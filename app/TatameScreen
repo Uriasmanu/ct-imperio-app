@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regras do Tatame</title>
+    <!-- Carrega o Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega ícones Lucide (opcional, mas bom para estilo app) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Define a fonte Inter (padrão elegante) e garante que o corpo ocupe 100% da viewport */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000; /* Fundo preto puro */
+        }
+        
+        /* Estilização para simular um gradiente sutil no fundo das regras */
+        .rule-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .rule-card:hover {
+            transform: translateY(-2px);
+            cursor: default;
+        }
+
+        /* Estilo para a lista de regras dentro do cartão */
+        .rule-list {
+            list-style: none; /* Remove bolinhas padrão */
+            padding-left: 0.5rem; /* Recuo leve */
+        }
+        .rule-list li:before {
+            content: '•'; /* Adiciona um ponto (bullet) personalizado */
+            color: #A38959; /* Cor do bullet é o dourado escuro */
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+    </style>
+    <script>
+        // Configuração do Tailwind CSS para definir as cores personalizadas (Dark Gold)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#0D0D0D', /* Fundo escuro sutil */
+                        'app-black': '#000000',
+                        'gold-dark': '#A38959', /* Ouro escuro principal */
+                        'gold-accent': '#D4AF37', /* Ouro mais claro para detalhes */
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-app-black text-gray-100 min-h-screen flex flex-col items-center justify-start p-4">
+
+    <!-- Container Principal Centrado -->
+    <div id="rules-screen" class="w-full max-w-md mx-auto h-full flex flex-col items-center py-8">
+
+        <!-- Ícone Superior (Simulando logo do tatame) -->
+        <div class="mb-6 p-3 rounded-full border-2 border-gold-dark shadow-xl" style="box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);">
+            <!-- Ícone de artes marciais (usando Lucide) -->
+            <i data-lucide="shield-half" class="w-10 h-10 text-gold-accent"></i>
+        </div>
+        
+        <!-- Título Principal -->
+        <h1 class="text-3xl font-extrabold tracking-widest text-gold-accent mb-8 uppercase border-b border-gold-dark pb-2">
+            Regras do Tatame
+        </h1>
+
+        <!-- Lista de Regras -->
+        <div id="rules-list" class="w-full space-y-4">
+            
+            <!-- Regra 1: Etiqueta e Respeito -->
+            <div class="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark">
+                <p class="text-lg font-bold text-gold-accent mb-2 flex items-center">
+                    <span class="text-2xl font-black mr-2">1.</span> Etiqueta e Respeito
+                </p>
+                <ul class="rule-list text-sm text-gray-300 space-y-1">
+                    <li>Cumprimente ao entrar e sair do tatame.</li>
+                    <li>Cumprimente por ordem de GRADUAÇÃO.</li>
+                    <li>Respeite mestres, instrutores e colegas em todos os momentos.</li>
+                </ul>
+            </div>
+
+            <!-- Regra 2: Higiene Pessoal -->
+            <div class="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark">
+                <p class="text-lg font-bold text-gold-accent mb-2 flex items-center">
+                    <span class="text-2xl font-black mr-2">2.</span> Higiene Pessoal
+                </p>
+                <ul class="rule-list text-sm text-gray-300 space-y-1">
+                    <li>KIMONO e FAIXA devem estar SEMPRE lavados e limpos.</li>
+                    <li>Mantenha UNHAS CURTAS (mãos e pés).</li>
+                    <li>Utilize DESODORANTE nas axilas.</li>
+                    <li>DENTES ESCOVADOS e hálito fresco.</li>
+                    <li>Cabelos longos devem estar presos.</li>
+                </ul>
+            </div>
+
+            <!-- Regra 3: Uniforme e Segurança -->
+            <div class="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark">
+                <p class="text-lg font-bold text-gold-accent mb-2 flex items-center">
+                    <span class="text-2xl font-black mr-2">3.</span> Uniforme e Segurança
+                </p>
+                <ul class="rule-list text-sm text-gray-300 space-y-1">
+                    <li>Apenas KIMONO PRETO é permitido para treino.</li>
+                    <li>CAMISETA ou RASHGUARD (sem decote) é obrigatória por baixo do kimono.</li>
+                    <li>Use SHORT por baixo da calça do kimono.</li>
+                    <li>Sem joias, brincos, piercings ou relógios no tatame.</li>
+                </ul>
+            </div>
+
+            <!-- Regra 4: Pontualidade e Preparação -->
+            <div class="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark">
+                <p class="text-lg font-bold text-gold-accent mb-2 flex items-center">
+                    <span class="text-2xl font-black mr-2">4.</span> Pontualidade e Preparação
+                </p>
+                <ul class="rule-list text-sm text-gray-300 space-y-1">
+                    <li>CHEGAR NO HORÁRIO da aula ou peça permissão ao instrutor se atrasado.</li>
+                    <li>Traga e ENCHA sua GARRAFA DE ÁGUA antes da aula começar.</li>
+                    <!-- NOVA REGRA sobre Calçados/Descalço -->
+                    <li>Sem calçados no tatame. Mantenha os chinelos nos pés ao sair do tatame e ao retornar.</li>
+                </ul>
+            </div>
+            
+            <!-- Regra 5: Foco e Conduta -->
+            <div class="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark">
+                <p class="text-lg font-bold text-gold-accent mb-2 flex items-center">
+                    <span class="text-2xl font-black mr-2">5.</span> Foco e Conduta
+                </p>
+                <ul class="rule-list text-sm text-gray-300 space-y-1">
+                    <!-- NOVA REGRA sobre Sair do Tatame -->
+                    <li>Sempre peça permissão ao professor antes de SAIR ou ENTRAR no tatame durante a aula.</li>
+                    <li>Treine com controle e comunique lesões.</li>
+                    <li>Mantenha o FOCO e a disciplina (Celulares desligados ou guardados).</li>
+                    <li>Ajude a manter o tatame e as áreas comuns limpas.</li>
+                </ul>
+            </div>
+
+        </div> <!-- Fim da Lista de Regras -->
+
+    </div> <!-- Fim do Container Principal -->
+    
+    <!-- Barra de Ação Inferior (App Navigation Mock) -->
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-app-black border-t border-gray-800 flex justify-center items-center">
+        <!-- Botão Principal de Ação -->
+        <button id="acknowledge-btn" 
+                class="w-3/4 py-3 rounded-xl font-semibold uppercase tracking-wider 
+                       bg-gold-dark text-app-black shadow-lg hover:bg-gold-accent transition duration-200 
+                       focus:outline-none focus:ring-4 focus:ring-gold-dark focus:ring-opacity-50">
+            Atesto que Li e Entendi
+        </button>
+        
+        <!-- Ícone de Configurações (Estético) -->
+        <button class="absolute right-4 p-2 text-gold-dark hover:text-gold-accent transition">
+            <i data-lucide="settings" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+
+    
+
