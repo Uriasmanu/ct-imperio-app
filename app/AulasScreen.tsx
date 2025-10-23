@@ -5,7 +5,13 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 const daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
 export default function AulasScreen() {
-  const [selectedDay, setSelectedDay] = useState(daysOfWeek[0]);
+  // Pega o dia da semana atual (0 = domingo, 6 = sábado)
+  const todayIndex = new Date().getDay();
+  
+  // Ajusta para o array começando em segunda
+  const adjustedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+
+  const [selectedDay, setSelectedDay] = useState(daysOfWeek[adjustedIndex]);
 
   // Filtra as aulas do dia selecionado
   const filteredClasses = classSchedule.filter(c => c.days.includes(selectedDay));
@@ -70,6 +76,7 @@ export default function AulasScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -99,14 +106,15 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   tabActive: {
-    backgroundColor: '#818cf8', // Indigo 400
+    backgroundColor: "#FFD700",
+    
   },
   tabText: {
     color: '#CCCCCC',
     fontWeight: '600',
   },
   tabTextActive: {
-    color: '#FFFFFF',
+    color: '#04041dff',
     fontWeight: 'bold',
   },
   scheduleList: {
@@ -135,9 +143,9 @@ const styles = StyleSheet.create({
     borderColor: '#4444FF33',
   },
   currentClassCard: {
-    borderColor: '#818cf8',
+    borderColor: '#FFD700',
     borderWidth: 2,
-    backgroundColor: '#1a1a40',
+    backgroundColor: '#04041dff',
   },
   classTimeContainer: {
     flex: 1,
@@ -145,7 +153,7 @@ const styles = StyleSheet.create({
   classTime: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#818cf8',
+    color: '#FFD700',
     marginBottom: 4,
   },
   classTitle: {
