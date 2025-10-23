@@ -31,8 +31,8 @@ export const classSchedule: ClassSchedule[] = [
     id: '3',
     title: 'Jiu-Jitsu Iniciante',
     instructor: 'Professor Carlos',
-    startTime: '03:10',
-    endTime: '3:30',
+    startTime: '03:34',
+    endTime: '3:50',
     days: ['Terça', 'Quinta']
   },
   {

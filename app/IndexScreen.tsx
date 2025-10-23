@@ -1,4 +1,5 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
+import { Clock, User } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -73,13 +74,13 @@ export default function IndexScreen() {
     setProgress(Math.min(Math.max(currentProgress, 0), 100));
   };
 
-  // Função para obter a cor do gradiente baseada no progresso
+  // FUNÇÃO MODIFICADA: Azul Escuro com Gradiente Elegante
   const getGradientColor = (progress: number): string => {
-    const baseGreen = 100;
-    const additionalGreen = Math.floor((progress / 100) * 155);
-    const greenValue = baseGreen + additionalGreen;
+    const baseBlue = 150;
+    const additionalBlue = Math.floor((progress / 100) * 105);
+    const blueValue = baseBlue + additionalBlue;
     
-    return `rgb(0, ${greenValue}, 0)`;
+    return `rgb(30, 70, ${blueValue})`;
   };
 
   useEffect(() => {
@@ -163,60 +164,60 @@ export default function IndexScreen() {
       <View style={styles.scheduleSection}>
         <Text style={styles.title}>Horário das Aulas</Text>
         
- {currentClass ? (
-    <View style={[
-      styles.currentClassContainer,
-      { backgroundColor: getGradientColor(progress) }
-    ]}>
+        {currentClass ? (
+          <View style={[
+            styles.currentClassContainer,
+            { backgroundColor: getGradientColor(progress) }
+          ]}>
 
-      {/* Barra de progresso estilizada */}
-      <View style={styles.progressBarBackground}>
-        <View 
-          style={[
-            styles.progressBarFill,
-            { width: `${progress}%` }
-          ]} 
-        />
-      </View>
+            {/* Barra de progresso estilizada */}
+            <View style={styles.progressBarBackground}>
+              <View 
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progress}%` }
+                ]} 
+              />
+            </View>
 
-      {/* Informações da aula */}
-      <View style={styles.classInfo}>
-        <Text style={styles.currentClassText}>
-          {currentClass.title}
-        </Text>
-        <View style={styles.classDetails}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailIcon}>🕐</Text>
-            <Text style={styles.detailText}>
-              {currentClass.startTime} - {currentClass.endTime}
+            {/* Informações da aula */}
+            <View style={styles.classInfo}>
+              <Text style={styles.currentClassText}>
+                {currentClass.title}
+              </Text>
+              <View style={styles.classDetails}>
+                <View style={styles.detailItem}>
+                  <Clock size={16} color="#FFFFFF" />
+                  <Text style={styles.detailText}>
+                    {currentClass.startTime} - {currentClass.endTime}
+                  </Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <User size={16} color="#FFFFFF" />
+                  <Text style={styles.detailText}>
+                    {currentClass.instructor}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.noClassContainer}>
+            <View style={styles.noClassIcon}>
+              <Text style={styles.noClassEmoji}>😴</Text>
+            </View>
+            <Text style={styles.noClassText}>
+              Nenhuma aula em andamento
+            </Text>
+            <Text style={styles.noClassSubtext}>
+              Próximas aulas hoje: {classSchedule
+                .filter(classItem => classItem.days.includes(getTodayDay()))
+                .map(classItem => `${classItem.title} (${classItem.startTime})`)
+                .join(', ') || 'Nenhuma aula programada'}
             </Text>
           </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailIcon}>👤</Text>
-            <Text style={styles.detailText}>
-              {currentClass.instructor}
-            </Text>
-          </View>
-        </View>
+        )}
       </View>
-    </View>
-  ) : (
-    <View style={styles.noClassContainer}>
-      <View style={styles.noClassIcon}>
-        <Text style={styles.noClassEmoji}>😴</Text>
-      </View>
-      <Text style={styles.noClassText}>
-        Nenhuma aula em andamento
-      </Text>
-      <Text style={styles.noClassSubtext}>
-        Próximas aulas hoje: {classSchedule
-          .filter(classItem => classItem.days.includes(getTodayDay()))
-          .map(classItem => `${classItem.title} (${classItem.startTime})`)
-          .join(', ') || 'Nenhuma aula programada'}
-      </Text>
-    </View>
-  )}
-</View>
     </ScrollView>
   );
 }
@@ -327,13 +328,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.5,
   },
+  // ESTILOS MODIFICADOS: Azul Escuro Elegante
   currentClassContainer: {
     padding: 20,
     borderRadius: 20,
     marginTop: 10,
     minHeight: 140,
     justifyContent: 'space-between',
-    shadowColor: '#00FF00',
+    shadowColor: '#3B82F6', // Azul para a sombra
     shadowOffset: {
       width: 0,
       height: 8,
@@ -342,7 +344,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(59, 130, 246, 0.3)', // Borda azul sutil
   },
   classHeader: {
     flexDirection: 'row',
@@ -390,9 +392,9 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FBBF24', // Amarelo para combinar com o tema
     borderRadius: 4,
-    shadowColor: '#FFFFFF',
+    shadowColor: '#FBBF24',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 4,
@@ -418,6 +420,7 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
   detailIcon: {
     fontSize: 14,
