@@ -1,7 +1,8 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
+import { useRouter } from 'expo-router';
 import { Clock, User } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -10,6 +11,7 @@ export default function IndexScreen() {
   const [currentClass, setCurrentClass] = useState<ClassSchedule | null>(null);
   const [progress, setProgress] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const router = useRouter();
 
   const carouselImages = [
     require('@/assets/imagens/Muay.jpeg'),
@@ -45,9 +47,9 @@ export default function IndexScreen() {
     const currentTimeInMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
 
     const today = getTodayDay();
-    
+
     // Encontrar aulas do dia atual
-    const todayClasses = classSchedule.filter(classItem => 
+    const todayClasses = classSchedule.filter(classItem =>
       classItem.days.includes(today)
     );
 
@@ -58,11 +60,11 @@ export default function IndexScreen() {
     todayClasses.forEach(classItem => {
       const startTimeInMinutes = timeToMinutes(classItem.startTime);
       const endTimeInMinutes = timeToMinutes(classItem.endTime);
-      
+
       // Se está dentro do horário da aula
       if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
         foundCurrentClass = classItem;
-        
+
         // Calcular progresso (0 a 100) com mais precisão
         const totalDuration = endTimeInMinutes - startTimeInMinutes;
         const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
@@ -79,17 +81,17 @@ export default function IndexScreen() {
     const baseBlue = 150;
     const additionalBlue = Math.floor((progress / 100) * 105);
     const blueValue = baseBlue + additionalBlue;
-    
+
     return `rgb(30, 70, ${blueValue})`;
   };
 
   useEffect(() => {
     // Calcular imediatamente ao montar o componente
     calculateClassProgress();
-    
+
     // Atualizar a cada segundo para progresso suave
     const interval = setInterval(calculateClassProgress, 1000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -114,7 +116,7 @@ export default function IndexScreen() {
       </View>
 
       {/* Carrossel com Indicadores Dinâmicos */}
-      <View style={styles.carouselSection}>        
+      <View style={styles.carouselSection}>
         <ScrollView
           ref={scrollViewRef}
           horizontal
@@ -163,20 +165,24 @@ export default function IndexScreen() {
 
       <View style={styles.scheduleSection}>
         <Text style={styles.title}>Horário das Aulas</Text>
-        
+
         {currentClass ? (
-          <View style={[
-            styles.currentClassContainer,
-            { backgroundColor: getGradientColor(progress) }
-          ]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push('/AulasScreen')}
+
+            style={[
+              styles.currentClassContainer,
+              { backgroundColor: getGradientColor(progress) }
+            ]}>
 
             {/* Barra de progresso estilizada */}
             <View style={styles.progressBarBackground}>
-              <View 
+              <View
                 style={[
                   styles.progressBarFill,
                   { width: `${progress}%` }
-                ]} 
+                ]}
               />
             </View>
 
@@ -200,7 +206,7 @@ export default function IndexScreen() {
                 </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ) : (
           <View style={styles.noClassContainer}>
             <View style={styles.noClassIcon}>
@@ -307,13 +313,13 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   professorName: {
-    fontSize: 18, 
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 5,
   },
   professorRole: {
-    fontSize: 12, 
+    fontSize: 12,
     color: '#CCCCCC',
     fontStyle: 'italic',
   },

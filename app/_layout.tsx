@@ -1,7 +1,7 @@
 import { NotificationProvider } from '@/context/NotificationContext';
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
-import { Home, Settings } from 'lucide-react-native';
+import { Clock, Home, Settings } from 'lucide-react-native';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -99,6 +99,16 @@ export default function RootLayout() {
                     title: '',
                     drawerIcon: ({ color, size }) => (
                       <Home size={size} color={color} />
+                    ),
+                  }}
+                />
+                <Drawer.Screen
+                  name="AulasScreen"
+                  options={{
+                    drawerLabel: 'Aulas',
+                    title: '',
+                    drawerIcon: ({ color, size }) => (
+                      <Clock size={size} color={color} />
                     ),
                   }}
                 />
