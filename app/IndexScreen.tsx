@@ -8,8 +8,9 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [currentClass, setCurrentClass] = useState<ClassSchedule | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [currentClasses, setCurrentClasses] = useState<ClassSchedule[]>([]);
+  const [nextClass, setNextClass] = useState<ClassSchedule | null>(null);
+  const [progressMap, setProgressMap] = useState<{[key: string]: number}>({});
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
 
@@ -37,43 +38,53 @@ export default function IndexScreen() {
     return days[new Date().getDay()];
   };
 
-  // Função para calcular o progresso da aula atual
-  const calculateClassProgress = () => {
+  // FUNÇÃO MODIFICADA: Encontrar TODAS as aulas em andamento
+  const calculateClasses = () => {
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentSecond = now.getSeconds();
-    // Incluir segundos para cálculo mais preciso
     const currentTimeInMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
 
     const today = getTodayDay();
 
-    // Encontrar aulas do dia atual
-    const todayClasses = classSchedule.filter(classItem =>
-      classItem.days.includes(today)
-    );
+    // Encontrar aulas do dia atual e ordenar por horário
+    const todayClasses = classSchedule
+      .filter(classItem => classItem.days.includes(today))
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
-    let foundCurrentClass: ClassSchedule | null = null;
-    let currentProgress = 0;
+    const foundCurrentClasses: ClassSchedule[] = [];
+    const newProgressMap: {[key: string]: number} = {};
+    let foundNextClass: ClassSchedule | null = null;
 
-    // Verificar cada aula do dia para encontrar a que está em andamento
+    // Encontrar TODAS as aulas em andamento
     todayClasses.forEach(classItem => {
       const startTimeInMinutes = timeToMinutes(classItem.startTime);
       const endTimeInMinutes = timeToMinutes(classItem.endTime);
 
       // Se está dentro do horário da aula
       if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
-        foundCurrentClass = classItem;
+        foundCurrentClasses.push(classItem);
 
-        // Calcular progresso (0 a 100) com mais precisão
+        // Calcular progresso para cada aula
         const totalDuration = endTimeInMinutes - startTimeInMinutes;
         const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
-        currentProgress = (elapsedTime / totalDuration) * 100;
+        const progress = (elapsedTime / totalDuration) * 100;
+        newProgressMap[classItem.title] = Math.min(Math.max(progress, 0), 100);
       }
     });
 
-    setCurrentClass(foundCurrentClass);
-    setProgress(Math.min(Math.max(currentProgress, 0), 100));
+    // Encontrar próxima aula (apenas se não há aulas em andamento)
+    if (foundCurrentClasses.length === 0) {
+      foundNextClass = todayClasses.find(classItem => {
+        const classStartTime = timeToMinutes(classItem.startTime);
+        return currentTimeInMinutes < classStartTime;
+      }) || null;
+    }
+
+    setCurrentClasses(foundCurrentClasses);
+    setNextClass(foundNextClass);
+    setProgressMap(newProgressMap);
   };
 
   // FUNÇÃO MODIFICADA: Azul Escuro com Gradiente Elegante
@@ -85,12 +96,17 @@ export default function IndexScreen() {
     return `rgb(30, 70, ${blueValue})`;
   };
 
+  // Função para gerar ID único para cada aula
+  const getClassId = (classItem: ClassSchedule): string => {
+    return `${classItem.title}-${classItem.startTime}-${classItem.endTime}`;
+  };
+
   useEffect(() => {
     // Calcular imediatamente ao montar o componente
-    calculateClassProgress();
+    calculateClasses();
 
     // Atualizar a cada segundo para progresso suave
-    const interval = setInterval(calculateClassProgress, 1000);
+    const interval = setInterval(calculateClasses, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -166,47 +182,54 @@ export default function IndexScreen() {
       <View style={styles.scheduleSection}>
         <Text style={styles.title}>Horário das Aulas</Text>
 
-        {currentClass ? (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push('/AulasScreen')}
-
-            style={[
-              styles.currentClassContainer,
-              { backgroundColor: getGradientColor(progress) }
-            ]}>
-
-            {/* Barra de progresso estilizada */}
-            <View style={styles.progressBarBackground}>
-              <View
+        {currentClasses.length > 0 ? (
+          <View style={styles.currentClassesContainer}>
+            <Text style={styles.currentClassesTitle}>
+              Aulas em andamento ({currentClasses.length})
+            </Text>
+            {currentClasses.map((classItem) => (
+              <TouchableOpacity
+                key={getClassId(classItem)}
+                activeOpacity={0.8}
+                onPress={() => router.push('/AulasScreen')}
                 style={[
-                  styles.progressBarFill,
-                  { width: `${progress}%` }
+                  styles.currentClassContainer,
+                  { backgroundColor: getGradientColor(progressMap[classItem.title] || 0) }
                 ]}
-              />
-            </View>
+              >
+                {/* Barra de progresso estilizada */}
+                <View style={styles.progressBarBackground}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${progressMap[classItem.title] || 0}%` }
+                    ]}
+                  />
+                </View>
 
-            {/* Informações da aula */}
-            <View style={styles.classInfo}>
-              <Text style={styles.currentClassText}>
-                {currentClass.title}
-              </Text>
-              <View style={styles.classDetails}>
-                <View style={styles.detailItem}>
-                  <Clock size={16} color="#FFFFFF" />
-                  <Text style={styles.detailText}>
-                    {currentClass.startTime} - {currentClass.endTime}
+                {/* Informações da aula */}
+                <View style={styles.classInfo}>
+                  <Text style={styles.currentClassText}>
+                    {classItem.title}
                   </Text>
+                  <View style={styles.classDetails}>
+                    <View style={styles.detailItem}>
+                      <Clock size={16} color="#FFFFFF" />
+                      <Text style={styles.detailText}>
+                        {classItem.startTime} - {classItem.endTime}
+                      </Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <User size={16} color="#FFFFFF" />
+                      <Text style={styles.detailText}>
+                        {classItem.instructor}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.detailItem}>
-                  <User size={16} color="#FFFFFF" />
-                  <Text style={styles.detailText}>
-                    {currentClass.instructor}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : (
           <View style={styles.noClassContainer}>
             <View style={styles.noClassIcon}>
@@ -216,10 +239,10 @@ export default function IndexScreen() {
               Nenhuma aula em andamento
             </Text>
             <Text style={styles.noClassSubtext}>
-              Próximas aulas hoje: {classSchedule
-                .filter(classItem => classItem.days.includes(getTodayDay()))
-                .map(classItem => `${classItem.title} (${classItem.startTime})`)
-                .join(', ') || 'Nenhuma aula programada'}
+              {nextClass
+                ? `Próxima aula: ${nextClass.title} (${nextClass.startTime})`
+                : 'Nenhuma aula programada para hoje'
+              }
             </Text>
           </View>
         )}
@@ -334,14 +357,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.5,
   },
+  // NOVO ESTILO: Container para múltiplas aulas
+  currentClassesContainer: {
+    marginTop: 10,
+  },
+  currentClassesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 15,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
   // ESTILOS MODIFICADOS: Azul Escuro Elegante
   currentClassContainer: {
     padding: 20,
     borderRadius: 20,
-    marginTop: 10,
+    marginBottom: 15, // Espaço entre os cards
     minHeight: 140,
     justifyContent: 'space-between',
-    shadowColor: '#3B82F6', // Azul para a sombra
+    shadowColor: '#3B82F6',
     shadowOffset: {
       width: 0,
       height: 8,
@@ -350,7 +385,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 16,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)', // Borda azul sutil
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
   classHeader: {
     flexDirection: 'row',
@@ -398,7 +433,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#FBBF24', // Amarelo para combinar com o tema
+    backgroundColor: '#FBBF24',
     borderRadius: 4,
     shadowColor: '#FBBF24',
     shadowOffset: { width: 0, height: 0 },
@@ -427,10 +462,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  detailIcon: {
-    fontSize: 14,
-    marginRight: 6,
   },
   detailText: {
     fontSize: 13,
