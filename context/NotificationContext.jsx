@@ -18,7 +18,7 @@ export const NotificationProvider = ({ children }) => {
   const [isExpoGo, setIsExpoGo] = useState(true);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notificationType, setNotificationType] = useState('local');
-  const [notificationTime, setNotificationTime] = useState({ hour: 19, minute: 0 }); // Padrão 19:00
+  const [notificationTime, setNotificationTime] = useState({ hour: 18, minute: 0 }); // Padrão 19:00
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
 
 
@@ -97,16 +97,6 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  // Navegação baseada na notificação
-  const handleNotificationNavigation = (data) => {
-    if (data.screen === 'flashcards') {
-      // Exemplo: navegar para tela de flashcards
-      // navigation.navigate('Flashcards');
-      console.log('Navegar para flashcards');
-    }
-  };
-
-  // Obter push token (apenas para development builds)
   // Obter push token (apenas para development builds)
   const getPushToken = async () => {
     if (isExpoGo) {
@@ -250,13 +240,13 @@ export const NotificationProvider = ({ children }) => {
       // Agendar nova notificação LOCAL
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Hora de estudar! 📚",
-          body: "Não se esqueça de revisar suas palavras hoje!",
+          title: "",
+          body: "",
           sound: true,
           priority: Notifications.AndroidNotificationPriority.HIGH,
           data: {
-            type: 'study_reminder',
-            screen: 'flashcards',
+            type: '',
+            screen: '',
             hour: hour,
             minute: minute
           },
@@ -367,8 +357,8 @@ async function registerForPushNotificationsAsync() {
 
     // Configurar canal para Android
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('study-reminders', {
-        name: 'Lembretes de Estudo',
+      await Notifications.setNotificationChannelAsync('', {
+        name: '',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',

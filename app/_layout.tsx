@@ -1,4 +1,3 @@
-import { NotificationProvider } from '@/context/NotificationContext';
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
 import { Clock, Home, Settings } from 'lucide-react-native';
@@ -27,7 +26,6 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <NotificationProvider>
           <View style={styles.container}>
             <View style={styles.drawerContainer}>
               <Drawer
@@ -128,7 +126,6 @@ export default function RootLayout() {
               {/* <AdBannerMock /> <AdBanner forceRealAds={true} /> */}
             </SafeAreaView>
           </View>
-        </NotificationProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
