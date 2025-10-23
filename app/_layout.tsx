@@ -94,19 +94,13 @@ export default function RootLayout() {
               >
                 <Drawer.Screen
                   name="IndexScreen"
-                  options={({ navigation }) => ({
+                  options={{
                     drawerLabel: 'Início',
                     title: '',
                     drawerIcon: ({ color, size }) => (
                       <Home size={size} color={color} />
                     ),
-                    // ✅ CORRETO: Agora recebe navigation como parâmetro
-                    headerLeft: () => (
-                      <HeaderLeftWithImage 
-                        onPress={() => navigation.openDrawer()} 
-                      />
-                    ),
-                  })}
+                  }}
                 />
 
                 <Drawer.Screen
