@@ -39,7 +39,9 @@ export default function IndexScreen() {
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const currentSecond = now.getSeconds();
+    // Incluir segundos para cálculo mais preciso
+    const currentTimeInMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
 
     const today = getTodayDay();
     
@@ -60,7 +62,7 @@ export default function IndexScreen() {
       if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
         foundCurrentClass = classItem;
         
-        // Calcular progresso (0 a 100)
+        // Calcular progresso (0 a 100) com mais precisão
         const totalDuration = endTimeInMinutes - startTimeInMinutes;
         const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
         currentProgress = (elapsedTime / totalDuration) * 100;
@@ -73,19 +75,19 @@ export default function IndexScreen() {
 
   // Função para obter a cor do gradiente baseada no progresso
   const getGradientColor = (progress: number): string => {
-    // Verde começa mais escuro e vai clareando conforme o progresso
-    const baseGreen = 100; // Verde base (escuro)
-    const additionalGreen = Math.floor((progress / 100) * 155); // Adiciona até 155
+    const baseGreen = 100;
+    const additionalGreen = Math.floor((progress / 100) * 155);
     const greenValue = baseGreen + additionalGreen;
     
     return `rgb(0, ${greenValue}, 0)`;
   };
 
   useEffect(() => {
+    // Calcular imediatamente ao montar o componente
     calculateClassProgress();
     
-    // Atualizar a cada minuto
-    const interval = setInterval(calculateClassProgress, 60000);
+    // Atualizar a cada segundo para progresso suave
+    const interval = setInterval(calculateClassProgress, 1000);
     
     return () => clearInterval(interval);
   }, []);
@@ -161,45 +163,60 @@ export default function IndexScreen() {
       <View style={styles.scheduleSection}>
         <Text style={styles.title}>Horário das Aulas</Text>
         
-        {currentClass ? (
-          <View style={[
-            styles.currentClassContainer,
-            { backgroundColor: getGradientColor(progress) }
-          ]}>
-            {/* Barra de progresso visual */}
-            <View style={styles.progressBarBackground}>
-              <View 
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progress}%` }
-                ]} 
-              />
-            </View>
-            
-            <Text style={styles.currentClassText}>
-              Agora: {currentClass.title}
-            </Text>
-            <Text style={styles.classTime}>
+ {currentClass ? (
+    <View style={[
+      styles.currentClassContainer,
+      { backgroundColor: getGradientColor(progress) }
+    ]}>
+
+      {/* Barra de progresso estilizada */}
+      <View style={styles.progressBarBackground}>
+        <View 
+          style={[
+            styles.progressBarFill,
+            { width: `${progress}%` }
+          ]} 
+        />
+      </View>
+
+      {/* Informações da aula */}
+      <View style={styles.classInfo}>
+        <Text style={styles.currentClassText}>
+          {currentClass.title}
+        </Text>
+        <View style={styles.classDetails}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>🕐</Text>
+            <Text style={styles.detailText}>
               {currentClass.startTime} - {currentClass.endTime}
             </Text>
-            <Text style={styles.classInstructor}>
-              Com {currentClass.instructor}
+          </View>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailIcon}>👤</Text>
+            <Text style={styles.detailText}>
+              {currentClass.instructor}
             </Text>
           </View>
-        ) : (
-          <View style={styles.noClassContainer}>
-            <Text style={styles.noClassText}>
-              Nenhuma aula em andamento no momento
-            </Text>
-            <Text style={styles.noClassSubtext}>
-              Próximas aulas hoje: {classSchedule
-                .filter(classItem => classItem.days.includes(getTodayDay()))
-                .map(classItem => `${classItem.title} (${classItem.startTime})`)
-                .join(', ') || 'Nenhuma aula programada'}
-            </Text>
-          </View>
-        )}
+        </View>
       </View>
+    </View>
+  ) : (
+    <View style={styles.noClassContainer}>
+      <View style={styles.noClassIcon}>
+        <Text style={styles.noClassEmoji}>😴</Text>
+      </View>
+      <Text style={styles.noClassText}>
+        Nenhuma aula em andamento
+      </Text>
+      <Text style={styles.noClassSubtext}>
+        Próximas aulas hoje: {classSchedule
+          .filter(classItem => classItem.days.includes(getTodayDay()))
+          .map(classItem => `${classItem.title} (${classItem.startTime})`)
+          .join(', ') || 'Nenhuma aula programada'}
+      </Text>
+    </View>
+  )}
+</View>
     </ScrollView>
   );
 }
@@ -300,76 +317,153 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   scheduleSection: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   currentClassContainer: {
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 20,
     marginTop: 10,
-    minHeight: 100,
-    justifyContent: 'center',
+    minHeight: 140,
+    justifyContent: 'space-between',
     shadowColor: '#00FF00',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  classHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  livePulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF4444',
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
   progressBarBackground: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 3,
-    marginBottom: 12,
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 4,
+    marginBottom: 20,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 3,
+    borderRadius: 4,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+  },
+  classInfo: {
+    // Espaço para as informações da aula
   },
   currentClassText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 15,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
-  classTime: {
+  classDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailIcon: {
     fontSize: 14,
+    marginRight: 6,
+  },
+  detailText: {
+    fontSize: 13,
     color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 5,
+    fontWeight: '500',
     opacity: 0.9,
   },
-  classInstructor: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    opacity: 0.8,
-    fontStyle: 'italic',
-  },
   noClassContainer: {
-    backgroundColor: '#1a1a1a',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 30,
+    borderRadius: 20,
     marginTop: 10,
-    minHeight: 80,
+    minHeight: 160,
     justifyContent: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#666666',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderStyle: 'dashed',
+  },
+  noClassIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  noClassEmoji: {
+    fontSize: 24,
   },
   noClassText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#CCCCCC',
     textAlign: 'center',
-    fontStyle: 'italic',
-    marginBottom: 5,
+    fontWeight: '600',
+    marginBottom: 10,
   },
   noClassSubtext: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#888888',
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
