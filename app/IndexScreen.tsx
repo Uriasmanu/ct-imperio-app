@@ -1,10 +1,13 @@
-import React, { useRef, useState } from 'react';
+import { classSchedule, ClassSchedule } from '@/data/classSchedule';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [currentClass, setCurrentClass] = useState<ClassSchedule | null>(null);
+  const [progress, setProgress] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const carouselImages = [
@@ -18,6 +21,74 @@ export default function IndexScreen() {
     const currentIndex = Math.round(contentOffsetX / (screenWidth - 40));
     setActiveIndex(currentIndex);
   };
+
+  // Função para converter hora string para minutos
+  const timeToMinutes = (timeString: string): number => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Função para obter o dia atual em português
+  const getTodayDay = (): string => {
+    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return days[new Date().getDay()];
+  };
+
+  // Função para calcular o progresso da aula atual
+  const calculateClassProgress = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+    const today = getTodayDay();
+    
+    // Encontrar aulas do dia atual
+    const todayClasses = classSchedule.filter(classItem => 
+      classItem.days.includes(today)
+    );
+
+    let foundCurrentClass: ClassSchedule | null = null;
+    let currentProgress = 0;
+
+    // Verificar cada aula do dia para encontrar a que está em andamento
+    todayClasses.forEach(classItem => {
+      const startTimeInMinutes = timeToMinutes(classItem.startTime);
+      const endTimeInMinutes = timeToMinutes(classItem.endTime);
+      
+      // Se está dentro do horário da aula
+      if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
+        foundCurrentClass = classItem;
+        
+        // Calcular progresso (0 a 100)
+        const totalDuration = endTimeInMinutes - startTimeInMinutes;
+        const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
+        currentProgress = (elapsedTime / totalDuration) * 100;
+      }
+    });
+
+    setCurrentClass(foundCurrentClass);
+    setProgress(Math.min(Math.max(currentProgress, 0), 100));
+  };
+
+  // Função para obter a cor do gradiente baseada no progresso
+  const getGradientColor = (progress: number): string => {
+    // Verde começa mais escuro e vai clareando conforme o progresso
+    const baseGreen = 100; // Verde base (escuro)
+    const additionalGreen = Math.floor((progress / 100) * 155); // Adiciona até 155
+    const greenValue = baseGreen + additionalGreen;
+    
+    return `rgb(0, ${greenValue}, 0)`;
+  };
+
+  useEffect(() => {
+    calculateClassProgress();
+    
+    // Atualizar a cada minuto
+    const interval = setInterval(calculateClassProgress, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
@@ -89,11 +160,45 @@ export default function IndexScreen() {
 
       <View style={styles.scheduleSection}>
         <Text style={styles.title}>Horário das Aulas</Text>
-        <View style={styles.currentClassContainer}>
-          <Text style={styles.currentClassText}>
-            Agora: Muay Thai Turma Mista
-          </Text>
-        </View>
+        
+        {currentClass ? (
+          <View style={[
+            styles.currentClassContainer,
+            { backgroundColor: getGradientColor(progress) }
+          ]}>
+            {/* Barra de progresso visual */}
+            <View style={styles.progressBarBackground}>
+              <View 
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progress}%` }
+                ]} 
+              />
+            </View>
+            
+            <Text style={styles.currentClassText}>
+              Agora: {currentClass.title}
+            </Text>
+            <Text style={styles.classTime}>
+              {currentClass.startTime} - {currentClass.endTime}
+            </Text>
+            <Text style={styles.classInstructor}>
+              Com {currentClass.instructor}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.noClassContainer}>
+            <Text style={styles.noClassText}>
+              Nenhuma aula em andamento no momento
+            </Text>
+            <Text style={styles.noClassSubtext}>
+              Próximas aulas hoje: {classSchedule
+                .filter(classItem => classItem.days.includes(getTodayDay()))
+                .map(classItem => `${classItem.title} (${classItem.startTime})`)
+                .join(', ') || 'Nenhuma aula programada'}
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -198,27 +303,73 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   currentClassContainer: {
-    backgroundColor: '#1a1a1a', // Dark background for contrast
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: 10,
-    minHeight: 60,
+    minHeight: 100,
     justifyContent: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF0000', // Accent color
-    shadowColor: '#000',
+    shadowColor: '#00FF00',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  progressBarBackground: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 3,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
   },
   currentClassText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  classTime: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 5,
+    opacity: 0.9,
+  },
+  classInstructor: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    opacity: 0.8,
+    fontStyle: 'italic',
+  },
+  noClassContainer: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 10,
+    minHeight: 80,
+    justifyContent: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#666666',
+  },
+  noClassText: {
+    fontSize: 16,
+    color: '#CCCCCC',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 5,
+  },
+  noClassSubtext: {
+    fontSize: 12,
+    color: '#888888',
     textAlign: 'center',
   },
 });
