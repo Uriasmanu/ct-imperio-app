@@ -1,16 +1,19 @@
 workflows:
-  expo-classic-build:
-    name: Expo Classic Build Android AAB
-    max_build_duration: 120
-    instance_type: mac_mini_m2
-
+  android-workflow:
+    name: Build Android AAB
+    environment:
+      groups:
+        - keystore_credentials
+        - expo_credentials
+      vars:
+        PACKAGE_NAME: "com.maanoelaurias.ctimperioapp"
     scripts:
-      - name: Install dependencies
-        script: |
-          npm install
       - name: Login Expo
         script: |
-          npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
-      - name: Build Android AAB
+          expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+      
+      - name: Build Android App Bundle (AAB)
         script: |
-          npx expo build:android -t app-bundle
+          flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
