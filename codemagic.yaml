@@ -3,7 +3,6 @@ workflows:
     name: Build Android AAB
     environment:
       groups:
-        - keystore_credentials
         - expo_credentials
       vars:
         PACKAGE_NAME: "com.maanoelaurias.ctimperioapp"
