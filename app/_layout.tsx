@@ -1,6 +1,6 @@
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
-import { Clock, Home, MessageCircleQuestion, Settings } from 'lucide-react-native';
+import { Clock, Home, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -120,6 +120,18 @@ export default function RootLayout() {
                   ),
                 }}
               />
+
+              <Drawer.Screen
+                name="TatameScreen"
+                options={{
+                  drawerLabel: 'Regras do Tatame',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <ShieldCheck size={size} color={color} />
+                  ),
+                }}
+              />
+
 
               <Drawer.Screen
                 name="SettingsScreen"

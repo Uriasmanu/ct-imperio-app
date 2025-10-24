@@ -1,4 +1,7 @@
-import { useState } from "react";
+
+import { ShieldCheck } from "lucide-react-native";
+import React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 interface Rule {
   number: number;
@@ -59,91 +62,129 @@ const rules: Rule[] = [
 ];
 
 export default function Rules() {
-  const [acknowledged, setAcknowledged] = useState(false);
 
   return (
-    <div className="bg-app-black text-gray-100 min-h-screen flex flex-col items-center justify-start p-4 font-sans">
-      <div className="w-full max-w-md mx-auto h-full flex flex-col items-center py-8">
-        {/* Ícone Superior */}
-        <div
-          className="mb-6 p-3 rounded-full border-2 border-gold-dark shadow-xl"
-          style={{ boxShadow: "0 0 15px rgba(212, 175, 55, 0.5)" }}
-        >
-          {/* Substituir Lucide por um ícone SVG próprio ou biblioteca de ícones */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-10 h-10 text-gold-accent"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7l3-7z"
-            />
-          </svg>
-        </div>
+    <View style={styles.container}>
+      {/* Ícone Superior */}
+      <View style={styles.iconContainer}>
+        <ShieldCheck size={35} color="#d4af37"/>
+      </View>
 
-        {/* Título Principal */}
-        <h1 className="text-3xl font-extrabold tracking-widest text-gold-accent mb-8 uppercase border-b border-gold-dark pb-2">
-          Regras do Tatame
-        </h1>
+      {/* Título */}
+      <Text style={styles.title}>Regras do Tatame</Text>
 
-        {/* Lista de Regras */}
-        <div className="w-full space-y-4">
-          {rules.map((rule) => (
-            <div
-              key={rule.number}
-              className="rule-card bg-dark-bg p-4 rounded-xl border-l-4 border-gold-dark shadow-md transition-transform duration-200 hover:-translate-y-1"
-            >
-              <p className="text-lg font-bold text-gold-accent mb-2 flex items-center">
-                <span className="text-2xl font-black mr-2">{rule.number}.</span>
-                {rule.title}
-              </p>
-              <ul className="rule-list text-sm text-gray-300 space-y-1">
-                {rule.items.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Lista de Regras */}
+      <ScrollView style={styles.scroll}>
+        {rules.map((rule) => (
+          <View key={rule.number} style={styles.ruleCard}>
+            <Text style={styles.ruleTitle}>
+              <Text style={styles.ruleNumber}>{rule.number}. </Text>
+              {rule.title}
+            </Text>
 
-      {/* Barra Inferior */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-app-black border-t border-gray-800 flex justify-center items-center">
-        <button
-          onClick={() => setAcknowledged(true)}
-          disabled={acknowledged}
-          className={`w-3/4 py-3 rounded-xl font-semibold uppercase tracking-wider shadow-lg transition duration-200 focus:outline-none focus:ring-4 focus:ring-gold-dark focus:ring-opacity-50 ${
-            acknowledged
-              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-              : "bg-gold-dark text-app-black hover:bg-gold-accent"
-          }`}
-        >
-          {acknowledged ? "Você reconheceu as regras" : "Atesto que Li e Entendi"}
-        </button>
+            {rule.items.map((item, idx) => (
+              <Text key={idx} style={styles.ruleItem}>
+                • {item}
+              </Text>
+            ))}
+          </View>
+        ))}
 
-        {/* Ícone de Configurações */}
-        <button className="absolute right-4 p-2 text-gold-dark hover:text-gold-accent transition">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8c1.5 0 2.5-1 3-2s1.5-2 3-2 2.5 1 3 2 1.5 2 3 2-1.5 1-3 2-2.5 1-3 2-1.5 2-3 2-2.5-1-3-2-1.5-2-3-2z"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0b0b0b",
+    alignItems: "center",
+    paddingVertical: 10
+  },
+  iconContainer: {
+    padding: 10,
+    borderWidth: 2,
+    borderColor: "#b8860b",
+    borderRadius: 50,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#d4af37",
+    textTransform: "uppercase",
+    borderBottomWidth: 1,
+    borderColor: "#b8860b",
+    paddingBottom: 8,
+    marginBottom: 20,
+  },
+  scroll: {
+    width: "90%",
+  },
+  ruleCard: {
+    backgroundColor: "#1a1a1a",
+    borderLeftWidth: 4,
+    borderLeftColor: "#b8860b",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  ruleTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#d4af37",
+    marginBottom: 6,
+  },
+  ruleNumber: {
+    fontSize: 20,
+    fontWeight: "900",
+    marginRight: 6,
+  },
+  ruleItem: {
+    fontSize: 13,
+    color: "#ccc",
+    marginLeft: 6,
+    marginBottom: 2,
+  },
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#0b0b0b",
+    borderTopWidth: 1,
+    borderTopColor: "#222",
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  button: {
+    width: "80%",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonActive: {
+    backgroundColor: "#b8860b",
+  },
+  buttonDisabled: {
+    backgroundColor: "#444",
+  },
+  buttonText: {
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  textActive: {
+    color: "#0b0b0b",
+  },
+  textDisabled: {
+    color: "#888",
+  },
+  settingsButton: {
+    position: "absolute",
+    right: 20,
+    top: "30%",
+  },
+});
