@@ -45,9 +45,9 @@ export default function IndexScreen() {
   const router = useRouter();
 
   const carouselImages = [
-    require('@/assets/imagens/Muay.jpeg'),
-    require('@/assets/imagens/Muay.jpeg'),
-    require('@/assets/imagens/Muay.jpeg'),
+    require('@/assets/images/Muay.jpeg'),
+    require('@/assets/images/Muay.jpeg'),
+    require('@/assets/images/Muay.jpeg'),
   ];
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -134,7 +134,7 @@ export default function IndexScreen() {
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       {/* Banner Principal */}
       <Image
-        source={require('@/assets/imagens/banner.jpeg')}
+        source={require('@/assets/images/banner.jpeg')}
         style={styles.banner}
         resizeMode="cover"
       />
@@ -188,7 +188,7 @@ export default function IndexScreen() {
       {/* Professor */}
       <View style={styles.professorContainer}>
         <Image
-          source={require('@/assets/imagens/will.jpg')}
+          source={require('@/assets/images/will.jpg')}
           style={styles.professorImage}
           resizeMode="cover"
         />

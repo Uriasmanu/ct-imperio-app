@@ -14,7 +14,7 @@ function HeaderLeftWithImage({ onPress }: { onPress: () => void }) {
       onPress={onPress}
     >
       <Image
-        source={require('@/assets/imagens/icon.png')}
+        source={require('@/assets/images/icon.png')}
         style={styles.headerImage}
         resizeMode="cover"
       />
@@ -63,7 +63,7 @@ export default function RootLayout() {
                   {/* Header do Drawer */}
                   <View style={styles.drawerHeader}>
                     <Image
-                      source={require('@/assets/imagens/icon.png')}
+                      source={require('@/assets/images/icon.png')}
                       style={styles.drawerHeaderImage}
                       resizeMode="cover"
                     />
