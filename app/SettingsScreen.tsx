@@ -15,7 +15,7 @@ const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
 
   const handlePrivacyPolicy = async () => {
-    const url = 'https://uriasmanu.github.io/flash-cards/';
+    const url = 'https://uriasmanu.github.io/ct-imperio-app/';
     try {
       const canOpen = await Linking.canOpenURL(url);
       if (canOpen) {
