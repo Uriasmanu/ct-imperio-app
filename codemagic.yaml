@@ -21,8 +21,8 @@ workflows:
         script: |
           npm install
       
-      - name: Build Android AAB
+      - name: Build with EAS
         script: |
-          npx expo build:android --type app-bundle --non-interactive
+          eas build --platform android --non-interactive
     artifacts:
       - build-*.aab
