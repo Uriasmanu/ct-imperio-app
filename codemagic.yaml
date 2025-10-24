@@ -6,20 +6,23 @@ workflows:
       groups:
         - expo_credentials
     scripts:
-      - name: Install Expo CLI
+      - name: Install Expo CLI globally
         script: |
           npm install -g @expo/cli
+          # Verifica se a instalação foi bem sucedida
+          which expo || echo "expo not found in PATH"
+          npx expo --version || echo "npx expo not working"
       
       - name: Login Expo
         script: |
-          expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+          npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
       
-      - name: Install dependencies
+      - name: Install project dependencies
         script: |
           npm install
       
       - name: Build Android AAB
         script: |
-          expo build:android --type app-bundle --non-interactive
+          npx expo build:android --type app-bundle --non-interactive
     artifacts:
       - build-*.aab
