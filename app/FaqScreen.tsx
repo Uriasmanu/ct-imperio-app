@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { AntDesign } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface FAQItem {
   question: string;
@@ -9,28 +11,27 @@ const faqItems: FAQItem[] = [
   {
     question: "Quais modalidades de luta vocês oferecem?",
     answer:
-      "Atualmente, oferecemos aulas de **Jiu-Jitsu Brasileiro (BJJ)**, **Muay Thai** e **Boxe**. Temos turmas separadas para iniciantes, intermediários e avançados em todas as categorias. Consulte a recepção para saber sobre turmas infantis.",
+      "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe. Temos turmas separadas para iniciantes, intermediários e avançados em todas as categorias. Consulte a recepção para saber sobre turmas infantis.",
   },
   {
     question: "Preciso ter experiência prévia para começar a treinar?",
     answer:
-      "De forma alguma! Nossas aulas são estruturadas para receber alunos de **todos os níveis**, especialmente iniciantes. O foco principal é na técnica, segurança e no desenvolvimento gradual do condicionamento físico. Nossos instrutores farão o acompanhamento de perto.",
+      "De forma alguma! Nossas aulas são estruturadas para receber alunos de todos os níveis, especialmente iniciantes. O foco principal é na técnica, segurança e no desenvolvimento gradual do condicionamento físico.",
   },
   {
-    question:
-      "Posso fazer uma aula experimental gratuita antes de me matricular?",
+    question: "Posso fazer uma aula experimental gratuita antes de me matricular?",
     answer:
-      "Claro! Oferecemos a primeira aula experimental **totalmente gratuita** para que você possa conhecer a equipe, o ambiente e a metodologia de treino. Basta agendar seu horário com antecedência na recepção ou pelo nosso WhatsApp.",
+      "Claro! Oferecemos a primeira aula experimental totalmente gratuita. Basta agendar seu horário com antecedência na recepção ou pelo WhatsApp.",
   },
   {
     question: "O que devo levar para o meu primeiro treino?",
     answer:
-      "Para a aula experimental, apenas traga **roupas leves** e confortáveis, uma toalha e uma garrafa d'água. Em modalidades que exigem kimono (BJJ) ou luvas (Boxe/Muay Thai), forneceremos o equipamento emprestado para o seu primeiro dia.",
+      "Roupas leves e confortáveis, uma toalha e uma garrafa d'água. Em modalidades que exigem kimono ou luvas, forneceremos o equipamento emprestado para o seu primeiro dia.",
   },
   {
     question: "Qual é o custo e quais são os planos disponíveis?",
     answer:
-      "Temos planos mensais, trimestrais e anuais com descontos progressivos. Os valores variam conforme o número de modalidades que você deseja treinar (1 modalidade ou Pacote Ilimitado). Não cobramos taxa de matrícula. Por favor, entre em contato para receber nossa tabela de preços detalhada.",
+      "Temos planos mensais, trimestrais e anuais com descontos progressivos. Entre em contato para receber nossa tabela de preços detalhada.",
   },
 ];
 
@@ -39,109 +40,233 @@ export default function FAQ() {
   const [showModal, setShowModal] = useState(false);
 
   const toggleAccordion = (index: number) => {
-    setActiveIndex((prev) => (prev === index ? null : index));
+    setActiveIndex(prev => (prev === index ? null : index));
   };
 
   return (
-    <div className="bg-dark-gray text-gray-200 min-h-screen p-4 sm:p-8 font-sans">
-      <div className="max-w-4xl mx-auto py-8">
-        {/* Header */}
-        <header className="text-center mb-12">
-          <h1 className="text-5xl sm:text-6xl font-extrabold text-dark-gold tracking-wider drop-shadow-lg">
-            FAQ{" "}
-            <span className="text-light-gold-accent text-3xl sm:text-4xl block mt-2">
-              Academia | Perguntas Frequentes
-            </span>
-          </h1>
-          <p className="mt-4 text-gray-400 text-lg">
-            Encontre respostas rápidas sobre treinos, horários e mensalidades.
-          </p>
-        </header>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <Text style={styles.title}>FAQ</Text>
+        <Text style={styles.subtitle}>Academia | Perguntas Frequentes</Text>
+        <Text style={styles.desc}>
+          Encontre respostas rápidas sobre treinos, horários e mensalidades.
+        </Text>
+      </View>
 
-        {/* FAQ */}
-        <div className="space-y-4">
-          {faqItems.map((item, index) => (
-            <div
-              key={index}
-              className={`faq-item bg-medium-gray rounded-xl shadow-2xl overflow-hidden border-b border-dark-gold/50 transition-all duration-300 ${
-                activeIndex === index ? "active" : ""
-              }`}
+      <View style={styles.faqContainer}>
+        {faqItems.map((item, index) => (
+          <View key={index} style={[
+            styles.item,
+            activeIndex === index && styles.activeItem
+          ]}>
+            <TouchableOpacity
+              style={styles.questionContainer}
+              onPress={() => toggleAccordion(index)}
+              activeOpacity={0.7}
             >
-              <button
-                className="faq-question w-full flex justify-between items-center p-5 sm:p-6 text-left focus:outline-none hover:bg-gray-700/50 transition duration-300"
-                onClick={() => toggleAccordion(index)}
-              >
-                <span className="text-lg sm:text-xl font-semibold text-light-gold-accent">
-                  {item.question}
-                </span>
-                <svg
-                  className={`arrow w-6 h-6 text-dark-gold flex-shrink-0 transform transition-transform duration-300 ${
-                    activeIndex === index ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 9l-7 7-7-7"
-                  ></path>
-                </svg>
-              </button>
-              <div
-                className={`faq-answer px-5 sm:px-6 text-gray-300 border-t border-dark-gold/20 transition-all duration-300 overflow-hidden ${
-                  activeIndex === index ? "max-h-[500px] py-4" : "max-h-0"
-                }`}
-              >
-                <p
-                  dangerouslySetInnerHTML={{
-                    __html: item.answer.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>"),
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+              <Text style={styles.questionText}>{item.question}</Text>
+              <AntDesign
+                name={activeIndex === index ? "up" : "down"}
+                size={18}
+                color="#D4AF37"
+                style={styles.icon}
+              />
+            </TouchableOpacity>
 
-        {/* Footer */}
-        <footer className="text-center mt-12 pt-6 border-t border-dark-gold/30">
-          <p className="text-gray-500">
-            Ainda tem dúvidas sobre como começar seu treino?
-          </p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="mt-3 px-8 py-3 bg-dark-gold text-dark-gray font-bold rounded-full hover:bg-yellow-500 transition duration-300 transform hover:scale-105 shadow-xl"
-          >
-            Agende sua Aula Experimental
-          </button>
-        </footer>
+            {activeIndex === index && (
+              <View style={styles.answerContainer}>
+                <Text style={styles.answer}>{item.answer}</Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
 
-        {/* Modal */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-medium-gray rounded-lg p-6 shadow-2xl max-w-sm w-full border border-dark-gold">
-              <h3 className="text-xl font-bold text-dark-gold mb-4">
-                Agendamento
-              </h3>
-              <p className="text-gray-300 mb-6">
-                Obrigado pelo seu interesse! Você seria redirecionado(a) para
-                uma página/formulário de agendamento online.
-              </p>
-              <div className="text-right">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-5 py-2 bg-dark-gold text-dark-gray font-semibold rounded-md hover:bg-yellow-500 transition"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Ainda tem dúvidas sobre como começar seu treino?
+        </Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setShowModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Agende sua Aula Experimental</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Modal */}
+      <Modal visible={showModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>Agendamento</Text>
+            <Text style={styles.modalDesc}>
+              Obrigado pelo seu interesse! Você seria redirecionado(a) para um formulário de agendamento online.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.closeButton]}
+                onPress={() => setShowModal(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.closeText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#1C1C1C",
+  },
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 30,
+    paddingHorizontal: 10,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#D4AF37",
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "#E0C96D",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  desc: {
+    color: "#aaa",
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  faqContainer: {
+    marginBottom: 20,
+  },
+  item: {
+    backgroundColor: "#2B2B2B",
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  activeItem: {
+    borderColor: "#D4AF37",
+    borderWidth: 1,
+  },
+  questionContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    paddingVertical: 18,
+  },
+  questionText: {
+    color: "#E0C96D",
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+    paddingRight: 12,
+    lineHeight: 22,
+  },
+  icon: {
+    marginLeft: 8,
+  },
+  answerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 18,
+  },
+  answer: {
+    color: "#ddd",
+    lineHeight: 22,
+    fontSize: 14,
+  },
+  footer: {
+    alignItems: "center",
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+    paddingHorizontal: 10,
+  },
+  footerText: {
+    color: "#ccc",
+    textAlign: "center",
+    marginBottom: 16,
+    fontSize: 15,
+  },
+  button: {
+    backgroundColor: "#D4AF37",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    minWidth: 200,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#1C1C1C",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalBox: {
+    backgroundColor: "#2B2B2B",
+    padding: 24,
+    borderRadius: 12,
+    width: "100%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    color: "#D4AF37",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  modalDesc: {
+    color: "#ccc",
+    marginBottom: 24,
+    lineHeight: 20,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  modalButtons: {
+    alignItems: "center",
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 6,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  closeButton: {
+    backgroundColor: "#D4AF37",
+  },
+  closeText: {
+    color: "#1C1C1C",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+});

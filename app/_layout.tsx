@@ -1,6 +1,6 @@
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
-import { Clock, Home, Settings } from 'lucide-react-native';
+import { Clock, Home, MessageCircleQuestion, Settings } from 'lucide-react-native';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -26,106 +26,116 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-          <View style={styles.container}>
-            <View style={styles.drawerContainer}>
-              <Drawer
-                screenOptions={{
-                  headerShown: true,
-                  drawerLabelStyle: {
-                    fontSize: 16,
-                    color: '#FFFFFF',
-                    fontWeight: '500'
-                  },
-                  drawerStyle: {
+        <View style={styles.container}>
+          <View style={styles.drawerContainer}>
+            <Drawer
+              screenOptions={{
+                headerShown: true,
+                drawerLabelStyle: {
+                  fontSize: 16,
+                  color: '#FFFFFF',
+                  fontWeight: '500'
+                },
+                drawerStyle: {
+                  backgroundColor: '#000000',
+                  width: 280,
+                },
+                headerStyle: {
+                  backgroundColor: '#000000',
+                },
+                headerTintColor: '#FFFFFF',
+                headerTitleStyle: {
+                  color: '#FFFFFF',
+                  fontWeight: 'bold',
+                },
+                drawerActiveBackgroundColor: '#1A1A1A',
+                drawerActiveTintColor: '#FFFFFF',
+                drawerInactiveTintColor: '#CCCCCC',
+              }}
+              drawerContent={(props) => (
+                <DrawerContentScrollView
+                  {...props}
+                  contentContainerStyle={{
+                    flex: 1,
                     backgroundColor: '#000000',
-                    width: 280,
-                  },
-                  headerStyle: {
-                    backgroundColor: '#000000',
-                  },
-                  headerTintColor: '#FFFFFF',
-                  headerTitleStyle: {
-                    color: '#FFFFFF',
-                    fontWeight: 'bold',
-                  },
-                  drawerActiveBackgroundColor: '#1A1A1A',
-                  drawerActiveTintColor: '#FFFFFF',
-                  drawerInactiveTintColor: '#CCCCCC',
-                }}
-                drawerContent={(props) => (
-                  <DrawerContentScrollView
-                    {...props}
-                    contentContainerStyle={{
-                      flex: 1,
-                      backgroundColor: '#000000',
-                    }}
-                  >
-                    {/* Header do Drawer */}
-                    <View style={styles.drawerHeader}>
-                      <Image
-                        source={require('@/assets/imagens/icon.png')}
-                        style={styles.drawerHeaderImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.drawerHeaderText}>
-                        <Text style={styles.drawerTitle}>CT Imperio</Text>
-                        <Text style={styles.drawerSubtitle}>Bem-vindo(a)</Text>
-                      </View>
-                    </View>
-
-                    {/* Lista de itens */}
-                    <DrawerItemList {...props} />
-
-                    <View style={{ flex: 1 }} />
-
-                    {/* Item de Configurações */}
-                    <DrawerItem
-                      label="Configurações"
-                      icon={({ color, size }) => (
-                        <Settings size={size} color='#fff' />
-                      )}
-                      onPress={() => props.navigation.navigate('SettingsScreen')}
-                      labelStyle={styles.drawerLabel}
+                  }}
+                >
+                  {/* Header do Drawer */}
+                  <View style={styles.drawerHeader}>
+                    <Image
+                      source={require('@/assets/imagens/icon.png')}
+                      style={styles.drawerHeaderImage}
+                      resizeMode="cover"
                     />
-                  </DrawerContentScrollView>
-                )}
-              >
-                <Drawer.Screen
-                  name="IndexScreen"
-                  options={{
-                    drawerLabel: 'Início',
-                    title: '',
-                    drawerIcon: ({ color, size }) => (
-                      <Home size={size} color={color} />
-                    ),
-                  }}
-                />
-                <Drawer.Screen
-                  name="AulasScreen"
-                  options={{
-                    drawerLabel: 'Aulas',
-                    title: '',
-                    drawerIcon: ({ color, size }) => (
-                      <Clock size={size} color={color} />
-                    ),
-                  }}
-                />
+                    <View style={styles.drawerHeaderText}>
+                      <Text style={styles.drawerTitle}>CT Imperio</Text>
+                      <Text style={styles.drawerSubtitle}>Bem-vindo(a)</Text>
+                    </View>
+                  </View>
 
-                <Drawer.Screen
-                  name="SettingsScreen"
-                  options={{
-                    drawerLabel: () => null,
-                    drawerItemStyle: { display: 'none' },
-                    title: 'Configurações',
-                  }}
-                />
-              </Drawer>
-            </View>
+                  {/* Lista de itens */}
+                  <DrawerItemList {...props} />
 
-            <SafeAreaView edges={["bottom"]} style={styles.bottomArea}>
-              {/* <AdBannerMock /> <AdBanner forceRealAds={true} /> */}
-            </SafeAreaView>
+                  <View style={{ flex: 1 }} />
+
+                  {/* Item de Configurações */}
+                  <DrawerItem
+                    label="Configurações"
+                    icon={({ color, size }) => (
+                      <Settings size={size} color='#fff' />
+                    )}
+                    onPress={() => props.navigation.navigate('SettingsScreen')}
+                    labelStyle={styles.drawerLabel}
+                  />
+                </DrawerContentScrollView>
+              )}
+            >
+              <Drawer.Screen
+                name="IndexScreen"
+                options={{
+                  drawerLabel: 'Início',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <Home size={size} color={color} />
+                  ),
+                }}
+              />
+              <Drawer.Screen
+                name="AulasScreen"
+                options={{
+                  drawerLabel: 'Aulas',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <Clock size={size} color={color} />
+                  ),
+                }}
+              />
+              <Drawer.Screen
+                name="FaqScreen"
+                options={{
+                  drawerLabel: 'Duvidas Frequentes',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <MessageCircleQuestion size={size} color={color} />
+                  ),
+                }}
+              />
+
+              <Drawer.Screen
+                name="SettingsScreen"
+                options={{
+                  drawerLabel: () => null,
+                  drawerItemStyle: { display: 'none' },
+                  title: 'Configurações',
+                }}
+              />
+            </Drawer>
           </View>
+
+          <SafeAreaView edges={["bottom"]} style={styles.bottomArea}>
+            {/* <AdBannerMock /> <AdBanner forceRealAds={true} /> */}
+          </SafeAreaView>
+        </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
