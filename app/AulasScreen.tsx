@@ -1,5 +1,5 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   ScrollView,
@@ -45,6 +45,14 @@ export default function AulasScreen() {
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[adjustedIndex]);
   const [fadeAnim] = useState(new Animated.Value(0));
 
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const filteredClasses = classSchedule.filter(c => c.days.includes(selectedDay));
 
   const sortByTime = (a: ClassSchedule, b: ClassSchedule) => {
@@ -72,27 +80,27 @@ export default function AulasScreen() {
     const now = new Date();
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
-    
+
     const [startHours, startMinutes] = aula.startTime.split(':').map(Number);
     const [endHours, endMinutes] = aula.endTime.split(':').map(Number);
-    
+
     // Converte tudo para minutos totais para facilitar a comparação
     const currentTotalMinutes = currentHours * 60 + currentMinutes;
     const startTotalMinutes = startHours * 60 + startMinutes;
     const endTotalMinutes = endHours * 60 + endMinutes;
-    
 
-    
+
+
     // Se a aula já terminou
     if (currentTotalMinutes > endTotalMinutes) {
       return 'finished';
     }
-    
+
     // Se a aula está acontecendo agora
     if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
       return 'current';
     }
-    
+
     // Se a aula ainda vai acontecer
     return 'upcoming';
   };
@@ -117,7 +125,7 @@ export default function AulasScreen() {
         {daysOfWeek.map(day => {
           const isToday = day === daysOfWeek[adjustedIndex];
           const isSelected = selectedDay === day;
-          
+
           return (
             <TouchableOpacity
               key={day}
@@ -144,13 +152,13 @@ export default function AulasScreen() {
 
       {/* CONTEÚDO PRINCIPAL com altura flexível */}
       <View style={styles.contentContainer}>
-        <Animated.View 
-          style={{ 
-            opacity: fadeAnim, 
-            flex: 1 
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            flex: 1
           }}
         >
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={styles.scheduleList}
             showsVerticalScrollIndicator={false}
           >
@@ -165,7 +173,7 @@ export default function AulasScreen() {
             ) : (
               filteredClasses.sort(sortByTime).map((aula) => {
                 const status = getClassStatus(aula);
-                
+
                 return (
                   <TouchableOpacity
                     key={aula.id}
@@ -182,7 +190,7 @@ export default function AulasScreen() {
                       status === 'upcoming' && styles.statusUpcoming,
                       status === 'finished' && styles.statusFinished
                     ]} />
-                    
+
                     <View style={styles.classContent}>
                       <View style={styles.classHeader}>
                         <Text style={styles.classTime}>{aula.startTime}</Text>
@@ -192,9 +200,9 @@ export default function AulasScreen() {
                           </Text>
                         </View>
                       </View>
-                      
+
                       <Text style={styles.classTitle}>{aula.title}</Text>
-                      
+
                       <View style={styles.classDetails}>
                         <View style={styles.detailItem}>
                           <Text style={styles.detailLabel}>Instrutor</Text>

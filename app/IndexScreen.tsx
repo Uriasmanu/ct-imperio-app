@@ -212,10 +212,6 @@ export default function IndexScreen() {
 
         {currentClasses.length > 0 ? (
           <View style={styles.currentClassesContainer}>
-            <View style={styles.liveIndicator}>
-              <View style={styles.livePulse} />
-              <Text style={styles.liveText}>AO VIVO</Text>
-            </View>
             <Text style={styles.currentClassesTitle}>
               Aulas em andamento ({currentClasses.length})
             </Text>
@@ -408,30 +404,6 @@ const styles = StyleSheet.create({
   },
   scheduleSection: {
     marginBottom: theme.spacing.lg,
-  },
-  liveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  livePulse: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    marginRight: 6,
-  },
-  liveText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
   },
   currentClassesContainer: {
     paddingHorizontal: theme.spacing.lg,
