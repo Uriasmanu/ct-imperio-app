@@ -8,7 +8,7 @@ workflows:
     scripts:
       - name: Install EAS CLI
         script: |
-          npm install -g @expo/eas-cli
+          npm install -g eas-cli
           eas --version
       
       - name: Install project dependencies
