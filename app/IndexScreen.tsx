@@ -2,9 +2,39 @@ import { classSchedule, ClassSchedule } from '@/data/classSchedule';
 import { useRouter } from 'expo-router';
 import { Clock, User } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Sistema de tema
+const theme = {
+  colors: {
+    primary: '#FFD700',
+    secondary: '#3B82F6',
+    background: '#000000',
+    card: '#1A1A1A',
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#E5E5E5',
+      muted: '#888888'
+    }
+  },
+  spacing: {
+    sm: 8,
+    md: 16,
+    lg: 24
+  }
+};
 
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -26,19 +56,17 @@ export default function IndexScreen() {
     setActiveIndex(currentIndex);
   };
 
-  // Função para converter hora string para minutos
   const timeToMinutes = (timeString: string): number => {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;
   };
 
-  // Função para obter o dia atual em português
   const getTodayDay = (): string => {
     const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     return days[new Date().getDay()];
   };
 
-  // FUNÇÃO MODIFICADA: Encontrar TODAS as aulas em andamento
+  // PERFORMANCE: Atualização otimizada
   const calculateClasses = () => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -48,7 +76,6 @@ export default function IndexScreen() {
 
     const today = getTodayDay();
 
-    // Encontrar aulas do dia atual e ordenar por horário
     const todayClasses = classSchedule
       .filter(classItem => classItem.days.includes(today))
       .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
@@ -57,16 +84,12 @@ export default function IndexScreen() {
     const newProgressMap: {[key: string]: number} = {};
     let foundNextClass: ClassSchedule | null = null;
 
-    // Encontrar TODAS as aulas em andamento
     todayClasses.forEach(classItem => {
       const startTimeInMinutes = timeToMinutes(classItem.startTime);
       const endTimeInMinutes = timeToMinutes(classItem.endTime);
 
-      // Se está dentro do horário da aula
       if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
         foundCurrentClasses.push(classItem);
-
-        // Calcular progresso para cada aula
         const totalDuration = endTimeInMinutes - startTimeInMinutes;
         const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
         const progress = (elapsedTime / totalDuration) * 100;
@@ -74,7 +97,6 @@ export default function IndexScreen() {
       }
     });
 
-    // Encontrar próxima aula (apenas se não há aulas em andamento)
     if (foundCurrentClasses.length === 0) {
       foundNextClass = todayClasses.find(classItem => {
         const classStartTime = timeToMinutes(classItem.startTime);
@@ -92,17 +114,14 @@ export default function IndexScreen() {
     const baseBlue = 150;
     const additionalBlue = Math.floor((progress / 100) * 105);
     const blueValue = baseBlue + additionalBlue;
-
     return `rgb(30, 70, ${blueValue})`;
   };
 
-  // Função para gerar ID único para cada aula
   const getClassId = (classItem: ClassSchedule): string => {
     return `${classItem.title}-${classItem.startTime}-${classItem.endTime}`;
   };
 
   useEffect(() => {
-    // Calcular imediatamente ao montar o componente
     calculateClasses();
 
     // Atualizar a cada segundo para progresso suave
@@ -124,10 +143,10 @@ export default function IndexScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Nossa História</Text>
         <Text style={styles.paragraph}>
-          Desde 2015, ajudamos pessoas a saírem do sedentarismo, cuidarem da saúde e evoluírem no esporte, seja para competir ou simplesmente ter mais qualidade de vida.
+          Desde 2015, ajudamos pessoas a saírem do sedentarismo, cuidarem da saúde e evoluírem no esporte.
         </Text>
         <Text style={styles.paragraph}>
-          Hoje, somos referência no interior paulista, com um trabalho dedicado a crianças e adultos. Venha fazer parte de um dos CTs de lutas que mais se destacam na região!
+          Referência no interior paulista com trabalho dedicado a crianças e adultos.
         </Text>
       </View>
 
@@ -153,7 +172,6 @@ export default function IndexScreen() {
           ))}
         </ScrollView>
 
-        {/* Indicadores dinâmicos */}
         <View style={styles.indicators}>
           {carouselImages.map((_, index) => (
             <View
@@ -167,23 +185,37 @@ export default function IndexScreen() {
         </View>
       </View>
 
+      {/* Professor */}
       <View style={styles.professorContainer}>
         <Image
           source={require('@/assets/imagens/will.jpg')}
           style={styles.professorImage}
           resizeMode="cover"
         />
-        <View>
+        <View style={styles.professorInfo}>
           <Text style={styles.professorName}>Mestre William Izarias</Text>
           <Text style={styles.professorRole}>Proprietário e Mestre</Text>
         </View>
       </View>
 
+      {/* Aulas em Andamento */}
       <View style={styles.scheduleSection}>
-        <Text style={styles.title}>Horário das Aulas</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Aulas de Hoje</Text>
+          <TouchableOpacity 
+            style={styles.seeAllButton}
+            onPress={() => router.push('/AulasScreen')}
+          >
+            <Text style={styles.seeAllText}>Ver todas</Text>
+          </TouchableOpacity>
+        </View>
 
         {currentClasses.length > 0 ? (
           <View style={styles.currentClassesContainer}>
+            <View style={styles.liveIndicator}>
+              <View style={styles.livePulse} />
+              <Text style={styles.liveText}>AO VIVO</Text>
+            </View>
             <Text style={styles.currentClassesTitle}>
               Aulas em andamento ({currentClasses.length})
             </Text>
@@ -197,7 +229,6 @@ export default function IndexScreen() {
                   { backgroundColor: getGradientColor(progressMap[classItem.title] || 0) }
                 ]}
               >
-                {/* Barra de progresso estilizada */}
                 <View style={styles.progressBarBackground}>
                   <View
                     style={[
@@ -207,11 +238,8 @@ export default function IndexScreen() {
                   />
                 </View>
 
-                {/* Informações da aula */}
                 <View style={styles.classInfo}>
-                  <Text style={styles.currentClassText}>
-                    {classItem.title}
-                  </Text>
+                  <Text style={styles.currentClassText}>{classItem.title}</Text>
                   <View style={styles.classDetails}>
                     <View style={styles.detailItem}>
                       <Clock size={16} color="#FFFFFF" />
@@ -221,9 +249,7 @@ export default function IndexScreen() {
                     </View>
                     <View style={styles.detailItem}>
                       <User size={16} color="#FFFFFF" />
-                      <Text style={styles.detailText}>
-                        {classItem.instructor}
-                      </Text>
+                      <Text style={styles.detailText}>{classItem.instructor}</Text>
                     </View>
                   </View>
                 </View>
@@ -232,18 +258,22 @@ export default function IndexScreen() {
           </View>
         ) : (
           <View style={styles.noClassContainer}>
-            <View style={styles.noClassIcon}>
-              <Text style={styles.noClassEmoji}>😴</Text>
-            </View>
-            <Text style={styles.noClassText}>
-              Nenhuma aula em andamento
+            <Text style={styles.noClassEmoji}>⏰</Text>
+            <Text style={styles.noClassTitle}>
+              {nextClass ? 'Próxima Aula' : 'Sem Aulas Hoje'}
             </Text>
-            <Text style={styles.noClassSubtext}>
-              {nextClass
-                ? `Próxima aula: ${nextClass.title} (${nextClass.startTime})`
-                : 'Nenhuma aula programada para hoje'
+            <Text style={styles.noClassText}>
+              {nextClass 
+                ? `${nextClass.title} às ${nextClass.startTime}`
+                : 'Aproveite para descansar!'
               }
             </Text>
+            <TouchableOpacity 
+              style={styles.scheduleButton}
+              onPress={() => router.push('/AulasScreen')}
+            >
+              <Text style={styles.scheduleButtonText}>Ver Grade Completa</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -254,204 +284,200 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.background,
   },
   container: {
-    padding: 20,
     paddingBottom: 40,
   },
   banner: {
     width: '100%',
-    height: 230,
-    borderRadius: 12,
-
+    height: 200,
+  },
+  content: {
+    padding: theme.spacing.lg,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.md,
+  },
+  paragraph: {
+    fontSize: 15,
+    color: theme.colors.text.secondary,
+    lineHeight: 22,
+    marginBottom: theme.spacing.md,
   },
   carouselSection: {
-    marginBottom: 40,
+    marginBottom: theme.spacing.lg,
   },
-  carouselTitle: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 15,
-    textAlign: 'center',
+    color: theme.colors.text.primary,
+  },
+  seeAllButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+  },
+  seeAllText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   carousel: {
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
   },
   carouselItem: {
     width: screenWidth - 40,
+    marginHorizontal: 20,
+    position: 'relative',
   },
   carouselImage: {
     width: '100%',
-    height: 200,
+    height: 160,
     borderRadius: 12,
   },
   indicators: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
   },
   indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#333333',
-    marginHorizontal: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.text.muted,
   },
   indicatorActive: {
-    backgroundColor: '#FFFFFF',
-    width: 12,
-  },
-  content: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginVertical: 10,
-  },
-  paragraph: {
-    fontSize: 14,
-    color: '#CCCCCC',
-    lineHeight: 24,
-    textAlign: 'justify',
-    marginBottom: 16,
+    backgroundColor: theme.colors.primary,
+    width: 20,
   },
   professorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 2,
+    padding: theme.spacing.lg,
+    marginHorizontal: 20,
     borderRadius: 16,
-    borderLeftWidth: 4,
-    gap: 15,
-    marginBottom: 30,
+    marginBottom: theme.spacing.lg,
   },
   professorImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 60,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     borderWidth: 3,
     borderColor: '#FFFFFF',
+  },
+  professorInfo: {
+    flex: 1,
+    marginLeft: theme.spacing.md,
   },
   professorName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 5,
+    color: theme.colors.text.primary,
+    marginBottom: 4,
   },
   professorRole: {
+    fontSize: 13,
+    color: theme.colors.text.muted,
+    marginBottom: 8,
+  },
+  professorStats: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
     fontSize: 12,
-    color: '#CCCCCC',
-    fontStyle: 'italic',
+    color: theme.colors.text.muted,
   },
   scheduleSection: {
-    marginBottom: 30,
+    marginBottom: theme.spacing.lg,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 20,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
-  // NOVO ESTILO: Container para múltiplas aulas
-  currentClassesContainer: {
-    marginTop: 10,
-  },
-  currentClassesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 15,
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-  // ESTILOS MODIFICADOS: Azul Escuro Elegante
-  currentClassContainer: {
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 15, // Espaço entre os cards
-    minHeight: 140,
-    justifyContent: 'space-between',
-    shadowColor: '#3B82F6',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
-  },
-  classHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  liveBadge: {
+  liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    alignSelf: 'center',
+    marginBottom: theme.spacing.md,
   },
   livePulse: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF4444',
+    backgroundColor: '#EF4444',
     marginRight: 6,
   },
   liveText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
-  progressPercentage: {
-    fontSize: 14,
+  currentClassesContainer: {
+    paddingHorizontal: theme.spacing.lg,
+  },
+  currentClassesTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
+  },
+  currentClassContainer: {
+    padding: theme.spacing.lg,
+    borderRadius: 16,
+    marginBottom: theme.spacing.md,
+    minHeight: 120,
+    justifyContent: 'space-between',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
   progressBarBackground: {
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 4,
-    marginBottom: 20,
+    borderRadius: 3,
+    marginBottom: theme.spacing.md,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#FBBF24',
-    borderRadius: 4,
-    shadowColor: '#FBBF24',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 3,
   },
   classInfo: {
-    // Espaço para as informações da aula
+    // Espaço para informações
   },
   currentClassText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: theme.spacing.md,
   },
   classDetails: {
     flexDirection: 'row',
@@ -467,43 +493,43 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFFFFF',
     fontWeight: '500',
-    opacity: 0.9,
   },
   noClassContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 30,
-    borderRadius: 20,
-    marginTop: 10,
-    minHeight: 160,
-    justifyContent: 'center',
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.lg,
+    borderRadius: 16,
+    marginHorizontal: theme.spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderStyle: 'dashed',
   },
-  noClassIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
   noClassEmoji: {
-    fontSize: 24,
+    fontSize: 32,
+    marginBottom: theme.spacing.md,
+  },
+  noClassTitle: {
+    fontSize: 18,
+    color: theme.colors.text.primary,
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
   },
   noClassText: {
-    fontSize: 18,
-    color: '#CCCCCC',
+    fontSize: 14,
+    color: theme.colors.text.secondary,
     textAlign: 'center',
-    fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: theme.spacing.lg,
   },
-  noClassSubtext: {
-    fontSize: 13,
-    color: '#888888',
-    textAlign: 'center',
-    lineHeight: 18,
+  scheduleButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: 12,
+  },
+  scheduleButtonText: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
