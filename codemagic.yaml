@@ -1,18 +1,25 @@
 workflows:
   android-workflow:
-    name: Build Android AAB
+    name: Build Android AAB - Expo
     environment:
+      node: 20
       groups:
         - expo_credentials
-      vars:
-        PACKAGE_NAME: "com.maanoelaurias.ctimperioapp"
     scripts:
+      - name: Install Expo CLI
+        script: |
+          npm install -g @expo/cli
+      
       - name: Login Expo
         script: |
           expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
       
-      - name: Build Android App Bundle (AAB)
+      - name: Install dependencies
         script: |
-          flutter build appbundle --release
+          npm install
+      
+      - name: Build Android AAB
+        script: |
+          expo build:android --type app-bundle --non-interactive
     artifacts:
-      - build/app/outputs/bundle/release/*.aab
+      - build-*.aab
