@@ -10,7 +10,7 @@ workflows:
           npm install
       - name: Login Expo
         script: |
-          npx expo login -u maanoelaurias@gmail.com -p /thYAH?$H+S7Q9r
+          npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
       - name: Build Android AAB
         script: |
           npx expo build:android -t app-bundle
