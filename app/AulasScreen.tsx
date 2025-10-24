@@ -73,9 +73,6 @@ export default function AulasScreen() {
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
     
-    // Para debug - mostra o horário atual
-    console.log(`Horário atual: ${currentHours}:${currentMinutes}`);
-    
     const [startHours, startMinutes] = aula.startTime.split(':').map(Number);
     const [endHours, endMinutes] = aula.endTime.split(':').map(Number);
     
@@ -84,23 +81,19 @@ export default function AulasScreen() {
     const startTotalMinutes = startHours * 60 + startMinutes;
     const endTotalMinutes = endHours * 60 + endMinutes;
     
-    console.log(`Aula: ${aula.title} - ${aula.startTime}-${aula.endTime}`);
-    console.log(`Current: ${currentTotalMinutes}, Start: ${startTotalMinutes}, End: ${endTotalMinutes}`);
+
     
     // Se a aula já terminou
     if (currentTotalMinutes > endTotalMinutes) {
-      console.log(`→ FINISHED`);
       return 'finished';
     }
     
     // Se a aula está acontecendo agora
     if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
-      console.log(`→ CURRENT`);
       return 'current';
     }
     
     // Se a aula ainda vai acontecer
-    console.log(`→ UPCOMING`);
     return 'upcoming';
   };
 

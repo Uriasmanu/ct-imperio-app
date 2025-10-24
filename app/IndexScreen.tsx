@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: '100%',
-    height: 180,
+    height: 230,
     borderRadius: 12,
-    marginBottom: 30,
+
   },
   carouselSection: {
     marginBottom: 40,

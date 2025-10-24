@@ -117,5 +117,13 @@ export const classSchedule: ClassSchedule[] = [
     days: ['Segunda', 'Quarta', 'Sexta'],
     current: true,
   },
-
+  {
+    id: '13',
+    title: 'Muay Thai - Turma Mista (Noite)',
+    instructor: 'Mestre William',
+    startTime: '18:30',
+    endTime: '19:30',
+    days: ['Segunda', 'Quarta', 'Sexta'],
+    current: true,
+  },
 ];
