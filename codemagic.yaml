@@ -6,16 +6,10 @@ workflows:
       groups:
         - expo_credentials
     scripts:
-      - name: Install Expo CLI globally
+      - name: Install EAS CLI
         script: |
-          npm install -g @expo/cli
-          # Verifica se a instalação foi bem sucedida
-          which expo || echo "expo not found in PATH"
-          npx expo --version || echo "npx expo not working"
-      
-      - name: Login Expo
-        script: |
-          npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+          npm install -g @expo/eas-cli
+          eas --version
       
       - name: Install project dependencies
         script: |
