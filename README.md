@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# POLÍTICA DE PRIVACIDADE - Flash Cards
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Última atualização:** 25 de outubro de 2024
 
-## Get started
+## 1. INFORMAÇÕES GERAIS
 
-1. Install dependencies
+O **Flash Cards** é um aplicativo de flash cards que opera localmente no seu dispositivo. Não coletamos, armazenamos ou compartilhamos seus dados pessoais.
 
-   ```bash
-   npm install
-   ```
+## 2. DADOS COLETADOS
 
-2. Start the app
+- O app **NÃO coleta nenhum dado pessoal** do usuário
+- Todo conteúdo criado (flash cards) fica armazenado **APENAS no seu dispositivo**
+- Não há registro de email, nome, localização ou qualquer informação pessoal
 
-   ```bash
-   npx expo start
-   ```
+## 3. ARMAZENAMENTO LOCAL
 
-In the output, you'll find options to open the app in a
+- Seus flash cards são salvos localmente no dispositivo
+- Utilizamos AsyncStorage/banco local do React Native
+- Os dados **NÃO são sincronizados** com nenhum servidor
+- Você é o único com acesso aos seus dados
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 4. ANÚNCIOS
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Exibimos anúncios através do **Google AdMob**
+- Os anúncios podem usar identificadores do dispositivo para personalização
+- Coletamos dados anônimos de visualização para métricas dos anúncios
+- **Não vinculamos anúncios** aos seus flash cards ou uso pessoal
 
-## Get a fresh project
+## 5. PERMISSÕES DO APLICATIVO
 
-When you're ready, run:
+O app solicita as seguintes permissões:
 
-```bash
-npm run reset-project
-```
+- **Internet**: Para exibir anúncios
+- **Armazenamento**: Para backup local dos seus flash cards (opcional)
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 6. SEUS DIREITOS
 
-## Learn more
+- **Excluir dados**: Desinstale o app para remover todos os dados
+- **Backup**: Faça backup manual se necessário
+- **Controle**: Você tem controle total sobre seus flash cards
 
-To learn more about developing your project with Expo, look at the following resources:
+## 7. ALTERAÇÕES NA POLÍTICA
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Notificaremos sobre mudanças significativas via atualização do app na Play Store.
 
-## Join the community
+## 8. CONTATO
 
-Join our community of developers creating universal apps.
+Para dúvidas sobre privacidade:
+**maanoelaurias@gmail.com**
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+*Esta política aplica-se apenas à versão Android disponível na Google Play Store.*
