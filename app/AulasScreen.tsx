@@ -70,13 +70,38 @@ export default function AulasScreen() {
 
   const getClassStatus = (aula: ClassSchedule) => {
     const now = new Date();
-    const [hours, minutes] = aula.startTime.split(':').map(Number);
-    const classTime = new Date();
-    classTime.setHours(hours, minutes, 0, 0);
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
     
-    if (aula.current) return 'current';
-    if (classTime > now) return 'upcoming';
-    return 'finished';
+    // Para debug - mostra o horário atual
+    console.log(`Horário atual: ${currentHours}:${currentMinutes}`);
+    
+    const [startHours, startMinutes] = aula.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = aula.endTime.split(':').map(Number);
+    
+    // Converte tudo para minutos totais para facilitar a comparação
+    const currentTotalMinutes = currentHours * 60 + currentMinutes;
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    const endTotalMinutes = endHours * 60 + endMinutes;
+    
+    console.log(`Aula: ${aula.title} - ${aula.startTime}-${aula.endTime}`);
+    console.log(`Current: ${currentTotalMinutes}, Start: ${startTotalMinutes}, End: ${endTotalMinutes}`);
+    
+    // Se a aula já terminou
+    if (currentTotalMinutes > endTotalMinutes) {
+      console.log(`→ FINISHED`);
+      return 'finished';
+    }
+    
+    // Se a aula está acontecendo agora
+    if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
+      console.log(`→ CURRENT`);
+      return 'current';
+    }
+    
+    // Se a aula ainda vai acontecer
+    console.log(`→ UPCOMING`);
+    return 'upcoming';
   };
 
   return (
@@ -181,6 +206,10 @@ export default function AulasScreen() {
                         <View style={styles.detailItem}>
                           <Text style={styles.detailLabel}>Instrutor</Text>
                           <Text style={styles.detailValue}>{aula.instructor}</Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>Término</Text>
+                          <Text style={styles.detailValue}>{aula.endTime}</Text>
                         </View>
                       </View>
                     </View>
