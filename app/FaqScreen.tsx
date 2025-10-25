@@ -60,15 +60,15 @@ interface FAQItem {
 const faqItems: FAQItem[] = [
   {
     question: "Quais modalidades de luta vocês oferecem?",
-    answer: "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe. Temos turmas separadas para iniciantes, intermediários e avançados em todas as categorias. Consulte a recepção para saber sobre turmas infantis.",
+    answer: "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe.  Consulte a recepção para saber sobre turmas infantis.",
   },
   {
     question: "Preciso ter experiência prévia para começar a treinar?",
     answer: "De forma alguma! Nossas aulas são estruturadas para receber alunos de todos os níveis, especialmente iniciantes. O foco principal é na técnica, segurança e no desenvolvimento gradual do condicionamento físico.",
   },
   {
-    question: "Posso fazer uma aula experimental gratuita antes de me matricular?",
-    answer: "Claro! Oferecemos a primeira aula experimental totalmente gratuita. Basta agendar seu horário com antecedência na recepção ou pelo WhatsApp.",
+    question: "Posso fazer uma aula experimental antes de me matricular?",
+    answer: "Claro! Basta agendar seu horário com antecedência na recepção ou pelo WhatsApp.",
   },
   {
     question: "O que devo levar para o meu primeiro treino?",
