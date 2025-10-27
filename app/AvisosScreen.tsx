@@ -38,12 +38,12 @@ interface Notice {
 const noticesData: Notice[] = [
   {
     id: 1,
-    title: 'TORNEIO INTERNO DE JIU-JITSU',
+    title: 'CAMPEONATO INTERNO',
     category: 'Evento',
-    date: '20/11/2025',
-    time: '14:00h',
+    date: '30/11/2025',
+    time: '09:00h',
     description:
-      'Prepare seu kimono! O torneio interno de Jiu-Jitsu será no próximo sábado. Inscrições abertas até quinta-feira na recepção. Categorias: Leve, Médio e Pesado. Premiação para os três primeiros!',
+      'Prepare seu kimono e suas luvas! O torneio interno de Jiu-Jitsu será no próximo sábado. Inscrições abertas até quinta-feira na recepção. Categorias: Leve, Médio e Pesado. Premiação para os três primeiros!',
     color: 'bg-fight-yellow',
     iconName: 'clock-outline', // Equivalent to the Clock icon
   },
@@ -57,29 +57,7 @@ const noticesData: Notice[] = [
       'Informamos que a partir de 01/12/2025 haverá um pequeno reajuste anual de 5% nas mensalidades. Agradecemos a compreensão e o apoio contínuo para manter a qualidade das nossas instalações e instrutores.',
     color: 'bg-gray-700',
     iconName: 'credit-card-outline', // Equivalent to the Credit Card icon
-  },
-  {
-    id: 3,
-    title: 'AULAS DE MUAY THAI CANCELADAS',
-    category: 'Urgente',
-    date: '25/10/2025',
-    time: '19:00h',
-    description:
-      'Devido a um imprevisto com o Mestre Carlos, as aulas de Muay Thai de hoje (25/10) às 19h e 20h estão canceladas. Pedimos desculpas pelo inconveniente. Aulas retornarão normalmente amanhã.',
-    color: 'bg-punch-red',
-    iconName: 'bell', // Equivalent to the Alert Triangle
-  },
-  {
-    id: 4,
-    title: 'NOVO HORÁRIO: BOXE FEMININO',
-    category: 'Novidade',
-    date: 'A partir de 04/11/2025',
-    time: 'Seg e Qua, 18:00h',
-    description:
-      'Atendendo a pedidos, adicionamos uma nova turma de Boxe focada em público feminino! Venha aprender técnicas de defesa e ganhar condicionamento físico. Vagas limitadas, garanta sua matrícula!',
-    color: 'bg-green-500',
-    iconName: 'plus-box-outline', // Equivalent to the Plus Icon
-  },
+  }
 ];
 
 // Helper function to map the simplified color string to a specific hex color
@@ -217,7 +195,7 @@ const AvisosScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.mainTitle}>
-          MURAL DA <Text style={styles.yellowText}>ARENA</Text>
+          MURAL <Text style={styles.yellowText}>CT IMPERIO</Text>
         </Text>
         <Text style={styles.subtitle}>
           Fique por dentro dos avisos e eventos.

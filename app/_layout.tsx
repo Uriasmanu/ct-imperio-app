@@ -1,6 +1,6 @@
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
-import { Clock, Home, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
+import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -138,7 +138,7 @@ export default function RootLayout() {
                   drawerLabel: 'Avisos',
                   title: '',
                   drawerIcon: ({ color, size }) => (
-                    <ShieldCheck size={size} color={color} />
+                    <Megaphone size={size} color={color} />
                   ),
                 }}
               />
