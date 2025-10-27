@@ -13,6 +13,17 @@ import { appConfig } from './../utils/constants';
 
 const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState('Unidade Centro');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  // Dados mockados da academia - você pode substituir por dados reais
+  const gymData = {
+    name: 'CT Império',
+    address: 'Rua Araraquara, 193 - Centro\nMarília - São Paulo',  
+    phone: '+55 (14) 99785-6670', 
+    instructor: 'Mestre William Izarias',
+    hours: 'Segunda a Sexta: 08:00 - 20:30\nSábado: 08:00 - 12:00',
+  };
 
   const handlePrivacyPolicy = async () => {
     const url = 'https://uriasmanu.github.io/ct-imperio-app/';
@@ -28,19 +39,71 @@ const SettingsScreen = () => {
     }
   };
 
+  const handleContact = () => {
+    const phoneNumber = gymData.phone.replace(/\D/g, '');
+    const url = `whatsapp://send?phone=${phoneNumber}`;
+    
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erro', 'WhatsApp não está instalado no dispositivo.');
+    });
+  };
+
+
   const toggleVersionInfo = () => {
     setShowVersionInfo(!showVersionInfo);
   };
 
+  const handleUnitChange = (unit: string) => {
+    setSelectedUnit(unit);
+    Alert.alert('Unidade Alterada', `Unidade selecionada: ${unit}`);
+  };
+
   return (
     <ScrollView style={styles.container}>
+      {/* Seção de Informações da Academia */}
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>
+        
+        <View style={styles.infoCard}>
+          <Text style={styles.gymName}>{gymData.name}</Text>
+          <Text style={styles.gymAddress}>{gymData.address}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.menuItem} onPress={handleContact}>
+          <View style={styles.menuItemLeft}>
+            <Text style={styles.menuText}>Contato / WhatsApp</Text>
+            <Text style={styles.menuSubtext}>{gymData.phone}</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <View style={styles.menuItem}>
+          <View style={styles.menuItemLeft}>
+            <Text style={styles.menuText}>Professor Responsável</Text>
+            <Text style={styles.menuSubtext}>{gymData.instructor}</Text>
+          </View>
+        </View>
+
+        <View style={styles.menuItem}>
+          <View style={styles.menuItemLeft}>
+            <Text style={styles.menuText}>Horários de Funcionamento</Text>
+            <Text style={styles.menuSubtext}>{gymData.hours}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Seção de Suporte */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>SUPORTE</Text>
+
         <TouchableOpacity style={styles.menuItem} onPress={handlePrivacyPolicy}>
           <Text style={styles.menuText}>Política de Privacidade</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
+      </View>
 
-        {/* Accordion para Atualizações */}
+      {/* Seção de Atualizações */}
+      <View style={styles.section}>
         <View style={styles.accordionContainer}>
           <TouchableOpacity
             style={styles.accordionHeader}
@@ -90,6 +153,12 @@ const SettingsScreen = () => {
           )}
         </View>
       </View>
+
+      {/* Rodapé */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>CT Império © 2024</Text>
+        <Text style={styles.footerSubtext}>Todos os direitos reservados</Text>
+      </View>
     </ScrollView>
   );
 };
@@ -105,11 +174,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#B8860B',
     marginVertical: 12,
     textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  infoCard: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#B8860B',
+  },
+  gymName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#B8860B',
+    marginBottom: 4,
+  },
+  gymAddress: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    lineHeight: 20,
   },
   menuItem: {
     flexDirection: 'row',
@@ -117,22 +206,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#B8860B',
+    borderBottomColor: '#333333',
+  },
+  menuItemLeft: {
+    flex: 1,
   },
   menuText: {
     fontSize: 16,
-    color: '#B8860B',
+    color: '#FFFFFF',
     fontWeight: '500',
+  },
+  menuSubtext: {
+    fontSize: 14,
+    color: '#B8860B',
+    marginTop: 4,
+    lineHeight: 18,
   },
   menuArrow: {
     fontSize: 18,
     color: '#B8860B',
     fontWeight: 'bold',
   },
+  unitSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  selectedUnitText: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '500',
+  },
+  unitOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#1a1a1a',
+    marginBottom: 1,
+  },
+  unitOptionText: {
+    fontSize: 14,
+    color: '#CCCCCC',
+  },
+  unitOptionTextSelected: {
+    color: '#B8860B',
+    fontWeight: '600',
+  },
+  checkmark: {
+    color: '#B8860B',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   // Estilos do Accordion
   accordionContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: '#B8860B',
+    borderBottomColor: '#333333',
   },
   accordionHeader: {
     flexDirection: 'row',
@@ -164,7 +294,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -16,
     paddingHorizontal: 16,
     borderTopWidth: 1,
-    borderTopColor: '#B8860B',
+    borderTopColor: '#333333',
   },
   versionInfo: {
     paddingVertical: 16,
@@ -183,10 +313,9 @@ const styles = StyleSheet.create({
   },
   versionLabel: {
     fontSize: 14,
-    color: '#B8860B',
+    color: '#CCCCCC',
     fontWeight: '500',
     flex: 1,
-    opacity: 0.9,
   },
   versionValue: {
     fontSize: 14,
@@ -206,9 +335,25 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     fontSize: 14,
-    color: '#B8860B',
+    color: '#CCCCCC',
     marginBottom: 4,
     fontWeight: '500',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    backgroundColor: '#000000',
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '500',
+  },
+  footerSubtext: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 4,
   },
 });
 
