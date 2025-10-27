@@ -46,8 +46,10 @@ export default function IndexScreen() {
 
   const carouselImages = [
     require('@/assets/images/Muay.jpeg'),
-    require('@/assets/images/Muay.jpeg'),
-    require('@/assets/images/Muay.jpeg'),
+    require('@/assets/images/boxe.jpeg'),
+    require('@/assets/images/jiu-feminino.jpeg'),
+    require('@/assets/images/jiu-misto.jpeg'),
+    require('@/assets/images/no-gi.jpeg'),
   ];
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -166,7 +168,7 @@ export default function IndexScreen() {
               <Image
                 source={image}
                 style={styles.carouselImage}
-                resizeMode="cover"
+                resizeMode='cover'
               />
             </View>
           ))}
@@ -340,7 +342,7 @@ const styles = StyleSheet.create({
   },
   carouselImage: {
     width: '100%',
-    height: 160,
+    height: 250,
     borderRadius: 12,
   },
   indicators: {

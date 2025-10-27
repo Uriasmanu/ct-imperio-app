@@ -57,10 +57,11 @@ interface FAQItem {
   answer: string;
 }
 
+
 const faqItems: FAQItem[] = [
   {
     question: "Quais modalidades de luta vocês oferecem?",
-    answer: "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe.  Consulte a recepção para saber sobre turmas infantis.",
+    answer: "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe. Consulte a recepção para saber sobre turmas infantis.",
   },
   {
     question: "Preciso ter experiência prévia para começar a treinar?",
@@ -85,6 +86,95 @@ const faqItems: FAQItem[] = [
   {
     question: "Há restrições de idade para treinar?",
     answer: "Oferecemos turmas para todas as idades a partir de 5 anos. Para crianças de 5 a 12 anos, temos aulas específicas com metodologia adaptada.",
+  },
+  // Novas perguntas e respostas adicionadas
+  {
+    question: "Qual é a diferença entre Muay Thai, Boxe e Jiu-Jitsu?",
+    answer: "Muay Thai é uma arte marcial tailandesa que utiliza socos, chutes, cotoveladas e joelhadas. Boxe foca apenas em socos com as mãos. Jiu-Jitsu é uma luta de solo com foco em finalizações, imobilizações e estrangulamentos. Cada uma desenvolve habilidades diferentes e são complementares.",
+  },
+  {
+    question: "Posso treinar mais de uma modalidade ao mesmo tempo?",
+    answer: "Sim! Inclusive recomendamos para um desenvolvimento marcial mais completo. Temos pacotes especiais para alunos que desejam praticar múltiplas modalidades.",
+  },
+  {
+    question: "Qual é a melhor arte marcial para defesa pessoal?",
+    answer: "Todas as modalidades que oferecemos são eficazes para defesa pessoal. Muay Thai e Boxe são excelentes para situações em pé, enquanto Jiu-Jitsu é ideal para situações de grappling e solo. A combinação de ambas oferece uma preparação mais completa.",
+  },
+  {
+    question: "Tem aulas para iniciantes?",
+    answer: "Sim! Temos turmas específicas para iniciantes em todas as modalidades, com foco nos fundamentos básicos e adaptação gradual ao treinamento.",
+  },
+  {
+    question: "Quais são os horários das aulas?",
+    answer: "Nossos horários variam por modalidade. Temos aulas pela manhã (6h-12h), tarde (14h-18h) e noite (19h-22h) de segunda a sexta, e aulas aos sábados pela manhã. Consulte a recepção para o horário específico de cada modalidade.",
+  },
+  {
+    question: "Preciso marcar aula ou posso chegar no horário?",
+    answer: "Para alunos matriculados, pode chegar no horário da aula. Para aula experimental, solicitamos que agende previamente para melhor atendimento.",
+  },
+  {
+    question: "Quanto tempo dura cada treino?",
+    answer: "Nossas aulas têm duração média de 1 hora a 1h30, dependendo da modalidade e do nível da turma.",
+  },
+  {
+    question: "Há planos trimestrais, semestrais ou anuais com desconto?",
+    answer: "Sim! Oferecemos descontos progressivos para planos de longer duration: 5% trimestral, 10% semestral e 15% anual.",
+  },
+  {
+    question: "Vocês aceitam cartão, PIX ou gympass?",
+    answer: "Aceitamos todas as formas de pagamento: cartão de crédito/débito, PIX, dinheiro e também trabalhamos com Gympass e TotalPass.",
+  },
+  {
+    question: "Existe taxa de matrícula?",
+    answer: "Não cobramos taxa de matrícula. O valor inclui apenas a mensalidade do plano escolhido.",
+  },
+  {
+    question: "Preciso comprar meus próprios equipamentos?",
+    answer: "Para as primeiras aulas, fornecemos equipamentos básicos. Recomendamos que adquira seus próprios equipamentos pessoais após decidir continuar com os treinos.",
+  },
+  {
+    question: "A academia fornece luvas, kimono ou caneleiras?",
+    answer: "Sim, temos equipamentos disponíveis para empréstimo nas primeiras aulas. Após isso, orientamos sobre a aquisição do material pessoal.",
+  },
+  {
+    question: "É obrigatório usar uniforme?",
+    answer: "Para Jiu-Jitsu é obrigatório o kimono. Para Muay Thai e Boxe, roupas de treino adequadas (shorts e camiseta). Temos uniformes disponíveis para compra na academia.",
+  },
+  {
+    question: "Preciso estar em forma para começar?",
+    answer: "Não! Os treinos são adaptados para todos os níveis de condicionamento. O objetivo é justamente ajudar você a melhorar sua forma física gradualmente.",
+  },
+  {
+    question: "Os treinos ajudam a emagrecer?",
+    answer: "Sim! As artes marciais são excelentes para queima calórica e definição muscular. Uma aula pode queimar entre 500-800 calorias, dependendo da intensidade.",
+  },
+  {
+    question: "Há risco de lesão?",
+    answer: "Como em qualquer atividade física, há riscos, mas minimizamos através de aquecimento adequado, supervisão constante e técnicas de ensino progressivas. A segurança é nossa prioridade.",
+  },
+  {
+    question: "Tem aquecimento e alongamento antes das aulas?",
+    answer: "Sim! Todas as aulas incluem aquecimento completo no início e alongamento no final, essenciais para prevenir lesões.",
+  },
+  {
+    question: "É necessário fazer exame médico?",
+    answer: "Recomendamos que todos os alunos realizem avaliação médica antes de iniciar qualquer atividade física intensa, especialmente se possuem condições preexistentes.",
+  },
+  {
+    question: "A partir de que idade as crianças podem treinar?",
+    answer: "Aceitamos crianças a partir de 5 anos em nossas turmas infantis, com metodologia específica e lúdica para cada faixa etária.",
+  },
+  {
+    question: "As aulas infantis são diferentes das de adultos?",
+    answer: "Sim! As aulas infantis focam em desenvolvimento motor, disciplina, coordenação e defesa pessoal básica, tudo de forma lúdica e segura.",
+  },
+  {
+    question: "A academia participa de campeonatos?",
+    answer: "Sim! Participamos regularmente de competições locais, estaduais e nacionais. Temos alunos competidores em todas as modalidades.",
+  },
+  {
+    question: "Posso competir mesmo sendo iniciante?",
+    answer: "Sim! Existem categorias para todos os níveis, incluindo iniciantes. Nossos professores avaliam e preparam alunos interessados em competir.",
   },
 ];
 

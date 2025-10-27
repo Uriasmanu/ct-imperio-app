@@ -19,8 +19,8 @@ export const COLORS = {
 };
 
 export const appConfig = {
-  version: '2.0',
-  lastUpload: '04/10/2025',
+  version: '1.0',
+  lastUpload: '27/10/2025',
   features: [
     'Correção de bugs',
     'Nova logica de exebição dos cards e da lista de palavras'
