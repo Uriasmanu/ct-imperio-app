@@ -132,6 +132,16 @@ export default function RootLayout() {
                 }}
               />
 
+              <Drawer.Screen
+                name="AvisosScreen"
+                options={{
+                  drawerLabel: 'Avisos',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <ShieldCheck size={size} color={color} />
+                  ),
+                }}
+              />
 
               <Drawer.Screen
                 name="SettingsScreen"
