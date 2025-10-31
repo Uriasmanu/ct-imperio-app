@@ -195,7 +195,7 @@ export default function IndexScreen() {
           resizeMode="cover"
         />
         <View style={styles.professorInfo}>
-          <Text style={styles.professorName}>Mestre William Izarias</Text>
+          <Text style={styles.professorName}>Mestre Will</Text>
           <Text style={styles.professorRole}>Proprietário e Mestre</Text>
         </View>
       </View>

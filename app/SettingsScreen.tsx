@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Alert,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 import { appConfig } from './../utils/constants';
@@ -21,7 +21,7 @@ const SettingsScreen = () => {
     name: 'CT Império',
     address: 'Rua Araraquara, 193 - Centro\nMarília - São Paulo',  
     phone: '+55 (14) 99785-6670', 
-    instructor: 'Mestre William Izarias',
+    instructor: 'Mestre Will Izarias',
     hours: 'Segunda a Sexta: 08:00 - 20:30\nSábado: 08:00 - 12:00',
   };
 

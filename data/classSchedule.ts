@@ -12,7 +12,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '1',
     title: 'Muay Thai - Turma Mista (Noite)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '19:30',
     endTime: '20:30',
     days: ['Segunda', 'Quarta', 'Sexta'],
@@ -21,7 +21,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '2',
     title: 'Jiu-Jitsu - Turma Mista (Noite)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '20:00',
     endTime: '21:00',
     days: ['Terça', 'Quinta'],
@@ -57,7 +57,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '6',
     title: 'Jiu-Jitsu - Turma Mista / Kids (Manhã)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '08:00',
     endTime: '09:00',
     days: ['Terça', 'Quinta', 'Sábado'],
@@ -66,7 +66,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '7',
     title: 'Jiu-Jitsu - Turma Baby (Até 4 Anos)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '18:00',
     endTime: '18:45',
     days: ['Terça', 'Quinta'],
@@ -75,7 +75,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '8',
     title: 'Jiu-Jitsu - Turma Kids (Até 6 Anos)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '18:30',
     endTime: '19:15',
     days: ['Terça', 'Quinta'],
@@ -84,7 +84,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '9',
     title: 'Jiu-Jitsu - Turma Kids (Até 12 Anos)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '19:15',
     endTime: '20:00',
     days: ['Terça', 'Quinta'],
@@ -93,7 +93,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '10',
     title: 'Jiu-Jitsu - Turma Mista No-Gi',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '19:30',
     endTime: '20:30',
     days: ['Sexta'],
@@ -102,7 +102,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '11',
     title: 'Muay Thai - Turma Mista (Manhã)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '08:00',
     endTime: '09:00',
     days: ['Segunda', 'Quarta', 'Sexta'],
@@ -120,7 +120,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '13',
     title: 'Muay Thai - Turma Mista (Noite)',
-    instructor: 'Mestre William',
+    instructor: 'Mestre Will',
     startTime: '18:30',
     endTime: '19:30',
     days: ['Segunda', 'Quarta', 'Sexta'],
