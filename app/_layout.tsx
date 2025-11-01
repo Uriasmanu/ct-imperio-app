@@ -91,7 +91,7 @@ export default function RootLayout() {
               )}
             >
               <Drawer.Screen
-                name="IndexScreen"
+                name="Index"
                 options={{
                   drawerLabel: 'Início',
                   title: '',
