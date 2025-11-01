@@ -91,7 +91,7 @@ export default function RootLayout() {
               )}
             >
               <Drawer.Screen
-                name="Index"
+                name="index"
                 options={{
                   drawerLabel: 'Início',
                   title: '',
@@ -113,14 +113,13 @@ export default function RootLayout() {
               <Drawer.Screen
                 name="FaqScreen"
                 options={{
-                  drawerLabel: 'Duvidas Frequentes',
+                  drawerLabel: 'Dúvidas Frequentes',
                   title: '',
                   drawerIcon: ({ color, size }) => (
                     <MessageCircleQuestion size={size} color={color} />
                   ),
                 }}
               />
-
               <Drawer.Screen
                 name="TatameScreen"
                 options={{
@@ -131,7 +130,6 @@ export default function RootLayout() {
                   ),
                 }}
               />
-
               <Drawer.Screen
                 name="AvisosScreen"
                 options={{
@@ -142,7 +140,6 @@ export default function RootLayout() {
                   ),
                 }}
               />
-
               <Drawer.Screen
                 name="SettingsScreen"
                 options={{
