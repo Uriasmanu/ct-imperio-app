@@ -206,10 +206,10 @@ export default function FAQ() {
   };
 
   const openWhatsApp = () => {
-    const phoneNumber = "5514997856670"; 
+    const phoneNumber = "5514997856670";
     const message = "Olá! Gostaria de agendar uma aula experimental.";
     const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
-    
+
     Linking.openURL(url).catch(() => {
       alert("WhatsApp não instalado. Entre em contato pelo telefone.");
     });
@@ -237,7 +237,7 @@ export default function FAQ() {
   return (
     <View style={styles.container}>
       {/* Header com efeito de parallax */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.header,
           {
@@ -254,7 +254,7 @@ export default function FAQ() {
       </Animated.View>
 
       {/* Lista de FAQs */}
-      <Animated.ScrollView 
+      <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -263,8 +263,8 @@ export default function FAQ() {
       >
         <View style={styles.faqContainer}>
           {faqItems.map((item, index) => (
-            <View 
-              key={index} 
+            <View
+              key={index}
               style={[
                 styles.item,
                 activeIndex === index && styles.itemActive
@@ -293,7 +293,7 @@ export default function FAQ() {
               </TouchableOpacity>
 
               {activeIndex === index && (
-                <Animated.View 
+                <Animated.View
                   style={[
                     styles.answerContainer,
                     {
@@ -334,9 +334,9 @@ export default function FAQ() {
       </Animated.ScrollView>
 
       {/* Modal de Agendamento */}
-      <Modal 
-        visible={showModal} 
-        transparent 
+      <Modal
+        visible={showModal}
+        transparent
         animationType="fade"
         statusBarTranslucent
       >
@@ -344,16 +344,16 @@ export default function FAQ() {
           <View style={styles.modalBox}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Agendar Aula Experimental</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalClose}
                 onPress={() => setShowModal(false)}
               >
                 <AntDesign name="close" size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
-            
+
             <Text style={styles.modalDesc}>
-              Escolha a melhor forma de entrar em contato conosco para agendar sua aula experimental gratuita:
+              Entre em contato pelo WhatsApp para agendar sua aula experimental.
             </Text>
 
             <View style={styles.modalButtons}>
@@ -365,7 +365,7 @@ export default function FAQ() {
                 <AntDesign name="whats-app" size={20} color="#FFF" />
                 <Text style={styles.whatsappText}>Abrir WhatsApp</Text>
               </TouchableOpacity>
-              
+
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.closeButton]}
