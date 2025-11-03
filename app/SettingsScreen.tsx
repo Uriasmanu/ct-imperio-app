@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import {
-    Alert,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 import { appConfig } from './../utils/constants';
+
+// Mock de dados do usuário - você pode substituir por dados reais
+const mockUser = {
+  name: 'João Silva',
+  email: 'joao.silva@email.com',
+  membership: 'Plano Premium',
+  since: '2024-01-15',
+  avatar: '👤'
+};
 
 const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState('Unidade Centro');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(mockUser);
 
   // Dados mockados da academia - você pode substituir por dados reais
   const gymData = {
@@ -48,7 +59,6 @@ const SettingsScreen = () => {
     });
   };
 
-
   const toggleVersionInfo = () => {
     setShowVersionInfo(!showVersionInfo);
   };
@@ -58,8 +68,95 @@ const SettingsScreen = () => {
     Alert.alert('Unidade Alterada', `Unidade selecionada: ${unit}`);
   };
 
+  // Funções de autenticação
+  const handleLogin = () => {
+    // Aqui você pode integrar com sua lógica de autenticação real
+    setIsLoggedIn(true);
+    Alert.alert('Login realizado', `Bem-vindo de volta, ${user.name}!`);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair da sua conta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: () => {
+            setIsLoggedIn(false);
+            Alert.alert('Logout realizado', 'Você saiu da sua conta.');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleProfile = () => {
+    if (isLoggedIn) {
+      Alert.alert(
+        'Perfil do Usuário',
+        `Nome: ${user.name}\nEmail: ${user.email}\nPlano: ${user.membership}\nMembro desde: ${new Date(user.since).toLocaleDateString('pt-BR')}`
+      );
+    } else {
+      Alert.alert('Atenção', 'Você precisa estar logado para acessar o perfil.');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
+      {/* Seção de Autenticação */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>MINHA CONTA</Text>
+        
+        {isLoggedIn ? (
+          // Usuário logado - mostrar informações e opções
+          <View style={styles.userCard}>
+            <View style={styles.userInfo}>
+              <Text style={styles.userAvatar}>{user.avatar}</Text>
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+                <Text style={styles.userMembership}>{user.membership}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.authButtons}>
+              <TouchableOpacity 
+                style={[styles.authButton, styles.profileButton]} 
+                onPress={handleProfile}
+              >
+                <Text style={styles.profileButtonText}>Ver Perfil</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.authButton, styles.logoutButton]} 
+                onPress={handleLogout}
+              >
+                <Text style={styles.logoutButtonText}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          // Usuário não logado - mostrar opção de login
+          <View style={styles.loginCard}>
+            <Text style={styles.loginTitle}>Acesse sua conta</Text>
+            <Text style={styles.loginSubtitle}>Faça login para acessar todas as funcionalidades</Text>
+            
+            <TouchableOpacity 
+              style={[styles.authButton, styles.loginButton]} 
+              onPress={handleLogin}
+            >
+              <Text style={styles.loginButtonText}>Fazer Login</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       {/* Seção de Informações da Academia */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>
@@ -181,6 +278,107 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
+  // Estilos para a seção de autenticação
+  userCard: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#B8860B',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userAvatar: {
+    fontSize: 40,
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    marginBottom: 2,
+  },
+  userMembership: {
+    fontSize: 12,
+    color: '#B8860B',
+    fontWeight: '500',
+  },
+  loginCard: {
+    backgroundColor: '#1a1a1a',
+    padding: 20,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#B8860B',
+    alignItems: 'center',
+  },
+  loginTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  loginSubtitle: {
+    fontSize: 14,
+    color: '#CCCCCC',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  authButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  authButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButton: {
+    backgroundColor: '#B8860B',
+  },
+  profileButton: {
+    backgroundColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: '#B8860B',
+  },
+  logoutButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#666666',
+  },
+  loginButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  profileButtonText: {
+    color: '#B8860B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  logoutButtonText: {
+    color: '#CCCCCC',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Estilos existentes mantidos
   infoCard: {
     backgroundColor: '#1a1a1a',
     padding: 16,
