@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -26,12 +27,13 @@ const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(mockUser);
+  const router = useRouter();
 
   // Dados mockados da academia - você pode substituir por dados reais
   const gymData = {
     name: 'CT Império',
-    address: 'Rua Araraquara, 193 - Centro\nMarília - São Paulo',  
-    phone: '+55 (14) 99785-6670', 
+    address: 'Rua Araraquara, 193 - Centro\nMarília - São Paulo',
+    phone: '+55 (14) 99785-6670',
     instructor: 'Mestre Will Izarias',
     hours: 'Segunda a Sexta: 08:00 - 20:30\nSábado: 08:00 - 12:00',
   };
@@ -53,7 +55,7 @@ const SettingsScreen = () => {
   const handleContact = () => {
     const phoneNumber = gymData.phone.replace(/\D/g, '');
     const url = `whatsapp://send?phone=${phoneNumber}`;
-    
+
     Linking.openURL(url).catch(() => {
       Alert.alert('Erro', 'WhatsApp não está instalado no dispositivo.');
     });
@@ -98,10 +100,7 @@ const SettingsScreen = () => {
 
   const handleProfile = () => {
     if (isLoggedIn) {
-      Alert.alert(
-        'Perfil do Usuário',
-        `Nome: ${user.name}\nEmail: ${user.email}\nPlano: ${user.membership}\nMembro desde: ${new Date(user.since).toLocaleDateString('pt-BR')}`
-      );
+      router.push('/PerfilScreen')
     } else {
       Alert.alert('Atenção', 'Você precisa estar logado para acessar o perfil.');
     }
@@ -112,7 +111,7 @@ const SettingsScreen = () => {
       {/* Seção de Autenticação */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>MINHA CONTA</Text>
-        
+
         {isLoggedIn ? (
           // Usuário logado - mostrar informações e opções
           <View style={styles.userCard}>
@@ -124,17 +123,17 @@ const SettingsScreen = () => {
                 <Text style={styles.userMembership}>{user.membership}</Text>
               </View>
             </View>
-            
+
             <View style={styles.authButtons}>
-              <TouchableOpacity 
-                style={[styles.authButton, styles.profileButton]} 
+              <TouchableOpacity
+                style={[styles.authButton, styles.profileButton]}
                 onPress={handleProfile}
               >
                 <Text style={styles.profileButtonText}>Ver Perfil</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.authButton, styles.logoutButton]} 
+
+              <TouchableOpacity
+                style={[styles.authButton, styles.logoutButton]}
                 onPress={handleLogout}
               >
                 <Text style={styles.logoutButtonText}>Sair</Text>
@@ -146,9 +145,9 @@ const SettingsScreen = () => {
           <View style={styles.loginCard}>
             <Text style={styles.loginTitle}>Acesse sua conta</Text>
             <Text style={styles.loginSubtitle}>Faça login para acessar todas as funcionalidades</Text>
-            
-            <TouchableOpacity 
-              style={[styles.authButton, styles.loginButton]} 
+
+            <TouchableOpacity
+              style={[styles.authButton, styles.loginButton]}
               onPress={handleLogin}
             >
               <Text style={styles.loginButtonText}>Fazer Login</Text>
@@ -160,7 +159,7 @@ const SettingsScreen = () => {
       {/* Seção de Informações da Academia */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>
-        
+
         <View style={styles.infoCard}>
           <Text style={styles.gymName}>{gymData.name}</Text>
           <Text style={styles.gymAddress}>{gymData.address}</Text>
