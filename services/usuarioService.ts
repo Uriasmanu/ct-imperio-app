@@ -1,9 +1,10 @@
 // src/services/usuarioService.ts
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import {
   doc,
   setDoc
 } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { auth, db } from '../config/firebaseConfig';
 import { Usuario } from '../types/usuarios';
 
 /**
@@ -39,6 +40,22 @@ export const criarUsuario = async (
     
   } catch (error: any) {
     console.error("❌ Erro ao criar documento:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+// src/services/usuarioService.ts (continuação)
+export const loginUsuario = async (
+  email: string,
+  senha: string
+): Promise<{ success: boolean; user?: any; error?: string }> => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+    const user = userCredential.user;
+    console.log("✅ Login bem-sucedido:", user.uid);
+    return { success: true, user };
+  } catch (error: any) {
+    console.error("❌ Erro no login:", error);
     return { success: false, error: error.message };
   }
 };

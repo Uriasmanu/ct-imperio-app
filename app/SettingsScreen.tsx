@@ -10,33 +10,26 @@ import {
   View
 } from 'react-native';
 
-import { appConfig } from './../utils/constants';
+import { auth } from '@/config/firebaseConfig';
+import { loginUsuario } from '@/services/usuarioService';
+import { signOut } from 'firebase/auth';
+import { appConfig, gymData } from './../utils/constants';
 
-// Mock de dados do usuário - você pode substituir por dados reais
-const mockUser = {
-  name: 'João Silva',
-  email: 'joao.silva@email.com',
-  membership: 'Plano Premium',
-  since: '2024-01-15',
-  avatar: '👤'
-};
 
 const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState('Unidade Centro');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(mockUser);
+  const [user, setUser] = useState<{
+  name: string;
+  email: string;
+  since: string;
+  avatar: string;
+} | null>(null);
+
   const router = useRouter();
 
-  // Dados mockados da academia - você pode substituir por dados reais
-  const gymData = {
-    name: 'CT Império',
-    address: 'Rua Araraquara, 193 - Centro\nMarília - São Paulo',
-    phone: '+55 (14) 99785-6670',
-    instructor: 'Mestre Will Izarias',
-    hours: 'Segunda a Sexta: 08:00 - 20:30\nSábado: 08:00 - 12:00',
-  };
 
   const handlePrivacyPolicy = async () => {
     const url = 'https://uriasmanu.github.io/ct-imperio-app/';
@@ -65,38 +58,52 @@ const SettingsScreen = () => {
     setShowVersionInfo(!showVersionInfo);
   };
 
-  const handleUnitChange = (unit: string) => {
-    setSelectedUnit(unit);
-    Alert.alert('Unidade Alterada', `Unidade selecionada: ${unit}`);
-  };
-
   // Funções de autenticação
-  const handleLogin = () => {
-    // Aqui você pode integrar com sua lógica de autenticação real
-    setIsLoggedIn(true);
-    Alert.alert('Login realizado', `Bem-vindo de volta, ${user.name}!`);
+  const handleLogin = async () => {
+    try {
+      const email = 'teste@email.com'; // <- depois pega do input
+      const senha = '123456'; // <- idem
+      const { success, user: firebaseUser, error } = await loginUsuario(email, senha);
+
+      if (!success || !firebaseUser) {
+        Alert.alert('Erro no login', error || 'Não foi possível fazer login.');
+        return;
+      }
+
+      setIsLoggedIn(true);
+      setUser({
+        name: firebaseUser.email?.split('@')[0] || 'Usuário',
+        email: firebaseUser.email,
+        since: new Date().toISOString().split('T')[0],
+        avatar: '👤',
+      });
+
+      Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao fazer login. Tente novamente.');
+    }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair da sua conta?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel'
-        },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: () => {
+  const handleLogout = async () => {
+    Alert.alert('Sair', 'Tem certeza que deseja sair?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Sair',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await signOut(auth);
             setIsLoggedIn(false);
+            setUser(null);
             Alert.alert('Logout realizado', 'Você saiu da sua conta.');
+          } catch (err) {
+            Alert.alert('Erro', 'Não foi possível sair.');
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
+
 
   const handleRegister = () => {
     router.push('/RegistroScreen')
@@ -113,19 +120,16 @@ const SettingsScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Seção de Autenticação */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>MINHA CONTA</Text>
 
-        {isLoggedIn ? (
-          // Usuário logado - mostrar informações e opções
+        {isLoggedIn && user ? (
           <View style={styles.userCard}>
             <View style={styles.userInfo}>
               <Text style={styles.userAvatar}>{user.avatar}</Text>
               <View style={styles.userDetails}>
                 <Text style={styles.userName}>{user.name}</Text>
                 <Text style={styles.userEmail}>{user.email}</Text>
-                <Text style={styles.userMembership}>{user.membership}</Text>
               </View>
             </View>
 
@@ -146,10 +150,12 @@ const SettingsScreen = () => {
             </View>
           </View>
         ) : (
-          // Usuário não logado - mostrar opção de login
           <View style={styles.loginCard}>
             <Text style={styles.loginTitle}>Acesse sua conta</Text>
-            <Text style={styles.loginSubtitle}>Faça login para acessar todas as funcionalidades</Text>
+            <Text style={styles.loginSubtitle}>
+              Faça login para acessar todas as funcionalidades
+            </Text>
+
             <View style={styles.authButtonsContainer}>
               <TouchableOpacity
                 style={[styles.authButton, styles.registerButton]}
@@ -165,7 +171,6 @@ const SettingsScreen = () => {
                 <Text style={styles.authButtonText}>Fazer Login</Text>
               </TouchableOpacity>
             </View>
-
           </View>
         )}
       </View>
