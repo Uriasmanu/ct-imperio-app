@@ -30,7 +30,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '3',
     title: 'Boxe Misto (Noite)',
-    instructor: 'Instrutor Gustavo',
+    instructor: 'Instrutor Jagunço (Gustavo)',
     startTime: '18:30',
     endTime: '19:30',
     days: ['Terça', 'Quinta'],
@@ -39,7 +39,7 @@ export const classSchedule: ClassSchedule[] = [
   {
     id: '4',
     title: 'Boxe Misto (Manhã de Sábado)',
-    instructor: 'Instrutor Gustavo',
+    instructor: 'Instrutor Jagunço (Gustavo)',
     startTime: '09:00',
     endTime: '10:00',
     days: ['Sábado'],
@@ -124,6 +124,15 @@ export const classSchedule: ClassSchedule[] = [
     startTime: '18:30',
     endTime: '19:30',
     days: ['Segunda', 'Quarta', 'Sexta'],
+    current: true,
+  },
+    {
+    id: '14',
+    title: 'Boxe Misto (Manhã)',
+    instructor: 'Instrutor Jagunço (Gustavo)',
+    startTime: '8:00',
+    endTime: '09:00',
+    days: ['Terça', 'Quinta'],
     current: true,
   },
 ];
