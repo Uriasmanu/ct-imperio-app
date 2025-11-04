@@ -1,50 +1,47 @@
-// src/services/usuarioService.ts
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import {
-  doc,
-  setDoc
-} from 'firebase/firestore';
-import { auth, db } from '../config/firebaseConfig';
-import { Usuario } from '../types/usuarios';
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebaseConfig";
+import { Usuario } from "../types/usuarios";
 
 /**
- * CRIA um novo documento de usuário no Firestore
- * @param usuarioData Dados do usuário (sem o ID)
- * @param id Opcional - ID customizado (se não informado, gera automaticamente)
- * @returns Promise com sucesso e ID do documento
+ * CRIA um novo documento de usuário no Firestore (sem armazenar senha)
  */
 export const criarUsuario = async (
-  usuarioData: Omit<Usuario, 'id'>, 
+  usuarioData: Omit<Usuario, "id"> & { senha?: string },
   id?: string
-): Promise<{success: boolean; id?: string; error?: string}> => {
+): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
     // Gera um ID único se não foi fornecido
     const usuarioId = id || `user_${Date.now()}`;
-    
+
+    // Remove o campo "senha" se vier por engano
+    const { senha, ...dadosSemSenha } = usuarioData;
+
     // Cria a REFERÊNCIA do documento
     const usuarioDocRef = doc(db, "usuarios", usuarioId);
-    
-    // Dados completos do usuário (agora incluindo o ID)
+
+    // Dados completos do usuário (sem senha)
     const usuarioCompleto: Usuario = {
-      ...usuarioData,
-      id: usuarioId, // ✅ CORRETO - estamos adicionando o ID aqui
+      ...dadosSemSenha,
+      id: usuarioId,
       dataDeRegistro: new Date().toISOString(),
       admin: usuarioData.admin ?? false,
     };
-    
-    // CRIA o documento no Firestore
+
+    // Grava no Firestore
     await setDoc(usuarioDocRef, usuarioCompleto);
-    
+
     console.log("✅ Documento criado com ID:", usuarioId);
     return { success: true, id: usuarioId };
-    
   } catch (error: any) {
     console.error("❌ Erro ao criar documento:", error);
     return { success: false, error: error.message };
   }
 };
 
-// src/services/usuarioService.ts (continuação)
+/**
+ * LOGIN de usuário usando Firebase Auth
+ */
 export const loginUsuario = async (
   email: string,
   senha: string

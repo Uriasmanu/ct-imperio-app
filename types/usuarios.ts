@@ -10,6 +10,7 @@ export interface Filho {
   observacao?: string;
   dataDeRegistro: string;
   pagamento?: boolean;
+  idade?: number;
 }
 
 export interface Usuario {
@@ -19,7 +20,6 @@ export interface Usuario {
   graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu;
   observacao?: string;
   email: string;
-  senha: string;
   telefone: string;
   dataDeRegistro: string;
   filhos?: Filho[];
