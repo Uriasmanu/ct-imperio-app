@@ -1,7 +1,7 @@
 // src/services/usuarioService.ts
 import {
-    doc,
-    setDoc
+  doc,
+  setDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Usuario } from '../types/usuarios';
@@ -27,7 +27,8 @@ export const criarUsuario = async (
     const usuarioCompleto: Usuario = {
       ...usuarioData,
       id: usuarioId, // ✅ CORRETO - estamos adicionando o ID aqui
-      dataDeRegistro: new Date().toISOString()
+      dataDeRegistro: new Date().toISOString(),
+      admin: usuarioData.admin ?? false,
     };
     
     // CRIA o documento no Firestore

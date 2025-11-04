@@ -9,6 +9,7 @@ export interface Filho {
   graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu;
   observacao?: string;
   dataDeRegistro: string;
+  pagamento: boolean;
 }
 
 export interface Usuario {
@@ -21,7 +22,9 @@ export interface Usuario {
   senha: string;
   telefone: string;
   dataDeRegistro: string;
-  filhos?: Filho[]; 
+  filhos?: Filho[];
+  admin: boolean;
+  pagamento: boolean; 
 }
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };
 
