@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import {
   Alert,
   Linking,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -21,14 +23,20 @@ const SettingsScreen = () => {
   const [selectedUnit, setSelectedUnit] = useState('Unidade Centro');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{
-  name: string;
-  email: string;
-  since: string;
-  avatar: string;
-} | null>(null);
-
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const [user, setUser] = useState<{
+    name: string;
+    email: string;
+    since: string;
+    avatar: string;
+  } | null>(null);
+
+
 
 
   const handlePrivacyPolicy = async () => {
@@ -58,12 +66,19 @@ const SettingsScreen = () => {
     setShowVersionInfo(!showVersionInfo);
   };
 
-  // Funções de autenticação
-  const handleLogin = async () => {
+  const handleLogin = () => {
+    setShowLoginModal(true);
+  };
+
+  const handleConfirmLogin = async () => {
     try {
-      const email = 'teste@email.com'; // <- depois pega do input
-      const senha = '123456'; // <- idem
-      const { success, user: firebaseUser, error } = await loginUsuario(email, senha);
+      if (!email || !password) {
+        Alert.alert('Campos obrigatórios', 'Informe e-mail e senha.');
+        return;
+      }
+
+      setLoading(true);
+      const { success, user: firebaseUser, error } = await loginUsuario(email, password);
 
       if (!success || !firebaseUser) {
         Alert.alert('Erro no login', error || 'Não foi possível fazer login.');
@@ -78,11 +93,17 @@ const SettingsScreen = () => {
         avatar: '👤',
       });
 
+      setShowLoginModal(false);
+      setEmail('');
+      setPassword('');
       Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
     } catch (error) {
       Alert.alert('Erro', 'Falha ao fazer login. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const handleLogout = async () => {
     Alert.alert('Sair', 'Tem certeza que deseja sair?', [
@@ -274,6 +295,58 @@ const SettingsScreen = () => {
         <Text style={styles.footerText}>CT Império © 2024</Text>
         <Text style={styles.footerSubtext}>Todos os direitos reservados</Text>
       </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showLoginModal}
+        onRequestClose={() => setShowLoginModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Fazer Login</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              placeholderTextColor="#aaa"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowLoginModal(false)}
+                disabled={loading}
+              >
+                <Text style={styles.modalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleConfirmLogin}
+                disabled={loading}
+              >
+                <Text style={styles.modalButtonText}>
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 };
@@ -586,6 +659,60 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
   },
+
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#1a1a1a',
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: '#B8860B',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#000',
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 6,
+  },
+  cancelButton: {
+    backgroundColor: '#333',
+  },
+  confirmButton: {
+    backgroundColor: '#B8860B',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+
 
 });
 
