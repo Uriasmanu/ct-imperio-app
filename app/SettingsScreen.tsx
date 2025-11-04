@@ -89,11 +89,14 @@ const SettingsScreen = () => {
 
       setIsLoggedIn(true);
       setUser({
-        name: firebaseUser.email?.split('@')[0] || 'Usuário',
-        email: firebaseUser.email,
+        name: firebaseUser?.email
+          ? firebaseUser.email.split('@')[0]
+          : 'Usuário',
+        email: firebaseUser?.email ?? 'E-mail não disponível',
         since: new Date().toISOString().split('T')[0],
         avatar: '👤',
       });
+
 
       setShowLoginModal(false);
       setEmail('');
