@@ -98,6 +98,11 @@ const SettingsScreen = () => {
     );
   };
 
+  const handleRegister = () => {
+    router.push('/RegistroScreen')
+
+  };
+
   const handleProfile = () => {
     if (isLoggedIn) {
       router.push('/PerfilScreen')
@@ -145,13 +150,22 @@ const SettingsScreen = () => {
           <View style={styles.loginCard}>
             <Text style={styles.loginTitle}>Acesse sua conta</Text>
             <Text style={styles.loginSubtitle}>Faça login para acessar todas as funcionalidades</Text>
+            <View style={styles.authButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.authButton, styles.registerButton]}
+                onPress={handleRegister}
+              >
+                <Text style={styles.authButtonText}>Registrar-se</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.authButton, styles.loginButton]}
-              onPress={handleLogin}
-            >
-              <Text style={styles.loginButtonText}>Fazer Login</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.authButton, styles.loginButton]}
+                onPress={handleLogin}
+              >
+                <Text style={styles.authButtonText}>Fazer Login</Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
         )}
       </View>
@@ -314,6 +328,12 @@ const styles = StyleSheet.create({
     color: '#B8860B',
     fontWeight: '500',
   },
+  authButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 10,
+  },
   loginCard: {
     backgroundColor: '#1a1a1a',
     padding: 20,
@@ -348,6 +368,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  registerButton: {
+    backgroundColor: '#B8860B',
+  },
+
+  authButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   loginButton: {
     backgroundColor: '#B8860B',
@@ -552,6 +581,7 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
   },
+
 });
 
 export default SettingsScreen;

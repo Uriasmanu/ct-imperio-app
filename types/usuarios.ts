@@ -18,6 +18,7 @@ export interface Usuario {
   graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu;
   observacao?: string;
   email: string;
+  senha: string;
   telefone: string;
   dataDeRegistro: string;
   filhos?: Filho[]; 

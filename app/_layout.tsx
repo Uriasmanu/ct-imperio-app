@@ -148,6 +148,21 @@ export default function RootLayout() {
                   title: 'Configurações',
                 }}
               />
+              <Drawer.Screen
+                name="PerfilScreen"
+                options={{
+                  drawerLabel: () => null,
+                  drawerItemStyle: { display: 'none' },
+                }}
+              />
+              <Drawer.Screen
+                name="RegistroScreen"
+                options={{
+                  drawerLabel: () => null,
+                  drawerItemStyle: { display: 'none' },
+                }}
+              />
+
             </Drawer>
           </View>
 
