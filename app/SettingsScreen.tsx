@@ -14,6 +14,7 @@ import {
 
 import { auth } from '@/config/firebaseConfig';
 import { loginUsuario } from '@/services/usuarioService';
+import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { appConfig, gymData } from './../utils/constants';
 
@@ -27,6 +28,7 @@ const SettingsScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const [user, setUser] = useState<{
@@ -137,6 +139,10 @@ const SettingsScreen = () => {
     } else {
       Alert.alert('Atenção', 'Você precisa estar logado para acessar o perfil.');
     }
+  };
+
+  const toggleShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -315,14 +321,27 @@ const SettingsScreen = () => {
               value={email}
               onChangeText={setEmail}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Senha"
-              placeholderTextColor="#aaa"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Senha"
+                placeholderTextColor="#aaa"
+                secureTextEntry={!showConfirmPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={toggleShowConfirmPassword}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off" : "eye"}
+                  size={22}
+                  color="#999"
+                />
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -345,6 +364,7 @@ const SettingsScreen = () => {
             </View>
           </View>
         </View>
+
       </Modal>
 
     </ScrollView>
@@ -712,7 +732,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: 10,
+  },
 
+  passwordInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 12,
+  },
+
+  eyeButton: {
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
 });
 
