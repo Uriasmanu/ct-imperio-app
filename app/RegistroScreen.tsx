@@ -1,15 +1,16 @@
 import { registerUser } from '@/config/firebaseConfig';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-
 
 const RegistroScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleRegisterPress = async () => {
@@ -20,6 +21,11 @@ const RegistroScreen = () => {
 
     if (email.trim() === '' || password.trim() === '') {
       Alert.alert('Erro', 'Preencha todos os campos.');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
       return;
     }
 
@@ -34,8 +40,16 @@ const RegistroScreen = () => {
       // Redirecionar para a tela de login ou principal
       router.replace('/SettingsScreen'); // Exemplo: Redireciona para a raiz ou tela de login
     } else {
-      Alert.alert('Erro no Registro', result.error);
+      Alert.alert('Erro no Registro', result.message );
     }
+  };
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -52,26 +66,50 @@ const RegistroScreen = () => {
         autoCapitalize="none"
       />
       
-      <TextInput
-        style={styles.input}
-        placeholder="Senha (mínimo 6 caracteres)"
-        placeholderTextColor="#999"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Senha (mínimo 6 caracteres)"
+          placeholderTextColor="#999"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={toggleShowPassword}
+        >
+          <Ionicons
+            name={showPassword ? "eye-off" : "eye"}
+            size={24}
+            color="#999"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirmar Senha"
-        placeholderTextColor="#999"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Confirmar Senha"
+          placeholderTextColor="#999"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showConfirmPassword}
+        />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={toggleShowConfirmPassword}
+        >
+          <Ionicons
+            name={showConfirmPassword ? "eye-off" : "eye"}
+            size={24}
+            color="#999"
+          />
+        </TouchableOpacity>
+      </View>
       
       <TouchableOpacity
-        style={styles.registerButton}
+        style={[styles.registerButton, loading && styles.registerButtonDisabled]}
         onPress={handleRegisterPress}
         disabled={loading}
       >
@@ -109,6 +147,27 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 15,
         fontSize: 16,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1a1a1a',
+        borderRadius: 8,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    passwordInput: {
+        flex: 1,
+        color: '#FFFFFF',
+        padding: 15,
+        fontSize: 16,
+    },
+    eyeButton: {
+        padding: 10,
+        marginRight: 5,
     },
     registerButton: {
         backgroundColor: '#B8860B',
@@ -116,6 +175,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         marginTop: 10,
+    },
+    registerButtonDisabled: {
+        backgroundColor: '#666',
+        opacity: 0.6,
     },
     registerButtonText: {
         color: '#000000',
