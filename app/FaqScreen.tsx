@@ -1,3 +1,4 @@
+import { faqItems } from "@/utils/constants";
 import { AntDesign } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
 import {
@@ -7,6 +8,7 @@ import {
   Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -52,137 +54,18 @@ const theme = {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-
-const faqItems: FAQItem[] = [
-  {
-    question: "Quais modalidades de luta vocês oferecem?",
-    answer: "Atualmente, oferecemos aulas de Jiu-Jitsu Brasileiro (BJJ), Muay Thai e Boxe. Consulte a recepção para saber sobre turmas infantis.",
-  },
-  {
-    question: "Preciso ter experiência prévia para começar a treinar?",
-    answer: "De forma alguma! Nossas aulas são estruturadas para receber alunos de todos os níveis, especialmente iniciantes. O foco principal é na técnica, segurança e no desenvolvimento gradual do condicionamento físico.",
-  },
-  {
-    question: "Posso fazer uma aula experimental antes de me matricular?",
-    answer: "Claro! Basta agendar seu horário com antecedência na recepção ou pelo WhatsApp.",
-  },
-  {
-    question: "O que devo levar para o meu primeiro treino?",
-    answer: "Roupas leves e confortáveis, uma toalha e uma garrafa d'água. Em modalidades que exigem kimono ou luvas, forneceremos o equipamento emprestado para o seu primeiro dia.",
-  },
-  {
-    question: "Qual é o custo e quais são os planos disponíveis?",
-    answer: "Temos planos mensais, trimestrais e anuais com descontos progressivos. Entre em contato para receber nossa tabela de preços detalhada.",
-  },
-  {
-    question: "Vocês oferecem horários flexíveis?",
-    answer: "Sim! Temos turmas em diversos horários pela manhã, tarde e noite durante a semana, e também aulas aos sábados pela manhã.",
-  },
-  {
-    question: "Há restrições de idade para treinar?",
-    answer: "Oferecemos turmas para todas as idades a partir de 5 anos. Para crianças de 5 a 12 anos, temos aulas específicas com metodologia adaptada.",
-  },
-  // Novas perguntas e respostas adicionadas
-  {
-    question: "Qual é a diferença entre Muay Thai, Boxe e Jiu-Jitsu?",
-    answer: "Muay Thai é uma arte marcial tailandesa que utiliza socos, chutes, cotoveladas e joelhadas. Boxe foca apenas em socos com as mãos. Jiu-Jitsu é uma luta de solo com foco em finalizações, imobilizações e estrangulamentos. Cada uma desenvolve habilidades diferentes e são complementares.",
-  },
-  {
-    question: "Posso treinar mais de uma modalidade ao mesmo tempo?",
-    answer: "Sim! Inclusive recomendamos para um desenvolvimento marcial mais completo. Temos pacotes especiais para alunos que desejam praticar múltiplas modalidades.",
-  },
-  {
-    question: "Qual é a melhor arte marcial para defesa pessoal?",
-    answer: "Todas as modalidades que oferecemos são eficazes para defesa pessoal. Muay Thai e Boxe são excelentes para situações em pé, enquanto Jiu-Jitsu é ideal para situações de grappling e solo. A combinação de ambas oferece uma preparação mais completa.",
-  },
-  {
-    question: "Tem aulas para iniciantes?",
-    answer: "Sim! Temos turmas específicas para iniciantes em todas as modalidades, com foco nos fundamentos básicos e adaptação gradual ao treinamento.",
-  },
-  {
-    question: "Quais são os horários das aulas?",
-    answer: "Nossos horários variam por modalidade. Temos aulas pela manhã (6h-12h), tarde (14h-18h) e noite (19h-22h) de segunda a sexta, e aulas aos sábados pela manhã. Consulte a recepção para o horário específico de cada modalidade.",
-  },
-  {
-    question: "Preciso marcar aula ou posso chegar no horário?",
-    answer: "Para alunos matriculados, pode chegar no horário da aula. Para aula experimental, solicitamos que agende previamente para melhor atendimento.",
-  },
-  {
-    question: "Quanto tempo dura cada treino?",
-    answer: "Nossas aulas têm duração média de 1 hora a 1h30, dependendo da modalidade e do nível da turma.",
-  },
-  {
-    question: "Há planos trimestrais, semestrais ou anuais com desconto?",
-    answer: "Sim! Oferecemos descontos progressivos para planos de longer duration: 5% trimestral, 10% semestral e 15% anual.",
-  },
-  {
-    question: "Vocês aceitam cartão, PIX ou gympass?",
-    answer: "Aceitamos todas as formas de pagamento: cartão de crédito/débito, PIX, dinheiro e também trabalhamos com Gympass e TotalPass.",
-  },
-  {
-    question: "Existe taxa de matrícula?",
-    answer: "Não cobramos taxa de matrícula. O valor inclui apenas a mensalidade do plano escolhido.",
-  },
-  {
-    question: "Preciso comprar meus próprios equipamentos?",
-    answer: "Para as primeiras aulas, fornecemos equipamentos básicos. Recomendamos que adquira seus próprios equipamentos pessoais após decidir continuar com os treinos.",
-  },
-  {
-    question: "A academia fornece luvas, kimono ou caneleiras?",
-    answer: "Sim, temos equipamentos disponíveis para empréstimo nas primeiras aulas. Após isso, orientamos sobre a aquisição do material pessoal.",
-  },
-  {
-    question: "É obrigatório usar uniforme?",
-    answer: "Para Jiu-Jitsu é obrigatório o kimono. Para Muay Thai e Boxe, roupas de treino adequadas (shorts e camiseta). Temos uniformes disponíveis para compra na academia.",
-  },
-  {
-    question: "Preciso estar em forma para começar?",
-    answer: "Não! Os treinos são adaptados para todos os níveis de condicionamento. O objetivo é justamente ajudar você a melhorar sua forma física gradualmente.",
-  },
-  {
-    question: "Os treinos ajudam a emagrecer?",
-    answer: "Sim! As artes marciais são excelentes para queima calórica e definição muscular. Uma aula pode queimar entre 500-800 calorias, dependendo da intensidade.",
-  },
-  {
-    question: "Há risco de lesão?",
-    answer: "Como em qualquer atividade física, há riscos, mas minimizamos através de aquecimento adequado, supervisão constante e técnicas de ensino progressivas. A segurança é nossa prioridade.",
-  },
-  {
-    question: "Tem aquecimento e alongamento antes das aulas?",
-    answer: "Sim! Todas as aulas incluem aquecimento completo no início e alongamento no final, essenciais para prevenir lesões.",
-  },
-  {
-    question: "É necessário fazer exame médico?",
-    answer: "Recomendamos que todos os alunos realizem avaliação médica antes de iniciar qualquer atividade física intensa, especialmente se possuem condições preexistentes.",
-  },
-  {
-    question: "A partir de que idade as crianças podem treinar?",
-    answer: "Aceitamos crianças a partir de 5 anos em nossas turmas infantis, com metodologia específica e lúdica para cada faixa etária.",
-  },
-  {
-    question: "As aulas infantis são diferentes das de adultos?",
-    answer: "Sim! As aulas infantis focam em desenvolvimento motor, disciplina, coordenação e defesa pessoal básica, tudo de forma lúdica e segura.",
-  },
-  {
-    question: "A academia participa de campeonatos?",
-    answer: "Sim! Participamos regularmente de competições locais, estaduais e nacionais. Temos alunos competidores em todas as modalidades.",
-  },
-  {
-    question: "Posso competir mesmo sendo iniciante?",
-    answer: "Sim! Existem categorias para todos os níveis, incluindo iniciantes. Nossos professores avaliam e preparam alunos interessados em competir.",
-  },
-];
 
 export default function FAQ() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredFaq = faqItems.filter(item =>
+    item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const toggleAccordion = (index: number) => {
     if (activeIndex === index) {
@@ -251,6 +134,14 @@ export default function FAQ() {
         <Text style={styles.desc}>
           Encontre respostas rápidas sobre treinos, horários e mensalidades.
         </Text>
+
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Digite sua dúvida..."
+          placeholderTextColor={theme.colors.text.muted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
       </Animated.View>
 
       {/* Lista de FAQs */}
@@ -262,56 +153,62 @@ export default function FAQ() {
         onScroll={handleScroll}
       >
         <View style={styles.faqContainer}>
-          {faqItems.map((item, index) => (
-            <View
-              key={index}
-              style={[
-                styles.item,
-                activeIndex === index && styles.itemActive
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.questionContainer}
-                onPress={() => toggleAccordion(index)}
-                activeOpacity={0.7}
+          {filteredFaq.length > 0 ? (
+            filteredFaq.map((item, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.item,
+                  activeIndex === index && styles.itemActive
+                ]}
               >
-                <Text style={styles.questionText}>{item.question}</Text>
-                <Animated.View
-                  style={{
-                    transform: [{
-                      rotate: activeIndex === index ? '0deg' : '180deg'
-                    }]
-                  }}
+                <TouchableOpacity
+                  style={styles.questionContainer}
+                  onPress={() => toggleAccordion(index)}
+                  activeOpacity={0.7}
                 >
-                  <AntDesign
-                    name="up"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.icon}
-                  />
-                </Animated.View>
-              </TouchableOpacity>
+                  <Text style={styles.questionText}>{item.question}</Text>
+                  <Animated.View
+                    style={{
+                      transform: [
+                        { rotate: activeIndex === index ? "0deg" : "180deg" }
+                      ]
+                    }}
+                  >
+                    <AntDesign
+                      name="up"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.icon}
+                    />
+                  </Animated.View>
+                </TouchableOpacity>
 
-              {activeIndex === index && (
-                <Animated.View
-                  style={[
-                    styles.answerContainer,
-                    {
-                      opacity: fadeAnim,
-                      transform: [{
-                        translateY: fadeAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-10, 0],
-                        })
-                      }]
-                    }
-                  ]}
-                >
-                  <Text style={styles.answer}>{item.answer}</Text>
-                </Animated.View>
-              )}
-            </View>
-          ))}
+                {activeIndex === index && (
+                  <Animated.View
+                    style={[
+                      styles.answerContainer,
+                      {
+                        opacity: fadeAnim,
+                        transform: [
+                          {
+                            translateY: fadeAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [-10, 0],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Text style={styles.answer}>{item.answer}</Text>
+                  </Animated.View>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noResults}>Nenhum resultado encontrado 😕</Text>
+          )}
         </View>
 
         {/* Footer com CTA */}
@@ -610,4 +507,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: theme.typography.body,
   },
+  searchInput: {
+    backgroundColor: theme.colors.cardActive,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    color: theme.colors.text.body,
+    marginTop: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    fontSize: theme.typography.body,
+    width: "100%",
+    maxWidth: 400,
+  },
+  noResults: {
+  textAlign: "center",
+  color: theme.colors.text.muted,
+  marginTop: theme.spacing.xl,
+  fontSize: theme.typography.caption,
+},
 });
