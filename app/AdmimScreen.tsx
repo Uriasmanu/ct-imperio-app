@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     // HEADER
     header: {
         backgroundColor: "#000",
-        paddingTop: 60,
+        paddingTop: 15,
         paddingBottom: 20,
         paddingHorizontal: 16,
         borderBottomWidth: 1,
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#1a1a1a",
         borderBottomWidth: 1,
         borderBottomColor: "#333",
-        height: 0
+         maxHeight: 120,
     },
     estatisticasContent: {
         padding: 16,
@@ -681,7 +681,8 @@ const styles = StyleSheet.create({
         minWidth: 140,
         borderWidth: 1,
         borderColor: "#333",
-        height: 100
+        height: 100,
+        marginRight: 12,
     },
     estatisticaTotalUsuarios: {
         borderColor: "#B8860B",
