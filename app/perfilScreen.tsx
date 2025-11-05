@@ -13,8 +13,6 @@ import {
 } from "react-native";
 
 import { auth, db } from "@/config/firebaseConfig";
-// Assumindo que Filho, Usuario e as interfaces de graduação estão definidas em '../types/usuarios'
-// e as constantes de graduação estão disponíveis, conforme fornecido.
 import { graduaçõesJiuJitsu, graduaçõesMuayThai } from "@/types/graduacoes";
 import {
   Filho,
@@ -24,12 +22,6 @@ import {
 } from "../types/usuarios";
 
 
-/**
- * 🥋 NOVO COMPONENTE DE UX/UI: GraduacaoSelector
- * Melhora a experiência de seleção de graduação com muitas opções.
- * - Para Jiu-Jitsu (Faixa + Grau): Seleciona a faixa e, em seguida, os graus.
- * - Para Muay Thai: Mantém a seleção simples.
- */
 interface GraduacaoSelectorProps {
   modalidade: string;
   graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
@@ -234,6 +226,7 @@ export default function PerfilScreen() {
         modalidade: usuario.modalidade ?? "",
         graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
         pagamento: usuario.pagamento ?? {},
+        dataUltimoPagamento: usuario.pagamento ? new Date().toISOString() : "",
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -286,6 +279,7 @@ export default function PerfilScreen() {
       pagamento: novoFilho.pagamento ?? false,
       observacao: novoFilho.observacao?.trim() || "",
       dataPagamento: dataPagamentoPadrao,
+      dataUltimoPagamento: novoFilho.pagamento ? new Date().toISOString() : "",
     };
 
     try {
@@ -312,8 +306,8 @@ export default function PerfilScreen() {
 
   // 🆕 FUNÇÃO: Inicia a edição de um filho
   const handleEditarFilho = (filho: Filho) => {
-    setFilhoEmEdicao(filho); // Coloca o filho no estado de edição
-    setModalFilho(true);     // Abre o modal
+    setFilhoEmEdicao(filho);
+    setModalFilho(true);
   };
 
   // 🆕 FUNÇÃO: Salva as alterações de um filho no Firestore
@@ -425,7 +419,15 @@ export default function PerfilScreen() {
                     usuario.pagamento && styles.modalidadeButtonSelected,
                     { flex: 0.4, minWidth: 100 }
                   ]}
-                  onPress={() => setUsuario(prev => prev ? { ...prev, pagamento: !prev.pagamento } : prev)}
+                  onPress={() => setUsuario(prev => {
+                    if (!prev) return prev;
+                    const novoStatus = !prev.pagamento;
+                    return {
+                      ...prev,
+                      pagamento: novoStatus,
+                      dataUltimoPagamento: novoStatus ? new Date().toISOString() : prev.dataUltimoPagamento,
+                    };
+                  })}
                 >
                   <Text style={[styles.modalidadeButtonText, usuario.pagamento && styles.modalidadeButtonTextSelected]}>
                     {usuario.pagamento ? "Pago" : "Pendente"}
@@ -610,13 +612,14 @@ const ModalContent: React.FC<ModalContentProps> = ({
   // Determinar qual objeto usar para leitura e escrita
   const dadosFilho = filhoEmEdicao || novoFilho;
 
-  const setDadosFilho = (updates: Partial<Filho>) => {
+  const setDadosFilho = (updates: Partial<Filho> | ((prev: Partial<Filho>) => Partial<Filho>)) => {
     if (filhoEmEdicao) {
-      setFilhoEmEdicao(prev => prev ? ({ ...prev, ...updates } as Filho) : null);
+      setFilhoEmEdicao(prev => prev ? ({ ...prev, ...(typeof updates === "function" ? updates(prev) : updates) }) : null);
     } else {
-      setNovoFilho(prev => ({ ...prev, ...updates }));
+      setNovoFilho(prev => ({ ...prev, ...(typeof updates === "function" ? updates(prev) : updates) }));
     }
   };
+
 
   const modalTitle = filhoEmEdicao ? "Editar Filho" : "Adicionar Filho";
   const handleAcao = filhoEmEdicao ? handleSalvarEdicaoFilho : handleAdicionarFilho;
@@ -689,13 +692,22 @@ const ModalContent: React.FC<ModalContentProps> = ({
                 dadosFilho.pagamento && styles.modalidadeButtonSelected,
                 { flex: 0.4, minWidth: 100 }
               ]}
-              onPress={() => setDadosFilho({ pagamento: !dadosFilho.pagamento })}
+              onPress={() => {
+                const novoStatus = !dadosFilho.pagamento;
+                setDadosFilho({
+                  ...dadosFilho,
+                  pagamento: novoStatus,
+                  dataUltimoPagamento: novoStatus ? new Date().toISOString() : dadosFilho.dataUltimoPagamento,
+                });
+              }}
+
             >
               <Text style={[styles.modalidadeButtonText, dadosFilho.pagamento && styles.modalidadeButtonTextSelected]}>
                 {dadosFilho.pagamento ? "Pago" : "Pendente"}
               </Text>
             </TouchableOpacity>
           </View>
+
 
           {/* Observação */}
           <TextInput

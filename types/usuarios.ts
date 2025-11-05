@@ -12,6 +12,7 @@ export interface Filho {
   pagamento: boolean;
   idade?: number;
   dataPagamento: string;
+  dataUltimoPagamento: string;
 }
 
 export interface Usuario {
@@ -27,6 +28,7 @@ export interface Usuario {
   admin: boolean;
   pagamento: boolean; 
   dataPagamento: string;
+  dataUltimoPagamento: string;
 }
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };
 
