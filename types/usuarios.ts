@@ -11,6 +11,7 @@ export interface Filho {
   dataDeRegistro: string;
   pagamento: boolean;
   idade?: number;
+  dataPagamento: string;
 }
 
 export interface Usuario {
@@ -25,6 +26,7 @@ export interface Usuario {
   filhos?: Filho[];
   admin: boolean;
   pagamento: boolean; 
+  dataPagamento: string;
 }
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };
 

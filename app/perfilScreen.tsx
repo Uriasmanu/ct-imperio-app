@@ -139,6 +139,9 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
   return <Text style={styles.infoValue}>Modalidade sem graduação definida.</Text>;
 };
 
+const hoje = new Date();
+const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
+
 // --- FIM DO NOVO COMPONENTE ---
 
 export default function PerfilScreen() {
@@ -201,48 +204,89 @@ export default function PerfilScreen() {
 
   // 🔹 Atualiza os dados pessoais no Firestore
   const handleSalvarPerfil = async () => {
-    if (!usuario?.id) return;
+    if (!usuario?.id) {
+      Alert.alert("Erro", "Usuário não encontrado. Tente novamente.");
+      return;
+    }
+
+    // 🧩 Validações antes de salvar
+    if (!usuario.modalidade) {
+      Alert.alert("Campo obrigatório", "Selecione uma modalidade antes de salvar.");
+      return;
+    }
+
+    if (!usuario.graduacao || Object.keys(usuario.graduacao).length === 0) {
+      Alert.alert(
+        "Informação incompleta",
+        "A modalidade selecionada precisa ter uma graduação definida."
+      );
+      return;
+    }
 
     try {
       const userRef = doc(db, "usuarios", usuario.id);
-      // Garante que o objeto de usuário sendo salvo contém todas as propriedades
+
       await updateDoc(userRef, {
-        nome: usuario.nome,
-        email: usuario.email,
-        telefone: usuario.telefone,
-        observacao: usuario.observacao,
-        modalidade: usuario.modalidade,
-        graduacao: usuario.graduacao,
-        pagamento: usuario.pagamento, // ✅ Incluído pagamento no update
+        nome: usuario.nome ?? "",
+        email: usuario.email ?? "",
+        telefone: usuario.telefone ?? "",
+        observacao: usuario.observacao ?? "",
+        modalidade: usuario.modalidade ?? "",
+        graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
+        pagamento: usuario.pagamento ?? {},
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
       setEditando(false);
     } catch (error) {
       console.error(error);
-      Alert.alert("Erro", "Não foi possível salvar as alterações.");
+      Alert.alert(
+        "Erro ao salvar",
+        "Não foi possível salvar as alterações. Verifique os campos e tente novamente."
+      );
     }
   };
 
+
   // 🔹 Adiciona um novo filho ao usuário
   const handleAdicionarFilho = async () => {
-    if (!novoFilho.nome || !usuario?.id) {
-      Alert.alert("Erro", "Por favor, informe o nome do filho.");
+    if (!usuario?.id) {
+      Alert.alert("Erro", "Usuário não encontrado. Tente fazer login novamente.");
       return;
     }
 
+    // 🔍 Validação mais clara com mensagens específicas
+    if (!novoFilho.nome?.trim()) {
+      Alert.alert("Campo obrigatório", "Por favor, informe o nome do filho.");
+      return;
+    }
+
+    if (novoFilho.idade === undefined || isNaN(Number(novoFilho.idade))) {
+      Alert.alert("Campo obrigatório", "Por favor, informe a idade do filho.");
+      return;
+    }
+
+    if (Number(novoFilho.idade) <= 0 || Number(novoFilho.idade) > 100) {
+      Alert.alert("Valor inválido", "A idade deve ser um número entre 1 e 100.");
+      return;
+    }
+
+    // 🔧 Construção segura do objeto Filho
     const filhoCompleto: Filho = {
       id: Date.now().toString(),
-      nome: novoFilho.nome ?? "",
+      nome: novoFilho.nome.trim(),
+      idade: Number(novoFilho.idade),
       modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
-      // Garante uma graduação padrão se estiver faltando
-      graduacao: novoFilho.graduacao || (novoFilho.modalidade === "Muay Thai" ? { cor: "Amarela" } : { cor: "Branca", grau: 1 }),
+      graduacao:
+        novoFilho.graduacao ||
+        (novoFilho.modalidade === "Muay Thai"
+          ? { cor: "Amarela" }
+          : { cor: "Branca", grau: 1 }),
       dataDeRegistro: new Date().toISOString().split("T")[0],
       pagamento: novoFilho.pagamento ?? false,
-      idade: novoFilho.idade,
-      observacao: novoFilho.observacao ?? "",
+      observacao: novoFilho.observacao?.trim() || "",
+      dataPagamento: dataPagamentoPadrao,
     };
-
 
     try {
       const userRef = doc(db, "usuarios", usuario.id);
@@ -257,12 +301,13 @@ export default function PerfilScreen() {
         graduacao: { cor: "Branca", grau: 1 },
       });
 
-      Alert.alert("Sucesso", "Filho adicionado com sucesso!");
+      Alert.alert("Sucesso", `${filhoCompleto.nome} foi adicionado com sucesso!`);
     } catch (error) {
       console.error(error);
-      Alert.alert("Erro", "Não foi possível adicionar o filho.");
+      Alert.alert("Erro", "Não foi possível adicionar o filho. Tente novamente.");
     }
   };
+
 
 
   // 🆕 FUNÇÃO: Inicia a edição de um filho
@@ -367,6 +412,10 @@ export default function PerfilScreen() {
 
           {/* ✅ NOVO CAMPO DE PAGAMENTO */}
           <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Dia de pagamento:</Text>
+            <Text style={styles.infoValue}>
+              {new Date(usuario.dataPagamento).getDate()} de cada mês
+            </Text>
             <Text style={styles.infoLabel}>Pagamento</Text>
             {editando ? (
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -493,6 +542,10 @@ export default function PerfilScreen() {
                 </Text>
                 {filho.idade && <Text style={styles.filhoData}>Idade: {filho.idade} anos</Text>}
                 {filho.observacao && <Text style={styles.filhoData}>Observação: {filho.observacao}</Text>}
+                <Text style={styles.infoLabel}>Dia de pagamento:</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(filho.dataPagamento).getDate()} de cada mês
+                </Text>
                 <Text style={styles.filhoData}>
                   Pagamento: {filho.pagamento ? "Pago" : "Pendente"}
                 </Text>
@@ -618,7 +671,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
           {/* Idade */}
           <TextInput
             style={styles.modalInput}
-            placeholder="Idade (opcional)"
+            placeholder="Idade"
             placeholderTextColor="#666"
             keyboardType="numeric"
             value={dadosFilho.idade?.toString() || ""}
@@ -759,7 +812,7 @@ const styles = StyleSheet.create({
   editButton: { fontSize: 14, color: "#B8860B", fontWeight: "600" },
   addButton: { fontSize: 14, color: "#B8860B", fontWeight: "600" },
   infoCard: { backgroundColor: "#1a1a1a", padding: 16, borderRadius: 8 },
-  infoField: { marginBottom: 16 },
+  infoField: { marginBottom: 15 },
   infoLabel: { fontSize: 12, color: "#B8860B", fontWeight: "600", marginBottom: 10 },
   infoValue: { fontSize: 16, color: "#FFF", fontWeight: "500" },
   input: { backgroundColor: "#2a2a2a", borderRadius: 6, padding: 12, color: "#FFF" },

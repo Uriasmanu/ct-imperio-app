@@ -22,12 +22,17 @@ export const criarUsuario = async (
     // Cria a REFERÊNCIA do documento
     const usuarioDocRef = doc(db, "usuarios", usuarioId);
 
+    const hoje = new Date();
+    const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
+
+
     // Dados completos do usuário (sem senha)
     const usuarioCompleto: Usuario = {
       ...dadosSemSenha,
       id: usuarioId,
       dataDeRegistro: new Date().toISOString(),
       admin: usuarioData.admin ?? false,
+      dataPagamento: usuarioData.dataPagamento ?? dataPagamentoPadrao,
     };
 
     // Grava no Firestore
