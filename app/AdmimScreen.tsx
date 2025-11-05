@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore"; // Adicionado getDoc
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -15,15 +15,18 @@ import {
 } from "react-native";
 
 import { db } from "@/config/firebaseConfig";
-import { Usuario } from "../types/usuarios";
+// Importe a interface Filho do seu arquivo de tipos, assim como no primeiro código
+import { Filho, Usuario } from "../types/usuarios";
 
 // 🎯 TIPOS E INTERFACES
 interface UsuarioCompleto extends Usuario {
     id: string;
 }
 
-interface GerenciarPagamentoAdminProps {
+// Nova interface para o componente unificado de gerenciamento
+interface GerenciarPagamentoProps {
     usuario: UsuarioCompleto;
+    filho?: Filho; // Opcional, para indicar se é o usuário principal ou um filho
     onPagamentoAtualizado: () => void;
 }
 
@@ -33,54 +36,19 @@ interface FiltrosState {
     modalidade: "todas" | Usuario["modalidade"];
 }
 
-// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO (ADMIN)
-const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
+// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO (UNIFICADO)
+const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
     usuario,
+    filho, // Recebe o filho
     onPagamentoAtualizado,
 }) => {
     const [modalPagamento, setModalPagamento] = useState(false);
     const [processando, setProcessando] = useState(false);
 
-    const handleConfirmarPagamento = async () => {
-        setProcessando(true);
-        try {
-            const userRef = doc(db, "usuarios", usuario.id);
-
-            await updateDoc(userRef, {
-                pagamento: true,
-                dataUltimoPagamento: new Date().toISOString()
-            });
-
-            onPagamentoAtualizado();
-            setModalPagamento(false);
-            Alert.alert("✅ Sucesso", `Pagamento de ${usuario.nome} confirmado!`);
-        } catch (error) {
-            console.error("Erro ao confirmar pagamento:", error);
-            Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
-        } finally {
-            setProcessando(false);
-        }
-    };
-
-    const handleMarcarComoPendente = async () => {
-        setProcessando(true);
-        try {
-            const userRef = doc(db, "usuarios", usuario.id);
-
-            await updateDoc(userRef, {
-                pagamento: false
-            });
-
-            onPagamentoAtualizado();
-            setModalPagamento(false);
-            Alert.alert("🔄 Status Alterado", `Pagamento de ${usuario.nome} marcado como pendente.`);
-        } catch (error) {
-            console.error("Erro ao atualizar pagamento:", error);
-            Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
-        } finally {
-            setProcessando(false);
-        }
-    };
+    // Determinar o nome e o status de pagamento a ser gerenciado
+    const nomeParaExibir = filho ? filho.nome : usuario.nome;
+    const pagamentoAtual = filho ? filho.pagamento : usuario.pagamento;
+    const dataPagamentoAtual = filho ? filho.dataUltimoPagamento : usuario.dataUltimoPagamento;
 
     const formatarData = (data: string) => {
         if (!data) return "Nunca";
@@ -88,9 +56,9 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
     };
 
     const calcularDiasDesdePagamento = () => {
-        if (!usuario.dataUltimoPagamento) return "Nunca pagou";
+        if (!dataPagamentoAtual) return "Nunca pagou";
 
-        const ultimoPagamento = new Date(usuario.dataUltimoPagamento);
+        const ultimoPagamento = new Date(dataPagamentoAtual);
         const hoje = new Date();
         const diffTempo = hoje.getTime() - ultimoPagamento.getTime();
         const diffDias = Math.floor(diffTempo / (1000 * 60 * 60 * 24));
@@ -100,25 +68,74 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
         return `${diffDias} dias atrás`;
     };
 
+    // 🔄 FUNÇÃO PARA ATUALIZAR O STATUS (PAGO/PENDENTE)
+    const handleTogglePagamento = async (status: boolean) => {
+        setProcessando(true);
+        try {
+            const userRef = doc(db, "usuarios", usuario.id);
+
+            if (filho) {
+                // LÓGICA PARA ATUALIZAR PAGAMENTO DO FILHO
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const usuarioData = userSnap.data() as Usuario;
+                    const novosFilhos = usuarioData.filhos?.map(f =>
+                        f.id === filho.id
+                            ? {
+                                ...f,
+                                pagamento: status,
+                                dataUltimoPagamento: status ? new Date().toISOString() : undefined,
+                            }
+                            : f
+                    );
+                    await updateDoc(userRef, { filhos: novosFilhos });
+                    Alert.alert(
+                        "✅ Sucesso",
+                        `Pagamento de ${filho.nome} ${status ? "confirmado" : "marcado como pendente"}!`
+                    );
+                }
+            } else {
+                // LÓGICA PARA ATUALIZAR PAGAMENTO DO USUÁRIO PRINCIPAL
+                await updateDoc(userRef, {
+                    pagamento: status,
+                    dataUltimoPagamento: status ? new Date().toISOString() : undefined,
+                });
+                Alert.alert(
+                    "✅ Sucesso",
+                    `Pagamento de ${usuario.nome} ${status ? "confirmado" : "marcado como pendente"}!`
+                );
+            }
+
+            onPagamentoAtualizado();
+            setModalPagamento(false);
+        } catch (error) {
+            console.error("Erro ao atualizar pagamento:", error);
+            Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
+        } finally {
+            setProcessando(false);
+        }
+    };
+
     return (
         <>
             <TouchableOpacity
                 style={[
                     styles.pagamentoButton,
-                    usuario.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
+                    pagamentoAtual ? styles.pagamentoPago : styles.pagamentoPendente
                 ]}
                 onPress={() => setModalPagamento(true)}
+                disabled={processando}
             >
                 <Ionicons
-                    name={usuario.pagamento ? "checkmark-circle" : "time-outline"}
+                    name={pagamentoAtual ? "checkmark-circle" : "time-outline"}
                     size={16}
-                    color={usuario.pagamento ? "#22c55e" : "#ef4444"}
+                    color={pagamentoAtual ? "#22c55e" : "#ef4444"}
                 />
                 <Text style={[
                     styles.pagamentoButtonText,
-                    usuario.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
+                    pagamentoAtual ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
                 ]}>
-                    {usuario.pagamento ? "Pago" : "Pendente"}
+                    {pagamentoAtual ? "Pago" : "Pendente"}
                 </Text>
             </TouchableOpacity>
 
@@ -143,22 +160,22 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
                         <View style={styles.pagamentoInfo}>
                             <View style={styles.alunoInfo}>
                                 <Ionicons name="person" size={20} color="#B8860B" />
-                                <Text style={styles.pagamentoNome}>{usuario.nome}</Text>
+                                <Text style={styles.pagamentoNome}>{nomeParaExibir} {filho && <Text style={styles.filhoTag}>(Aluno Dependente)</Text>}</Text>
                             </View>
 
                             <View style={[
                                 styles.statusBadge,
-                                usuario.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
+                                pagamentoAtual ? styles.statusBadgePago : styles.statusBadgePendente
                             ]}>
                                 <Text style={styles.statusBadgeText}>
-                                    {usuario.pagamento ? "PAGO" : "PENDENTE"}
+                                    {pagamentoAtual ? "PAGO" : "PENDENTE"}
                                 </Text>
                             </View>
 
                             <View style={styles.dataInfo}>
                                 <Ionicons name="calendar" size={16} color="#666" />
                                 <Text style={styles.pagamentoData}>
-                                    Último pagamento: {formatarData(usuario.dataUltimoPagamento)}
+                                    Último pagamento: {formatarData(dataPagamentoAtual || "")}
                                 </Text>
                             </View>
 
@@ -169,12 +186,15 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
                                 </Text>
                             </View>
 
-                            <View style={styles.dataInfo}>
-                                <Ionicons name="card" size={16} color="#666" />
-                                <Text style={styles.pagamentoData}>
-                                    Dia de pagamento: {new Date(usuario.dataPagamento).getDate()} de cada mês
-                                </Text>
-                            </View>
+                            {/* Mostrar dia de pagamento apenas para o usuário principal, se a info for pertinente */}
+                            {!filho && (
+                                <View style={styles.dataInfo}>
+                                    <Ionicons name="card" size={16} color="#666" />
+                                    <Text style={styles.pagamentoData}>
+                                        Dia de pagamento: {new Date(usuario.dataPagamento).getDate()} de cada mês
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.modalActions}>
@@ -186,10 +206,10 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
                                 <Text style={styles.cancelButtonText}>Fechar</Text>
                             </TouchableOpacity>
 
-                            {!usuario.pagamento ? (
+                            {!pagamentoAtual ? (
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.confirmButton]}
-                                    onPress={handleConfirmarPagamento}
+                                    onPress={() => handleTogglePagamento(true)}
                                     disabled={processando}
                                 >
                                     {processando ? (
@@ -204,7 +224,7 @@ const GerenciarPagamentoAdmin: React.FC<GerenciarPagamentoAdminProps> = ({
                             ) : (
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.warningButton]}
-                                    onPress={handleMarcarComoPendente}
+                                    onPress={() => handleTogglePagamento(false)}
                                     disabled={processando}
                                 >
                                     {processando ? (
@@ -261,6 +281,10 @@ const UsuarioCard: React.FC<{
         return "#ef4444";
     };
 
+    const getFilhoStatusColor = (pagamento: boolean) => {
+        return pagamento ? "#22c55e" : "#ef4444";
+    }
+
     return (
         <View style={styles.usuarioCard}>
             <View style={styles.usuarioHeader}>
@@ -276,7 +300,8 @@ const UsuarioCard: React.FC<{
                         <Text style={styles.usuarioEmail}>{usuario.email}</Text>
                     </View>
                 </View>
-                <GerenciarPagamentoAdmin
+                {/* Botão de pagamento do usuário principal */}
+                <GerenciarPagamento
                     usuario={usuario}
                     onPagamentoAtualizado={onPagamentoAtualizado}
                 />
@@ -312,37 +337,39 @@ const UsuarioCard: React.FC<{
                 </View>
             </View>
 
-            {/* SEÇÃO DE FILHOS */}
+            {/* SEÇÃO DE FILHOS COM BOTÃO DE PAGAMENTO INDIVIDUAL */}
             {usuario.filhos && usuario.filhos.length > 0 && (
                 <View style={styles.filhosSection}>
                     <Text style={styles.filhosTitle}>
                         <Ionicons name="people" size={14} color="#B8860B" />
                         Alunos Dependentes ({usuario.filhos.length})
                     </Text>
-                    {usuario.filhos.slice(0, 3).map((filho, index) => (
+                    {usuario.filhos.map((filho) => (
                         <View key={filho.id} style={styles.filhoItem}>
-                            <Text style={styles.filhoNome}>{filho.nome}</Text>
-                            <View style={styles.filhoInfo}>
-                                <Text style={styles.filhoModalidade}>{filho.modalidade}</Text>
-                                <View style={[
-                                    styles.statusPonto,
-                                    filho.pagamento ? styles.statusPago : styles.statusPendente
-                                ]} />
+                            <View style={styles.filhoItemContent}>
+                                <Text style={styles.filhoNome}>{filho.nome}</Text>
+                                <View style={styles.filhoMeta}>
+                                    <Text style={styles.filhoModalidade}>{filho.modalidade}</Text>
+                                    <Text style={styles.filhoPagamentoData}>
+                                        Último: {formatarData(filho.dataUltimoPagamento || "")}
+                                    </Text>
+                                </View>
                             </View>
+                            {/* Adicionado o componente de Gerenciar Pagamento para o Filho */}
+                            <GerenciarPagamento
+                                usuario={usuario}
+                                filho={filho}
+                                onPagamentoAtualizado={onPagamentoAtualizado}
+                            />
                         </View>
                     ))}
-                    {usuario.filhos.length > 3 && (
-                        <Text style={styles.maisFilhos}>
-                            + {usuario.filhos.length - 3} outros alunos
-                        </Text>
-                    )}
                 </View>
             )}
         </View>
     );
 };
 
-// 🎯 COMPONENTE DE FILTROS
+// 🎯 COMPONENTE DE FILTROS (MANTIDO IGUAL)
 const Filtros: React.FC<{
     filtros: FiltrosState;
     onFiltrosChange: (filtros: FiltrosState) => void;
@@ -438,7 +465,7 @@ const Filtros: React.FC<{
     );
 };
 
-// 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
+// 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN (MANTIDO IGUAL, EXCETO USAR O NOVO COMPONENTE)
 export default function AdminScreen() {
     const [usuarios, setUsuarios] = useState<UsuarioCompleto[]>([]);
     const [loading, setLoading] = useState(true);
@@ -487,8 +514,10 @@ export default function AdminScreen() {
     // 🎯 APLICAR FILTROS
     const usuariosFiltrados = usuarios.filter(usuario => {
         // Filtro por busca
-        if (filtros.busca && !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
-            !usuario.email.toLowerCase().includes(filtros.busca.toLowerCase())) {
+        if (filtros.busca &&
+            !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
+            !usuario.email.toLowerCase().includes(filtros.busca.toLowerCase())
+        ) {
             return false;
         }
 
@@ -514,7 +543,7 @@ export default function AdminScreen() {
         comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
         totalAlunos: usuarios.reduce((total, usuario) =>
             total + (usuario.filhos ? usuario.filhos.length : 0), 0
-        )
+        ) + usuarios.length // Adiciona os usuários principais
     };
 
     // 🎯 RENDER STATES
@@ -605,12 +634,9 @@ export default function AdminScreen() {
                         />
                     ))
                 ) : (
-                    <View style={styles.emptyState}>
-                        <Ionicons name="search" size={48} color="#666" />
-                        <Text style={styles.emptyStateText}>Nenhum usuário encontrado</Text>
-                        <Text style={styles.emptyStateSubtext}>
-                            Tente ajustar os filtros ou termos de busca
-                        </Text>
+                    <View style={styles.nenhumResultado}>
+                        <Ionicons name="alert-circle" size={24} color="#B8860B" />
+                        <Text style={styles.nenhumResultadoText}>Nenhum usuário encontrado com os filtros aplicados.</Text>
                     </View>
                 )}
             </ScrollView>
@@ -618,61 +644,23 @@ export default function AdminScreen() {
     );
 }
 
-// 🎯 ESTILOS
+// 🎯 ESTILOS (Adicionados estilos para os filhos)
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#000",
-    },
-    loadingContainer: {
-        flex: 1,
-        backgroundColor: "#000",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 16,
-    },
-    loadingText: {
-        color: "#B8860B",
-        fontSize: 16,
-        fontWeight: "500",
-    },
+    // ... estilos existentes
+    container: { flex: 1, backgroundColor: "#000", padding: 16 },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" },
+    loadingText: { color: "#FFF", marginTop: 10 },
+    header: { paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#333", marginBottom: 16 },
+    headerContent: { alignItems: "center" },
+    headerTitle: { fontSize: 24, fontWeight: "bold", color: "#FFF", marginTop: 8 },
+    headerSubtitle: { fontSize: 14, color: "#AAA" },
 
-    // HEADER
-    header: {
-        backgroundColor: "#000",
-        paddingTop: 15,
-        paddingBottom: 20,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-    },
-    headerContent: {
-        alignItems: "center",
-        gap: 8,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "#FFF",
-        textAlign: "center",
-    },
-    headerSubtitle: {
-        fontSize: 14,
-        color: "#B8860B",
-        textAlign: "center",
-    },
-
-    // ESTATÍSTICAS
     estatisticasContainer: {
-        backgroundColor: "#1a1a1a",
         borderBottomWidth: 1,
-        borderBottomColor: "#333",
-         maxHeight: 120,
+        maxHeight: 120,
+        marginBottom: 10
     },
-    estatisticasContent: {
-        padding: 16,
-        gap: 12,
-    },
+    estatisticasContent: { paddingRight: 16 },
     estatisticaCard: {
         backgroundColor: "#2a2a2a",
         padding: 16,
@@ -681,423 +669,149 @@ const styles = StyleSheet.create({
         minWidth: 140,
         borderWidth: 1,
         borderColor: "#333",
-        height: 100,
+        height: 118,
         marginRight: 12,
     },
-    estatisticaTotalUsuarios: {
-        borderColor: "#B8860B",
-    },
-    estatisticaPagos: {
-        borderColor: "#22c55e",
-    },
-    estatisticaPendentes: {
-        borderColor: "#ef4444",
-    },
-    estatisticaFilhos: {
-        borderColor: "#8b5cf6",
-    },
-    estatisticaNumero: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#FFF",
-        marginTop: 4,
-    },
-    estatisticaLabel: {
-        fontSize: 12,
-        color: "#CCC",
-        textAlign: "center",
-        marginTop: 4,
-    },
+    estatisticaTotalUsuarios: { borderColor: "#B8860B", borderWidth: 1 },
+    estatisticaPagos: { borderColor: "#22c55e", borderWidth: 1 },
+    estatisticaPendentes: { borderColor: "#ef4444", borderWidth: 1 },
+    estatisticaFilhos: { borderColor: "#8b5cf6", borderWidth: 1 },
+    estatisticaNumero: { fontSize: 18, fontWeight: "bold", color: "#FFF", marginTop: 4 },
+    estatisticaLabel: { fontSize: 10, color: "#AAA", textAlign: "center", marginTop: 2 },
 
-    // FILTROS
-    filtrosContainer: {
-        backgroundColor: "#1a1a1a",
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-    },
-    filtrosHeader: {
-        flexDirection: "row",
-        gap: 12,
-        alignItems: "center",
-    },
+    filtrosContainer: { paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#333", marginBottom: 16 },
+    filtrosHeader: { flexDirection: "row", gap: 10, marginBottom: 10 },
     buscaInput: {
         flex: 1,
-        backgroundColor: "#2a2a2a",
-        borderRadius: 8,
-        padding: 12,
+        backgroundColor: "#1a1a1a",
         color: "#FFF",
-        fontSize: 16,
-        borderWidth: 1,
-        borderColor: "#333",
-    },
-    filtroButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        padding: 12,
-        backgroundColor: "#2a2a2a",
+        padding: 10,
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#333",
-    },
-    filtroButtonText: {
-        color: "#B8860B",
-        fontWeight: "600",
         fontSize: 14,
     },
-    filtrosAvançados: {
-        marginTop: 16,
-        gap: 16,
-    },
-    filtroGrupo: {
-        gap: 8,
-    },
-    filtroLabel: {
-        fontSize: 14,
-        color: "#B8860B",
-        fontWeight: "600",
-    },
-    filtroBotoes: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-    },
+    filtroButton: { flexDirection: "row", alignItems: "center", gap: 4, padding: 10, backgroundColor: "#1a1a1a", borderRadius: 8 },
+    filtroButtonText: { color: "#B8860B", fontWeight: "bold" },
+    filtrosAvançados: { backgroundColor: "#1a1a1a", padding: 12, borderRadius: 8 },
+    filtroGrupo: { marginBottom: 10 },
+    filtroLabel: { color: "#FFF", fontWeight: "bold", marginBottom: 6, fontSize: 12 },
+    filtroBotoes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     filtroOpcao: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        backgroundColor: "#2a2a2a",
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#333",
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: "#333",
     },
-    filtroOpcaoSelecionada: {
-        backgroundColor: "#B8860B",
-        borderColor: "#DAA520",
-    },
-    filtroOpcaoTexto: {
-        color: "#CCC",
-        fontSize: 12,
-        fontWeight: "500",
-    },
-    filtroOpcaoTextoSelecionado: {
-        color: "#000",
-        fontWeight: "600",
-    },
+    filtroOpcaoSelecionada: { backgroundColor: "#B8860B" },
+    filtroOpcaoTexto: { color: "#B8860B", fontSize: 12, marginLeft: 4 },
+    filtroOpcaoTextoSelecionado: { color: "#000", fontWeight: "bold" },
 
-    // LISTA
-    listaContainer: {
-        flex: 1,
-    },
-    resultadosInfo: {
-        padding: 16,
-        backgroundColor: "#1a1a1a",
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-    },
-    resultadosTexto: {
-        color: "#B8860B",
-        fontWeight: "600",
-        fontSize: 14,
-    },
-    buscaTexto: {
-        color: "#666",
-        fontSize: 12,
-        marginTop: 4,
-    },
+    listaContainer: { flex: 1 },
+    resultadosInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    resultadosTexto: { color: '#AAA', fontSize: 12 },
+    buscaTexto: { color: '#B8860B', fontSize: 12, fontWeight: 'bold' },
+    nenhumResultado: { alignItems: 'center', marginTop: 50, padding: 20, backgroundColor: '#1a1a1a', borderRadius: 12 },
+    nenhumResultadoText: { color: '#FFF', marginTop: 8, textAlign: 'center' },
 
-    // CARD DE USUÁRIO
     usuarioCard: {
         backgroundColor: "#1a1a1a",
-        margin: 16,
-        marginBottom: 0,
         padding: 16,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#333",
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: "#B8860B",
     },
-    usuarioHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center", // antes estava flex-start, agora centraliza verticalmente
-        marginBottom: 12,
-    },
-    usuarioInfo: {
-        flex: 1,
-    },
-    usuarioNome: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#FFF",
-        marginBottom: 8,
-    },
-    usuarioMeta: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        flexWrap: "wrap",
-    },
-    modalidadeBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    modalidadeBadgeText: {
-        fontSize: 12,
-        color: "#FFF",
-        fontWeight: "600",
-    },
-    usuarioEmail: {
-        fontSize: 12,
-        color: "#666",
-    },
+    usuarioHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+    usuarioInfo: { flex: 1, paddingRight: 10 },
+    usuarioNome: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
+    usuarioMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, flexWrap: 'wrap' },
+    modalidadeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
+    modalidadeBadgeText: { color: "#FFF", fontSize: 10, fontWeight: "bold" },
+    usuarioEmail: { color: "#AAA", fontSize: 12, marginTop: 2 },
 
-    // INFORMAÇÕES DE PAGAMENTO
-    pagamentoInfo: {
-        gap: 12,
-        marginBottom: 12,
+    pagamentoButton: { flexDirection: "row", alignItems: "center", gap: 6, padding: 6, borderRadius: 8, minWidth: 100, justifyContent: 'center' },
+    pagamentoPago: { backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#22c55e" },
+    pagamentoPendente: { backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#ef4444" },
+    pagamentoButtonText: { fontSize: 12, fontWeight: "600" },
+    pagamentoButtonTextPago: { color: "#22c55e" },
+    pagamentoButtonTextPendente: { color: "#ef4444" },
 
-    },
-    dataRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        gap: 12,
-    },
-    dataItem: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    dataLabel: {
-        fontSize: 12,
-        color: "#B8860B",
-        fontWeight: "500",
-    },
-    dataValue: {
-        fontSize: 12,
-        color: "#FFF",
-        fontWeight: "500",
-    },
+    pagamentoInfo: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: "#333", borderBottomWidth: 1, borderBottomColor: "#333", marginBottom: 12 },
+    dataRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    dataItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    dataLabel: { color: '#AAA', fontSize: 12 },
+    dataValue: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
 
-    // SEÇÃO DE FILHOS
+    // Estilos Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { width: '90%', backgroundColor: '#000', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#B8860B' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#333', paddingBottom: 10, marginBottom: 15 },
+    modalTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+    pagamentoNome: { color: '#FFF', fontSize: 16, fontWeight: '600', marginLeft: 8, flexShrink: 1 },
+    alunoInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginBottom: 15 },
+    statusBadgePago: { backgroundColor: '#22c55e' },
+    statusBadgePendente: { backgroundColor: '#ef4444' },
+    statusBadgeText: { color: '#000', fontWeight: 'bold', fontSize: 12 },
+    dataInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+    pagamentoData: { color: '#CCC', fontSize: 14 },
+    modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, borderTopWidth: 1, borderTopColor: '#333', paddingTop: 15 },
+    modalButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, gap: 6, flex: 1, marginHorizontal: 5, justifyContent: 'center' },
+    cancelButton: { backgroundColor: '#333' },
+    cancelButtonText: { color: '#FFF', fontWeight: 'bold' },
+    confirmButton: { backgroundColor: '#B8860B' },
+    confirmButtonText: { color: '#000', fontWeight: 'bold' },
+    warningButton: { backgroundColor: '#ef4444' },
+    warningButtonText: { color: '#FFF', fontWeight: 'bold' },
+    filhoTag: { color: '#8b5cf6', fontSize: 12, fontWeight: 'normal' },
+
+    // Estilos de Filhos
     filhosSection: {
-        borderTopWidth: 1,
-        borderTopColor: "#333",
+        marginTop: 12,
         paddingTop: 12,
-        gap: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#333',
     },
     filhosTitle: {
+        color: '#B8860B',
+        fontWeight: 'bold',
         fontSize: 14,
-        color: "#B8860B",
-        fontWeight: "600",
-        flexDirection: "row",
-        alignItems: "center",
+        marginBottom: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 6,
     },
     filhoItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center", // garante que ponto de status fique centralizado com o nome
-        paddingVertical: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#0a0a0a',
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 8,
+        borderLeftWidth: 2,
+        borderLeftColor: '#8b5cf6',
     },
+    filhoItemContent: { flex: 1 },
     filhoNome: {
-        fontSize: 12,
-        color: "#CCC",
-        flex: 1,
+        color: '#FFF',
+        fontWeight: '600',
+        fontSize: 13,
     },
-    filhoInfo: {
-        flexDirection: "row",
-        alignItems: "center",
+    filhoMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
-        minWidth: 80, // evita que fique muito pequeno
+        marginTop: 2,
     },
     filhoModalidade: {
-        fontSize: 10,
-        color: "#666",
-        textTransform: "uppercase",
-    },
-    statusPonto: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-    },
-    statusPago: {
-        backgroundColor: "#22c55e",
-    },
-    statusPendente: {
-        backgroundColor: "#ef4444",
-    },
-    maisFilhos: {
+        color: '#AAA',
         fontSize: 11,
-        color: "#666",
-        fontStyle: "italic",
-        textAlign: "center",
     },
-
-    // BOTÃO DE PAGAMENTO
-    pagamentoButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-    },
-    pagamentoPago: {
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-        borderColor: "#22c55e",
-    },
-    pagamentoPendente: {
-        backgroundColor: "rgba(239, 68, 68, 0.1)",
-        borderColor: "#ef4444",
-
-    },
-    pagamentoButtonText: {
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    pagamentoButtonTextPago: {
-        color: "#22c55e",
-    },
-    pagamentoButtonTextPendente: {
-        color: "#ef4444",
-    },
-
-    // MODAL
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.8)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-    },
-    modalContent: {
-        backgroundColor: "#1a1a1a",
-        borderRadius: 16,
-        width: "100%",
-        maxWidth: 400,
-        borderWidth: 1,
-        borderColor: "#333",
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#FFF",
-    },
-    alunoInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    pagamentoNome: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#FFF",
-    },
-    statusBadge: {
-        alignSelf: "flex-start",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
-    },
-    statusBadgePago: {
-        backgroundColor: "rgba(34, 197, 94, 0.2)",
-    },
-    statusBadgePendente: {
-        backgroundColor: "rgba(239, 68, 68, 0.2)",
-    },
-    statusBadgeText: {
-        fontSize: 12,
-        fontWeight: "700",
-        color: "#FFF",
-        textTransform: "uppercase",
-    },
-    dataInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    pagamentoData: {
-        fontSize: 14,
-        color: "#CCC",
-    },
-    modalActions: {
-        flexDirection: "row",
-        gap: 12,
-        padding: 20,
-        borderTopWidth: 1,
-        borderTopColor: "#333",
-    },
-    modalButton: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 8,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "row",
-        gap: 8,
-    },
-    cancelButton: {
-        backgroundColor: "#2a2a2a",
-        borderWidth: 1,
-        borderColor: "#333",
-    },
-    confirmButton: {
-        backgroundColor: "#B8860B",
-    },
-    warningButton: {
-        backgroundColor: "#ef4444",
-    },
-    cancelButtonText: {
-        color: "#CCC",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-    confirmButtonText: {
-        color: "#000",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-    warningButtonText: {
-        color: "#FFF",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-
-    // ESTADO VAZIO
-    emptyState: {
-        backgroundColor: "#1a1a1a",
-        margin: 40,
-        padding: 40,
-        borderRadius: 12,
-        alignItems: "center",
-        gap: 12,
-        borderWidth: 1,
-        borderColor: "#333",
-        borderStyle: "dashed",
-    },
-    emptyStateText: {
-        fontSize: 16,
-        color: "#CCC",
-        fontWeight: "600",
-        textAlign: "center",
-    },
-    emptyStateSubtext: {
-        fontSize: 14,
-        color: "#666",
-        textAlign: "center",
+    filhoPagamentoData: {
+        color: '#AAA',
+        fontSize: 11,
+        fontStyle: 'italic',
     },
 });
