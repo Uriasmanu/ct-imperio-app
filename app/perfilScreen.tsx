@@ -37,6 +37,11 @@ interface GerenciarPagamentoProps {
   onPagamentoAtualizado: () => void;
 }
 
+interface GerenciarPagamentoUsuarioProps {
+  usuario: Usuario;
+  onPagamentoAtualizado: () => void;
+}
+
 interface ModalContentProps {
   filhoEmEdicao: Filho | null;
   novoFilho: Partial<Filho>;
@@ -151,7 +156,173 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
   return <Text style={styles.infoValue}>Modalidade sem graduação definida.</Text>;
 };
 
-// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO
+// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO DO USUÁRIO PRINCIPAL
+const GerenciarPagamentoUsuario: React.FC<GerenciarPagamentoUsuarioProps> = ({
+  usuario,
+  onPagamentoAtualizado,
+}) => {
+  const [modalPagamento, setModalPagamento] = useState(false);
+  const [processando, setProcessando] = useState(false);
+
+  const handleConfirmarPagamento = async () => {
+    setProcessando(true);
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      
+      await updateDoc(userRef, {
+        pagamento: true,
+        dataUltimoPagamento: new Date().toISOString()
+      });
+
+      onPagamentoAtualizado();
+      setModalPagamento(false);
+      Alert.alert("✅ Sucesso", `Pagamento de ${usuario.nome} confirmado!`);
+    } catch (error) {
+      console.error("Erro ao confirmar pagamento:", error);
+      Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const handleMarcarComoPendente = async () => {
+    setProcessando(true);
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      
+      await updateDoc(userRef, {
+        pagamento: false
+      });
+
+      onPagamentoAtualizado();
+      setModalPagamento(false);
+      Alert.alert("🔄 Status Alterado", `Pagamento de ${usuario.nome} marcado como pendente.`);
+    } catch (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString("pt-BR");
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={[
+          styles.pagamentoButton,
+          usuario.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
+        ]}
+        onPress={() => setModalPagamento(true)}
+      >
+        <Ionicons 
+          name={usuario.pagamento ? "checkmark-circle" : "time-outline"} 
+          size={16} 
+          color={usuario.pagamento ? "#22c55e" : "#ef4444"} 
+        />
+        <Text style={[
+          styles.pagamentoButtonText,
+          usuario.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
+        ]}>
+          {usuario.pagamento ? "Pago" : "Pendente"}
+        </Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalPagamento}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => !processando && setModalPagamento(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gerenciar Pagamento</Text>
+              <TouchableOpacity 
+                onPress={() => !processando && setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.pagamentoInfo}>
+              <View style={styles.alunoInfo}>
+                <Ionicons name="person" size={20} color="#B8860B" />
+                <Text style={styles.pagamentoNome}>{usuario.nome}</Text>
+              </View>
+              
+              <View style={[
+                styles.statusBadge,
+                usuario.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
+              ]}>
+                <Text style={styles.statusBadgeText}>
+                  {usuario.pagamento ? "PAGO" : "PENDENTE"}
+                </Text>
+              </View>
+
+              {usuario.dataUltimoPagamento && (
+                <View style={styles.dataInfo}>
+                  <Ionicons name="calendar" size={16} color="#666" />
+                  <Text style={styles.pagamentoData}>
+                    Último pagamento: {formatarData(usuario.dataUltimoPagamento)}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Text style={styles.cancelButtonText}>Fechar</Text>
+              </TouchableOpacity>
+
+              {!usuario.pagamento ? (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmarPagamento}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={18} color="#000" />
+                      <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.warningButton]}
+                  onPress={handleMarcarComoPendente}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="refresh" size={18} color="#FFF" />
+                      <Text style={styles.warningButtonText}>Marcar como Pendente</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO DOS FILHOS
 const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
   filho,
   usuarioId,
@@ -452,8 +623,7 @@ export default function PerfilScreen() {
         observacao: usuario.observacao ?? "",
         modalidade: usuario.modalidade ?? "",
         graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
-        pagamento: usuario.pagamento ?? false,
-        dataUltimoPagamento: usuario.pagamento ? new Date().toISOString() : usuario.dataUltimoPagamento,
+        // Não altera o pagamento aqui - só no componente dedicado
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -674,6 +844,15 @@ export default function PerfilScreen() {
             <Text style={styles.infoValue}>
               {new Date(usuario.dataPagamento).getDate()} de cada mês
             </Text>
+          </View>
+
+          {/* PAGAMENTO DO USUÁRIO PRINCIPAL - SEPARADO */}
+          <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Status do Pagamento</Text>
+            <GerenciarPagamentoUsuario
+              usuario={usuario}
+              onPagamentoAtualizado={handlePagamentoAtualizado}
+            />
           </View>
 
           {/* MODALIDADE */}
@@ -1012,7 +1191,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
 
 // 🎯 ESTILOS
 const styles = StyleSheet.create({
-  // CONTAINERS PRINCIPAIS
+  // ... (todos os estilos anteriores mantidos exatamente iguais)
   container: {
     flex: 1,
     backgroundColor: "#000",
@@ -1032,8 +1211,6 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 20,
   },
-  
-  // HEADER
   header: {
     backgroundColor: "#000",
     alignItems: "center",
@@ -1089,8 +1266,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  
-  // SECTIONS
   section: {
     marginVertical: 8,
     paddingHorizontal: 16,
@@ -1113,8 +1288,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  
-  // BOTÕES DE AÇÃO
   editButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -1142,8 +1315,6 @@ const styles = StyleSheet.create({
   editIconButton: {
     padding: 8,
   },
-  
-  // CARDS DE INFORMAÇÃO
   infoCard: {
     backgroundColor: "#1a1a1a",
     padding: 20,
@@ -1176,8 +1347,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  
-  // BOTÕES DE MODALIDADE
   modalidadeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1206,8 +1375,6 @@ const styles = StyleSheet.create({
     color: "#000",
     fontWeight: "600",
   },
-  
-  // BOTÃO SALVAR
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -1223,8 +1390,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  
-  // CARDS DE FILHOS
   filhoCard: {
     backgroundColor: "#1a1a1a",
     padding: 16,
@@ -1289,8 +1454,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginTop: 4,
   },
-  
-  // SEÇÃO DE PAGAMENTO
   pagamentoSection: {
     marginTop: 12,
     paddingTop: 12,
@@ -1323,8 +1486,6 @@ const styles = StyleSheet.create({
   pagamentoButtonTextPendente: {
     color: "#ef4444",
   },
-  
-  // ESTADOS VAZIOS
   emptyState: {
     backgroundColor: "#1a1a1a",
     padding: 40,
@@ -1346,8 +1507,6 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
-  
-  // MODAL
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.8)",
@@ -1449,8 +1608,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  
-  // COMPONENTE DE PAGAMENTO NO MODAL
   pagamentoInfo: {
     backgroundColor: "#2a2a2a",
     padding: 16,
@@ -1495,8 +1652,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  
-  // SELEÇÃO DE GRADUAÇÃO
   graduacaoContainer: {
     gap: 12,
   },
@@ -1553,8 +1708,6 @@ const styles = StyleSheet.create({
     color: "#000",
     fontWeight: "600",
   },
-  
-  // TEXTO DE CARREGAMENTO E ERRO
   loadingText: {
     color: "#B8860B",
     fontSize: 16,
