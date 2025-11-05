@@ -13,6 +13,9 @@ import {
 } from "react-native";
 
 import { auth, db } from "@/config/firebaseConfig";
+// Assumindo que Filho, Usuario e as interfaces de graduação estão definidas em '../types/usuarios'
+// e as constantes de graduação estão disponíveis, conforme fornecido.
+import { graduaçõesJiuJitsu, graduaçõesMuayThai } from "@/types/graduacoes";
 import {
   Filho,
   GraduacaoJiuJitsu,
@@ -20,11 +23,18 @@ import {
   Usuario,
 } from "../types/usuarios";
 
+// ⚠️ Se suas constantes de graduação não estiverem em outro arquivo, COPIE e COLE
+// as definições aqui. Assumindo que elas estão importadas ou definidas no topo:
+
+
 export default function PerfilScreen() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // 🆕 ESTADO PARA EDIÇÃO: Armazena o filho que está sendo editado
+  const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
   const [novoFilho, setNovoFilho] = useState<Partial<Filho>>({
     nome: "",
@@ -137,6 +147,40 @@ export default function PerfilScreen() {
     }
   };
 
+
+  // 🆕 FUNÇÃO: Inicia a edição de um filho
+  const handleEditarFilho = (filho: Filho) => {
+    setFilhoEmEdicao(filho); // Coloca o filho no estado de edição
+    setModalFilho(true);     // Abre o modal
+  };
+
+  // 🆕 FUNÇÃO: Salva as alterações de um filho no Firestore
+  const handleSalvarEdicaoFilho = async () => {
+    if (!filhoEmEdicao || !usuario?.id) return;
+
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+
+      // Mapeia a lista de filhos, substituindo o filho editado
+      const novosFilhos = (usuario.filhos || []).map((f) =>
+        f.id === filhoEmEdicao.id ? filhoEmEdicao : f
+      );
+
+      await updateDoc(userRef, { filhos: novosFilhos });
+
+      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+      // Fechar modal e resetar estados
+      setModalFilho(false);
+      setFilhoEmEdicao(null);
+
+      Alert.alert("Sucesso", "Informações do filho atualizadas com sucesso!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível salvar as alterações do filho.");
+    }
+  };
+
+
   const renderInfoField = (label: string, value: string, editable?: boolean) => (
     <View style={styles.infoField}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -186,7 +230,7 @@ export default function PerfilScreen() {
         <Text style={styles.userModalidade}>{usuario.modalidade}</Text>
       </View>
 
-      {/* Informações Pessoais */}
+      {/* Informações Pessoais (Sem alterações relevantes aqui) */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
@@ -245,49 +289,40 @@ export default function PerfilScreen() {
             {editando ? (
               usuario.modalidade === "Muay Thai" ? (
                 <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  {["Branca", "Amarela", "Laranja", "Verde", "Azul", "Roxa", "Marrom", "Preta"].map(
-                    (cor) => (
-                      <TouchableOpacity
-                        key={cor}
+                  {graduaçõesMuayThai.map((grad) => (
+                    <TouchableOpacity
+                      key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
+                      style={[
+                        styles.modalidadeButton,
+                        (usuario.graduacao as GraduacaoMuayThai)?.cor === grad.cor &&
+                        (usuario.graduacao as GraduacaoMuayThai)?.pontaBranca === grad.pontaBranca &&
+                        styles.modalidadeButtonSelected,
+                        { paddingHorizontal: 6, paddingVertical: 8 }
+                      ]}
+                      onPress={() =>
+                        setUsuario((prev) =>
+                          prev
+                            ? { ...prev, graduacao: grad as GraduacaoMuayThai }
+                            : prev
+                        )
+                      }
+                    >
+                      <Text
                         style={[
-                          styles.modalidadeButton,
-                          (usuario.graduacao as GraduacaoMuayThai)?.cor === cor &&
-                          styles.modalidadeButtonSelected,
+                          styles.modalidadeButtonText,
+                          (usuario.graduacao as GraduacaoMuayThai)?.cor === grad.cor &&
+                          (usuario.graduacao as GraduacaoMuayThai)?.pontaBranca === grad.pontaBranca &&
+                          styles.modalidadeButtonTextSelected,
                         ]}
-                        onPress={() =>
-                          setUsuario((prev) =>
-                            prev
-                              ? { ...prev, graduacao: { cor } as GraduacaoMuayThai }
-                              : prev
-                          )
-                        }
                       >
-                        <Text
-                          style={[
-                            styles.modalidadeButtonText,
-                            (usuario.graduacao as GraduacaoMuayThai)?.cor === cor &&
-                            styles.modalidadeButtonTextSelected,
-                          ]}
-                        >
-                          {cor}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  )}
+                        {grad.cor} {grad.pontaBranca ? "(PB)" : ""}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               ) : usuario.modalidade === "Jiu-Jitsu" ? (
                 <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  {[
-                    { cor: "Branca", grau: 1 },
-                    { cor: "Branca", grau: 2 },
-                    { cor: "Azul", grau: 1 },
-                    { cor: "Azul", grau: 2 },
-                    { cor: "Roxa", grau: 1 },
-                    { cor: "Roxa", grau: 2 },
-                    { cor: "Marrom", grau: 1 },
-                    { cor: "Marrom", grau: 2 },
-                    { cor: "Preta", grau: 1 },
-                  ].map((grad) => (
+                  {graduaçõesJiuJitsu.map((grad) => (
                     <TouchableOpacity
                       key={`${grad.cor}-${grad.grau}`}
                       style={[
@@ -295,6 +330,7 @@ export default function PerfilScreen() {
                         (usuario.graduacao as GraduacaoJiuJitsu)?.cor === grad.cor &&
                         (usuario.graduacao as GraduacaoJiuJitsu)?.grau === grad.grau &&
                         styles.modalidadeButtonSelected,
+                        { paddingHorizontal: 6, paddingVertical: 8 }
                       ]}
                       onPress={() =>
                         setUsuario((prev) =>
@@ -329,24 +365,29 @@ export default function PerfilScreen() {
             </TouchableOpacity>
           )}
         </View>
-
-
       </View>
 
       {/* Seção de Filhos */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>FILHOS CADASTRADOS</Text>
-          <TouchableOpacity onPress={() => setModalFilho(true)}>
+          <TouchableOpacity onPress={() => { setFilhoEmEdicao(null); setModalFilho(true); }}>
             <Text style={styles.addButton}>+ Adicionar</Text>
           </TouchableOpacity>
         </View>
 
         {usuario.filhos && usuario.filhos.length > 0 ? (
           usuario.filhos.map((filho, index) => (
+            // 🆕 Botão de edição adicionado no filhoCard
             <View key={filho.id} style={styles.filhoCard}>
               <View style={styles.filhoHeader}>
                 <Text style={styles.filhoName}>{filho.nome}</Text>
+                <TouchableOpacity onPress={() => handleEditarFilho(filho)}>
+                    <Text style={styles.editButton}>Editar</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.filhoInfo}>
                 <View
                   style={[
                     styles.modalidadeBadge,
@@ -360,9 +401,6 @@ export default function PerfilScreen() {
                     {filho.modalidade}
                   </Text>
                 </View>
-              </View>
-
-              <View style={styles.filhoInfo}>
                 <Text style={styles.filhoGraduacao}>
                   {formatarGraduacao(filho.graduacao, filho.modalidade)}
                 </Text>
@@ -387,119 +425,266 @@ export default function PerfilScreen() {
         )}
       </View>
 
-      {/* Modal para Adicionar Filho */}
+      {/* Modal para Adicionar/Editar Filho */}
       <Modal
         visible={modalFilho}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setModalFilho(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Adicionar Filho</Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nome do filho"
-              value={novoFilho.nome}
-              onChangeText={(text) => setNovoFilho((prev) => ({ ...prev, nome: text }))}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Idade"
-              keyboardType="numeric"
-              value={novoFilho.idade?.toString() || ""}
-              onChangeText={(text) =>
-                setNovoFilho((prev) => ({ ...prev, idade: Number(text) }))
-              }
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Observação"
-              value={novoFilho.observacao || ""}
-              onChangeText={(text) =>
-                setNovoFilho((prev) => ({ ...prev, observacao: text }))
-              }
-            />
-
-            <View style={styles.modalRow}>
-              <Text style={styles.modalLabel}>Modalidade:</Text>
-              <View style={styles.modalidadeButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.modalidadeButton,
-                    novoFilho.modalidade === "Jiu-Jitsu" &&
-                    styles.modalidadeButtonSelected,
-                  ]}
-                  onPress={() =>
-                    setNovoFilho({
-                      ...novoFilho,
-                      modalidade: "Jiu-Jitsu",
-                      graduacao: { cor: "Branca", grau: 1 },
-                    })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.modalidadeButtonText,
-                      novoFilho.modalidade === "Jiu-Jitsu" &&
-                      styles.modalidadeButtonTextSelected,
-                    ]}
-                  >
-                    Jiu-Jitsu
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.modalidadeButton,
-                    novoFilho.modalidade === "Muay Thai" &&
-                    styles.modalidadeButtonSelected,
-                  ]}
-                  onPress={() =>
-                    setNovoFilho({
-                      ...novoFilho,
-                      modalidade: "Muay Thai",
-                      graduacao: { cor: "Amarela" },
-                    })
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.modalidadeButtonText,
-                      novoFilho.modalidade === "Muay Thai" &&
-                      styles.modalidadeButtonTextSelected,
-                    ]}
-                  >
-                    Muay Thai
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalFilho(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleAdicionarFilho}
-              >
-                <Text style={styles.confirmButtonText}>Adicionar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        {/* 🆕 Lógica dinâmica para Adicionar/Editar */}
+        {modalFilho && (
+          <ModalContent
+            filhoEmEdicao={filhoEmEdicao}
+            novoFilho={novoFilho}
+            setFilhoEmEdicao={setFilhoEmEdicao}
+            setNovoFilho={setNovoFilho}
+            setModalFilho={setModalFilho}
+            handleAdicionarFilho={handleAdicionarFilho}
+            handleSalvarEdicaoFilho={handleSalvarEdicaoFilho}
+          />
+        )}
       </Modal>
     </ScrollView>
   );
 }
+
+
+// 🆕 Novo componente para o conteúdo do Modal para facilitar a leitura
+interface ModalContentProps {
+  filhoEmEdicao: Filho | null;
+  novoFilho: Partial<Filho>;
+  setFilhoEmEdicao: React.Dispatch<React.SetStateAction<Filho | null>>;
+  setNovoFilho: React.Dispatch<React.SetStateAction<Partial<Filho>>>;
+  setModalFilho: React.Dispatch<React.SetStateAction<boolean>>;
+  handleAdicionarFilho: () => Promise<void>;
+  handleSalvarEdicaoFilho: () => Promise<void>;
+}
+
+const ModalContent: React.FC<ModalContentProps> = ({
+  filhoEmEdicao,
+  novoFilho,
+  setFilhoEmEdicao,
+  setNovoFilho,
+  setModalFilho,
+  handleAdicionarFilho,
+  handleSalvarEdicaoFilho,
+}) => {
+  // Determinar qual objeto usar para leitura e escrita
+  const dadosFilho = filhoEmEdicao || novoFilho;
+  
+  const setDadosFilho = (updates: Partial<Filho>) => {
+    if (filhoEmEdicao) {
+      setFilhoEmEdicao(prev => prev ? ({ ...prev, ...updates } as Filho) : null);
+    } else {
+      setNovoFilho(prev => ({ ...prev, ...updates }));
+    }
+  };
+
+  const modalTitle = filhoEmEdicao ? "Editar Filho" : "Adicionar Filho";
+  const handleAcao = filhoEmEdicao ? handleSalvarEdicaoFilho : handleAdicionarFilho;
+  const confirmButtonText = filhoEmEdicao ? "Salvar" : "Adicionar";
+
+  const closeModal = () => {
+    setModalFilho(false);
+    setFilhoEmEdicao(null); 
+    setNovoFilho({ 
+      nome: "",
+      modalidade: "Jiu-Jitsu",
+      graduacao: { cor: "Branca", grau: 1 },
+    });
+  };
+  
+  // Tipagem da graduação (simplificada para o JSX)
+  const graduacaoJiuJitsu = dadosFilho.graduacao as GraduacaoJiuJitsu;
+  const graduacaoMuayThai = dadosFilho.graduacao as GraduacaoMuayThai;
+
+
+  return (
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContent}>
+        <Text style={styles.modalTitle}>{modalTitle}</Text>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* Nome */}
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Nome do filho"
+            value={dadosFilho.nome}
+            onChangeText={(text) => setDadosFilho({ nome: text })}
+          />
+
+          {/* Idade */}
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Idade (opcional)"
+            keyboardType="numeric"
+            value={dadosFilho.idade?.toString() || ""}
+            onChangeText={(text) =>
+              setDadosFilho({ idade: Number(text) })
+            }
+          />
+
+          {/* Pagamento */}
+          <View style={[styles.modalRow, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
+            <Text style={styles.modalLabel}>Pagamento:</Text>
+            <TouchableOpacity
+              style={[
+                styles.modalidadeButton,
+                dadosFilho.pagamento && styles.modalidadeButtonSelected,
+                { flex: 0.4, minWidth: 100 }
+              ]}
+              onPress={() => setDadosFilho({ pagamento: !dadosFilho.pagamento })}
+            >
+              <Text style={[styles.modalidadeButtonText, dadosFilho.pagamento && styles.modalidadeButtonTextSelected]}>
+                {dadosFilho.pagamento ? "Pago" : "Pendente"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Observação */}
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Observação (opcional)"
+            value={dadosFilho.observacao || ""}
+            onChangeText={(text) =>
+              setDadosFilho({ observacao: text })
+            }
+            multiline
+          />
+
+          {/* Modalidade */}
+          <View style={styles.modalRow}>
+            <Text style={styles.modalLabel}>Modalidade:</Text>
+            <View style={styles.modalidadeButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.modalidadeButton,
+                  dadosFilho.modalidade === "Jiu-Jitsu" &&
+                  styles.modalidadeButtonSelected,
+                ]}
+                onPress={() =>
+                  setDadosFilho({
+                    modalidade: "Jiu-Jitsu",
+                    graduacao: { cor: "Branca", grau: 1 }, // Resetar para graduação inicial
+                  })
+                }
+              >
+                <Text
+                  style={[
+                    styles.modalidadeButtonText,
+                    dadosFilho.modalidade === "Jiu-Jitsu" &&
+                    styles.modalidadeButtonTextSelected,
+                  ]}
+                >
+                  Jiu-Jitsu
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalidadeButton,
+                  dadosFilho.modalidade === "Muay Thai" &&
+                  styles.modalidadeButtonSelected,
+                ]}
+                onPress={() =>
+                  setDadosFilho({
+                    modalidade: "Muay Thai",
+                    graduacao: { cor: "Amarela" }, // Resetar para graduação inicial
+                  })
+                }
+              >
+                <Text
+                  style={[
+                    styles.modalidadeButtonText,
+                    dadosFilho.modalidade === "Muay Thai" &&
+                    styles.modalidadeButtonTextSelected,
+                  ]}
+                >
+                  Muay Thai
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* 🆕 Seleção de Graduação Dinâmica */}
+          <View style={styles.modalRow}>
+              <Text style={styles.modalLabel}>Graduação:</Text>
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {dadosFilho.modalidade === "Jiu-Jitsu"
+                  ? graduaçõesJiuJitsu.map((grad) => (
+                      <TouchableOpacity
+                        key={`${grad.cor}-${grad.grau}`}
+                        style={[
+                          styles.modalidadeButton,
+                          graduacaoJiuJitsu?.cor === grad.cor &&
+                          graduacaoJiuJitsu?.grau === grad.grau &&
+                          styles.modalidadeButtonSelected,
+                          { paddingHorizontal: 6, paddingVertical: 8 }
+                        ]}
+                        onPress={() => setDadosFilho({ graduacao: grad })}
+                      >
+                        <Text
+                          style={[
+                            styles.modalidadeButtonText,
+                            graduacaoJiuJitsu?.cor === grad.cor &&
+                            graduacaoJiuJitsu?.grau === grad.grau &&
+                            styles.modalidadeButtonTextSelected,
+                          ]}
+                        >
+                          {grad.cor} {grad.grau}º
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  : graduaçõesMuayThai.map((grad) => (
+                      <TouchableOpacity
+                        key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
+                        style={[
+                          styles.modalidadeButton,
+                          graduacaoMuayThai?.cor === grad.cor &&
+                          graduacaoMuayThai?.pontaBranca === grad.pontaBranca &&
+                          styles.modalidadeButtonSelected,
+                          { paddingHorizontal: 6, paddingVertical: 8 }
+                        ]}
+                        onPress={() => setDadosFilho({ graduacao: grad })}
+                      >
+                        <Text
+                          style={[
+                            styles.modalidadeButtonText,
+                            graduacaoMuayThai?.cor === grad.cor &&
+                            graduacaoMuayThai?.pontaBranca === grad.pontaBranca &&
+                            styles.modalidadeButtonTextSelected,
+                          ]}
+                        >
+                          {grad.cor}
+                          {grad.pontaBranca ? " (PB)" : ""}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+              </View>
+            </View>
+        </ScrollView>
+
+        <View style={styles.modalActions}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.cancelButton]}
+            onPress={closeModal}
+          >
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modalButton, styles.confirmButton]}
+            onPress={handleAcao}
+          >
+            <Text style={styles.confirmButtonText}>{confirmButtonText}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 
 // ⚙️ Estilos (mantidos do seu código original)
 const styles = StyleSheet.create({
@@ -552,9 +737,9 @@ const styles = StyleSheet.create({
   },
   filhoHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
   filhoName: { fontSize: 18, fontWeight: "bold", color: "#FFF" },
-  modalidadeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  modalidadeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start' },
   modalidadeBadgeText: { fontSize: 12, color: "#FFF", fontWeight: "600" },
-  filhoInfo: { marginBottom: 8 },
+  filhoInfo: { marginBottom: 8, marginTop: 8 },
   filhoGraduacao: { fontSize: 14, color: "#B8860B", marginBottom: 4 },
   filhoData: { fontSize: 12, color: "#CCC" },
   emptyState: {
@@ -572,7 +757,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  modalContent: { backgroundColor: "#1a1a1a", borderRadius: 12, padding: 24, width: "100%", maxWidth: 400 },
+  modalContent: { backgroundColor: "#1a1a1a", borderRadius: 12, padding: 24, width: "100%", maxWidth: 400, maxHeight: '90%' },
   modalTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF", marginBottom: 20, textAlign: "center" },
   modalInput: {
     backgroundColor: "#2a2a2a",
