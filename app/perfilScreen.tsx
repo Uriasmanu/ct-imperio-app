@@ -112,6 +112,7 @@ const formatarGraduacao = (
       modalidade: novoFilho.modalidade!,
       graduacao: novoFilho.graduacao!,
       dataDeRegistro: new Date().toISOString().split("T")[0],
+      pagamento: false
     };
 
     try {
