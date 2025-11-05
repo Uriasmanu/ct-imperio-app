@@ -23,9 +23,123 @@ import {
   Usuario,
 } from "../types/usuarios";
 
-// ⚠️ Se suas constantes de graduação não estiverem em outro arquivo, COPIE e COLE
-// as definições aqui. Assumindo que elas estão importadas ou definidas no topo:
 
+/**
+ * 🥋 NOVO COMPONENTE DE UX/UI: GraduacaoSelector
+ * Melhora a experiência de seleção de graduação com muitas opções.
+ * - Para Jiu-Jitsu (Faixa + Grau): Seleciona a faixa e, em seguida, os graus.
+ * - Para Muay Thai: Mantém a seleção simples.
+ */
+interface GraduacaoSelectorProps {
+  modalidade: string;
+  graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
+  onSelect: (grad: GraduacaoMuayThai | GraduacaoJiuJitsu) => void;
+}
+
+const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
+  modalidade,
+  graduacaoAtual,
+  onSelect,
+}) => {
+  if (modalidade === "Jiu-Jitsu") {
+    const atual = graduacaoAtual as GraduacaoJiuJitsu;
+    // 1. Filtrar as faixas únicas para a seleção inicial (UX: Seleção de Nível)
+    const faixasUnicas = Array.from(new Set(graduaçõesJiuJitsu.map(g => g.cor))).map(cor =>
+      graduaçõesJiuJitsu.find(g => g.cor === cor)
+    ).filter((g): g is GraduacaoJiuJitsu => !!g);
+
+    // 2. Filtrar os graus disponíveis para a faixa selecionada (UX: Seleção de Detalhe)
+    const faixaSelecionada = atual?.cor || faixasUnicas[0]?.cor;
+    const grausDaFaixa = graduaçõesJiuJitsu
+      .filter(g => g.cor === faixaSelecionada)
+      .sort((a, b) => (a.grau ?? 0) - (b.grau ?? 0));
+    return (
+      <View style={styles.graduacaoContainer}>
+        {/* Seleção de Faixa */}
+        <Text style={styles.modalLabel}>Faixa:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {faixasUnicas.map((grad) => (
+            <TouchableOpacity
+              key={grad.cor}
+              style={[
+                styles.graduacaoButton,
+                faixaSelecionada === grad.cor && styles.modalidadeButtonSelected,
+              ]}
+              onPress={() => {
+                // Ao mudar a faixa, tenta manter o grau se existir na nova faixa, senão volta para o 1º Grau
+                const novoGrau = grausDaFaixa.find(g => g.cor === grad.cor && g.grau === atual?.grau) ? atual.grau : 1;
+                onSelect({ cor: grad.cor, grau: novoGrau } as GraduacaoJiuJitsu);
+              }}
+            >
+              <Text style={[
+                styles.modalidadeButtonText,
+                faixaSelecionada === grad.cor && styles.modalidadeButtonTextSelected,
+              ]}>
+                {grad.cor}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Seleção de Grau (Visível apenas se houver uma faixa selecionada e graus > 1) */}
+        {grausDaFaixa.length > 1 && (
+          <>
+            <Text style={[styles.modalLabel, { marginTop: 12 }]}>Grau:</Text>
+            <View style={styles.grauButtonsContainer}>
+              {grausDaFaixa.map((grad) => (
+                <TouchableOpacity
+                  key={`${grad.cor}-${grad.grau}`}
+                  style={[
+                    styles.grauButton,
+                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.modalidadeButtonSelected,
+                  ]}
+                  onPress={() => onSelect(grad)}
+                >
+                  <Text style={[
+                    styles.modalidadeButtonText,
+                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.modalidadeButtonTextSelected,
+                  ]}>
+                    {grad.grau}º
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    );
+  } else if (modalidade === "Muay Thai") {
+    const atual = graduacaoAtual as GraduacaoMuayThai;
+    return (
+      <View style={styles.graduacaoContainer}>
+        <Text style={styles.modalLabel}>Grau (Kruang):</Text>
+        <View style={styles.grauButtonsContainer}>
+          {graduaçõesMuayThai.map((grad) => (
+            <TouchableOpacity
+              key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
+              style={[
+                styles.grauButton,
+                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.modalidadeButtonSelected,
+              ]}
+              onPress={() => onSelect(grad)}
+            >
+              <Text style={[
+                styles.modalidadeButtonText,
+                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.modalidadeButtonTextSelected,
+              ]}>
+                {grad.cor} {grad.pontaBranca ? " (PB)" : ""}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  return <Text style={styles.infoValue}>Modalidade sem graduação definida.</Text>;
+};
+
+// --- FIM DO NOVO COMPONENTE ---
 
 export default function PerfilScreen() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -91,6 +205,7 @@ export default function PerfilScreen() {
 
     try {
       const userRef = doc(db, "usuarios", usuario.id);
+      // Garante que o objeto de usuário sendo salvo contém todas as propriedades
       await updateDoc(userRef, {
         nome: usuario.nome,
         email: usuario.email,
@@ -119,7 +234,8 @@ export default function PerfilScreen() {
       id: Date.now().toString(),
       nome: novoFilho.nome ?? "",
       modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
-      graduacao: novoFilho.graduacao ?? { cor: "Branca", grau: 1 },
+      // Garante uma graduação padrão se estiver faltando
+      graduacao: novoFilho.graduacao || (novoFilho.modalidade === "Muay Thai" ? { cor: "Amarela" } : { cor: "Branca", grau: 1 }),
       dataDeRegistro: new Date().toISOString().split("T")[0],
       pagamento: novoFilho.pagamento ?? false,
       idade: novoFilho.idade,
@@ -254,12 +370,14 @@ export default function PerfilScreen() {
             <Text style={styles.infoLabel}>Modalidade</Text>
             {editando ? (
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {/* Otimizando os botões de modalidade */}
                 {["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"].map((mod) => (
                   <TouchableOpacity
                     key={mod}
                     style={[
                       styles.modalidadeButton,
                       usuario.modalidade === mod && styles.modalidadeButtonSelected,
+                      { flex: 1 / 2, minWidth: '45%' } // Melhor distribuição em duas colunas
                     ]}
                     onPress={() =>
                       setUsuario((prev) =>
@@ -283,77 +401,19 @@ export default function PerfilScreen() {
             )}
           </View>
 
-          {/* Graduação editável */}
+          {/* Graduação editável (NOVO COMPONENTE APLICADO) */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Graduação</Text>
             {editando ? (
-              usuario.modalidade === "Muay Thai" ? (
-                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  {graduaçõesMuayThai.map((grad) => (
-                    <TouchableOpacity
-                      key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
-                      style={[
-                        styles.modalidadeButton,
-                        (usuario.graduacao as GraduacaoMuayThai)?.cor === grad.cor &&
-                        (usuario.graduacao as GraduacaoMuayThai)?.pontaBranca === grad.pontaBranca &&
-                        styles.modalidadeButtonSelected,
-                        { paddingHorizontal: 6, paddingVertical: 8 }
-                      ]}
-                      onPress={() =>
-                        setUsuario((prev) =>
-                          prev
-                            ? { ...prev, graduacao: grad as GraduacaoMuayThai }
-                            : prev
-                        )
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.modalidadeButtonText,
-                          (usuario.graduacao as GraduacaoMuayThai)?.cor === grad.cor &&
-                          (usuario.graduacao as GraduacaoMuayThai)?.pontaBranca === grad.pontaBranca &&
-                          styles.modalidadeButtonTextSelected,
-                        ]}
-                      >
-                        {grad.cor} {grad.pontaBranca ? "(PB)" : ""}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : usuario.modalidade === "Jiu-Jitsu" ? (
-                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  {graduaçõesJiuJitsu.map((grad) => (
-                    <TouchableOpacity
-                      key={`${grad.cor}-${grad.grau}`}
-                      style={[
-                        styles.modalidadeButton,
-                        (usuario.graduacao as GraduacaoJiuJitsu)?.cor === grad.cor &&
-                        (usuario.graduacao as GraduacaoJiuJitsu)?.grau === grad.grau &&
-                        styles.modalidadeButtonSelected,
-                        { paddingHorizontal: 6, paddingVertical: 8 }
-                      ]}
-                      onPress={() =>
-                        setUsuario((prev) =>
-                          prev ? { ...prev, graduacao: grad as GraduacaoJiuJitsu } : prev
-                        )
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.modalidadeButtonText,
-                          (usuario.graduacao as GraduacaoJiuJitsu)?.cor === grad.cor &&
-                          (usuario.graduacao as GraduacaoJiuJitsu)?.grau === grad.grau &&
-                          styles.modalidadeButtonTextSelected,
-                        ]}
-                      >
-                        {grad.cor} {grad.grau}º
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.infoValue}>—</Text>
-              )
+              <GraduacaoSelector
+                modalidade={usuario.modalidade}
+                graduacaoAtual={usuario.graduacao}
+                onSelect={(graduacao) => {
+                  setUsuario((prev) =>
+                    prev ? { ...prev, graduacao: graduacao } : prev
+                  );
+                }}
+              />
             ) : (
               <Text style={styles.infoValue}>{formatarGraduacao(usuario.graduacao, usuario.modalidade)}</Text>
             )}
@@ -383,7 +443,7 @@ export default function PerfilScreen() {
               <View style={styles.filhoHeader}>
                 <Text style={styles.filhoName}>{filho.nome}</Text>
                 <TouchableOpacity onPress={() => handleEditarFilho(filho)}>
-                    <Text style={styles.editButton}>Editar</Text>
+                  <Text style={styles.editButton}>Editar</Text>
                 </TouchableOpacity>
               </View>
 
@@ -391,6 +451,7 @@ export default function PerfilScreen() {
                 <View
                   style={[
                     styles.modalidadeBadge,
+                    // Uso de cores mais contrastantes com o tema
                     {
                       backgroundColor:
                         filho.modalidade === "Muay Thai" ? "#8B0000" : "#00008B",
@@ -472,7 +533,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
 }) => {
   // Determinar qual objeto usar para leitura e escrita
   const dadosFilho = filhoEmEdicao || novoFilho;
-  
+
   const setDadosFilho = (updates: Partial<Filho>) => {
     if (filhoEmEdicao) {
       setFilhoEmEdicao(prev => prev ? ({ ...prev, ...updates } as Filho) : null);
@@ -487,17 +548,33 @@ const ModalContent: React.FC<ModalContentProps> = ({
 
   const closeModal = () => {
     setModalFilho(false);
-    setFilhoEmEdicao(null); 
-    setNovoFilho({ 
+    setFilhoEmEdicao(null);
+    setNovoFilho({
       nome: "",
       modalidade: "Jiu-Jitsu",
       graduacao: { cor: "Branca", grau: 1 },
     });
   };
-  
-  // Tipagem da graduação (simplificada para o JSX)
-  const graduacaoJiuJitsu = dadosFilho.graduacao as GraduacaoJiuJitsu;
-  const graduacaoMuayThai = dadosFilho.graduacao as GraduacaoMuayThai;
+
+  // Para garantir que a graduação é válida ao mudar a modalidade
+  const handleModalidadeChange = (modalidade: Filho["modalidade"]) => {
+    if (modalidade === "Jiu-Jitsu") {
+      setDadosFilho({
+        modalidade: modalidade,
+        graduacao: { cor: "Branca", grau: 1 }
+      });
+    } else if (modalidade === "Muay Thai") {
+      setDadosFilho({
+        modalidade: modalidade,
+        graduacao: { cor: "Amarela" } // Primeiro kruang
+      });
+    } else {
+      setDadosFilho({
+        modalidade: modalidade,
+        graduacao: undefined
+      });
+    }
+  };
 
 
   return (
@@ -510,6 +587,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <TextInput
             style={styles.modalInput}
             placeholder="Nome do filho"
+            placeholderTextColor="#666"
             value={dadosFilho.nome}
             onChangeText={(text) => setDadosFilho({ nome: text })}
           />
@@ -518,6 +596,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <TextInput
             style={styles.modalInput}
             placeholder="Idade (opcional)"
+            placeholderTextColor="#666"
             keyboardType="numeric"
             value={dadosFilho.idade?.toString() || ""}
             onChangeText={(text) =>
@@ -541,11 +620,12 @@ const ModalContent: React.FC<ModalContentProps> = ({
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* Observação */}
           <TextInput
             style={styles.modalInput}
             placeholder="Observação (opcional)"
+            placeholderTextColor="#666"
             value={dadosFilho.observacao || ""}
             onChangeText={(text) =>
               setDadosFilho({ observacao: text })
@@ -557,24 +637,18 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <View style={styles.modalRow}>
             <Text style={styles.modalLabel}>Modalidade:</Text>
             <View style={styles.modalidadeButtons}>
+              {/* Refatorado para usar a nova função de mudança de modalidade */}
               <TouchableOpacity
                 style={[
                   styles.modalidadeButton,
-                  dadosFilho.modalidade === "Jiu-Jitsu" &&
-                  styles.modalidadeButtonSelected,
+                  dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonSelected,
                 ]}
-                onPress={() =>
-                  setDadosFilho({
-                    modalidade: "Jiu-Jitsu",
-                    graduacao: { cor: "Branca", grau: 1 }, // Resetar para graduação inicial
-                  })
-                }
+                onPress={() => handleModalidadeChange("Jiu-Jitsu")}
               >
                 <Text
                   style={[
                     styles.modalidadeButtonText,
-                    dadosFilho.modalidade === "Jiu-Jitsu" &&
-                    styles.modalidadeButtonTextSelected,
+                    dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonTextSelected,
                   ]}
                 >
                   Jiu-Jitsu
@@ -584,21 +658,14 @@ const ModalContent: React.FC<ModalContentProps> = ({
               <TouchableOpacity
                 style={[
                   styles.modalidadeButton,
-                  dadosFilho.modalidade === "Muay Thai" &&
-                  styles.modalidadeButtonSelected,
+                  dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonSelected,
                 ]}
-                onPress={() =>
-                  setDadosFilho({
-                    modalidade: "Muay Thai",
-                    graduacao: { cor: "Amarela" }, // Resetar para graduação inicial
-                  })
-                }
+                onPress={() => handleModalidadeChange("Muay Thai")}
               >
                 <Text
                   style={[
                     styles.modalidadeButtonText,
-                    dadosFilho.modalidade === "Muay Thai" &&
-                    styles.modalidadeButtonTextSelected,
+                    dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonTextSelected,
                   ]}
                 >
                   Muay Thai
@@ -606,63 +673,15 @@ const ModalContent: React.FC<ModalContentProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-          
-          {/* 🆕 Seleção de Graduação Dinâmica */}
+
+          {/* 🆕 Seleção de Graduação Dinâmica com o novo componente */}
           <View style={styles.modalRow}>
-              <Text style={styles.modalLabel}>Graduação:</Text>
-              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                {dadosFilho.modalidade === "Jiu-Jitsu"
-                  ? graduaçõesJiuJitsu.map((grad) => (
-                      <TouchableOpacity
-                        key={`${grad.cor}-${grad.grau}`}
-                        style={[
-                          styles.modalidadeButton,
-                          graduacaoJiuJitsu?.cor === grad.cor &&
-                          graduacaoJiuJitsu?.grau === grad.grau &&
-                          styles.modalidadeButtonSelected,
-                          { paddingHorizontal: 6, paddingVertical: 8 }
-                        ]}
-                        onPress={() => setDadosFilho({ graduacao: grad })}
-                      >
-                        <Text
-                          style={[
-                            styles.modalidadeButtonText,
-                            graduacaoJiuJitsu?.cor === grad.cor &&
-                            graduacaoJiuJitsu?.grau === grad.grau &&
-                            styles.modalidadeButtonTextSelected,
-                          ]}
-                        >
-                          {grad.cor} {grad.grau}º
-                        </Text>
-                      </TouchableOpacity>
-                    ))
-                  : graduaçõesMuayThai.map((grad) => (
-                      <TouchableOpacity
-                        key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
-                        style={[
-                          styles.modalidadeButton,
-                          graduacaoMuayThai?.cor === grad.cor &&
-                          graduacaoMuayThai?.pontaBranca === grad.pontaBranca &&
-                          styles.modalidadeButtonSelected,
-                          { paddingHorizontal: 6, paddingVertical: 8 }
-                        ]}
-                        onPress={() => setDadosFilho({ graduacao: grad })}
-                      >
-                        <Text
-                          style={[
-                            styles.modalidadeButtonText,
-                            graduacaoMuayThai?.cor === grad.cor &&
-                            graduacaoMuayThai?.pontaBranca === grad.pontaBranca &&
-                            styles.modalidadeButtonTextSelected,
-                          ]}
-                        >
-                          {grad.cor}
-                          {grad.pontaBranca ? " (PB)" : ""}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-              </View>
-            </View>
+            <GraduacaoSelector
+              modalidade={dadosFilho.modalidade || "Jiu-Jitsu"} // Default
+              graduacaoAtual={dadosFilho.graduacao}
+              onSelect={(graduacao) => setDadosFilho({ graduacao: graduacao })}
+            />
+          </View>
         </ScrollView>
 
         <View style={styles.modalActions}>
@@ -686,8 +705,10 @@ const ModalContent: React.FC<ModalContentProps> = ({
 };
 
 
-// ⚙️ Estilos (mantidos do seu código original)
+// ⚙️ Estilos (Adicionando novos estilos para o GraduacaoSelector e ajustando existentes)
 const styles = StyleSheet.create({
+  // ... [ESTILOS ANTERIORES] ... (Mantidos para brevidade)
+
   container: { flex: 1, backgroundColor: "#000" },
   header: {
     backgroundColor: "#000",
@@ -786,4 +807,32 @@ const styles = StyleSheet.create({
   confirmButton: { backgroundColor: "#B8860B" },
   cancelButtonText: { color: "#CCC", fontWeight: "600" },
   confirmButtonText: { color: "#000", fontWeight: "600" },
+
+  // 🆕 ESTILOS PARA GRADUACAOSELECTOR
+  graduacaoContainer: {
+    marginTop: 0, // Removendo margem superior do modalRow padrão
+  },
+  scrollContent: {
+    paddingRight: 16, // Espaço para a última faixa não ficar colada na borda
+  },
+  graduacaoButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#2a2a2a",
+    marginRight: 8, // Espaço entre os botões na rolagem horizontal
+  },
+  grauButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  grauButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#2a2a2a",
+    minWidth: 50,
+    alignItems: 'center',
+  },
 });
