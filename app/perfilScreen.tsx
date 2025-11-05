@@ -142,6 +142,42 @@ export default function PerfilScreen() {
   const [modalFilho, setModalFilho] = useState(false);
   const [loading, setLoading] = useState(true);
 
+
+  const verificarPagamentosFilhos = async () => {
+    if (!usuario?.id || !usuario.filhos) return;
+
+    const hoje = new Date();
+    let atualizou = false;
+
+    const filhosAtualizados = usuario.filhos.map(filho => {
+      if (!filho.dataUltimoPagamento) return filho;
+
+      const ultimaData = new Date(filho.dataUltimoPagamento);
+      const diffDias = Math.floor((hoje.getTime() - ultimaData.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDias >= 30 && filho.pagamento) {
+        atualizou = true;
+        return { ...filho, pagamento: false };
+      }
+      return filho;
+    });
+
+    if (atualizou) {
+      try {
+        const userRef = doc(db, "usuarios", usuario.id);
+        await updateDoc(userRef, { filhos: filhosAtualizados });
+        setUsuario(prev => prev ? { ...prev, filhos: filhosAtualizados } : prev);
+      } catch (error) {
+        console.error("Erro ao atualizar pagamentos:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    verificarPagamentosFilhos();
+  }, [usuario?.filhos]);
+
+
   // 🆕 ESTADO PARA EDIÇÃO: Armazena o filho que está sendo editado
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
