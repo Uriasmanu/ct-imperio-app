@@ -48,9 +48,7 @@ export default function PerfilScreen() {
           console.error(error);
           Alert.alert("Erro", "Não foi possível carregar os dados do usuário.");
         }
-      } else {
-        Alert.alert("Erro", "Nenhum usuário autenticado.");
-      }
+      } 
       setLoading(false);
     });
 
