@@ -48,7 +48,7 @@ export default function PerfilScreen() {
           console.error(error);
           Alert.alert("Erro", "Não foi possível carregar os dados do usuário.");
         }
-      } 
+      }
       setLoading(false);
     });
 
@@ -59,23 +59,21 @@ export default function PerfilScreen() {
     return new Date(data).toLocaleDateString("pt-BR");
   };
 
-const formatarGraduacao = (
-  graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu,
-  modalidade?: string
-) => {
-  // Se não existir graduação, retorna um texto padrão
-  if (!graduacao) return "Sem graduação";
+  const formatarGraduacao = (
+    graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu,
+    modalidade?: string
+  ) => {
+    if (!graduacao) return "Sem graduação";
 
-  if (modalidade === "Muay Thai") {
-    const grad = graduacao as GraduacaoMuayThai;
-    return grad?.pontaBranca ? `${grad.cor} (Ponta Branca)` : grad.cor;
-  } else {
-    const grad = graduacao as GraduacaoJiuJitsu;
-    const grau = grad?.grau ?? 0;
-    return `${grad.cor} - ${grau}º Grau`;
-  }
-};
-
+    if (modalidade === "Muay Thai") {
+      const grad = graduacao as GraduacaoMuayThai;
+      return grad?.pontaBranca ? `${grad.cor} (Ponta Branca)` : grad.cor;
+    } else {
+      const grad = graduacao as GraduacaoJiuJitsu;
+      const grau = grad?.grau ?? 0;
+      return `${grad.cor} - ${grau}º Grau`;
+    }
+  };
 
   // 🔹 Atualiza os dados pessoais no Firestore
   const handleSalvarPerfil = async () => {
@@ -87,6 +85,9 @@ const formatarGraduacao = (
         nome: usuario.nome,
         email: usuario.email,
         telefone: usuario.telefone,
+        observacao: usuario.observacao,
+        modalidade: usuario.modalidade,
+        graduacao: usuario.graduacao,
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -110,7 +111,9 @@ const formatarGraduacao = (
       modalidade: novoFilho.modalidade!,
       graduacao: novoFilho.graduacao!,
       dataDeRegistro: new Date().toISOString().split("T")[0],
-      pagamento: false
+      pagamento: novoFilho.pagamento ?? false,
+      idade: novoFilho.idade,
+      observacao: novoFilho.observacao,
     };
 
     try {
@@ -198,6 +201,126 @@ const formatarGraduacao = (
           {renderInfoField("Email", usuario.email, true)}
           {renderInfoField("Telefone", usuario.telefone || "", true)}
           {renderInfoField("Data de Registro", formatarData(usuario.dataDeRegistro))}
+          {renderInfoField("Observação", usuario.observacao || "", true)}
+          {renderInfoField("Pagamento", usuario.pagamento ? "Pago" : "Pendente")}
+
+          {/* Modalidade editável */}
+          <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Modalidade</Text>
+            {editando ? (
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"].map((mod) => (
+                  <TouchableOpacity
+                    key={mod}
+                    style={[
+                      styles.modalidadeButton,
+                      usuario.modalidade === mod && styles.modalidadeButtonSelected,
+                    ]}
+                    onPress={() =>
+                      setUsuario((prev) =>
+                        prev ? { ...prev, modalidade: mod as Usuario["modalidade"] } : prev
+                      )
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.modalidadeButtonText,
+                        usuario.modalidade === mod && styles.modalidadeButtonTextSelected,
+                      ]}
+                    >
+                      {mod}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.infoValue}>{usuario.modalidade}</Text>
+            )}
+          </View>
+
+          {/* Graduação editável */}
+          <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Graduação</Text>
+            {editando ? (
+              usuario.modalidade === "Muay Thai" ? (
+                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                  {["Branca", "Amarela", "Laranja", "Verde", "Azul", "Roxa", "Marrom", "Preta"].map(
+                    (cor) => (
+                      <TouchableOpacity
+                        key={cor}
+                        style={[
+                          styles.modalidadeButton,
+                          (usuario.graduacao as GraduacaoMuayThai)?.cor === cor &&
+                          styles.modalidadeButtonSelected,
+                        ]}
+                        onPress={() =>
+                          setUsuario((prev) =>
+                            prev
+                              ? { ...prev, graduacao: { cor } as GraduacaoMuayThai }
+                              : prev
+                          )
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.modalidadeButtonText,
+                            (usuario.graduacao as GraduacaoMuayThai)?.cor === cor &&
+                            styles.modalidadeButtonTextSelected,
+                          ]}
+                        >
+                          {cor}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              ) : usuario.modalidade === "Jiu-Jitsu" ? (
+                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                  {[
+                    { cor: "Branca", grau: 1 },
+                    { cor: "Branca", grau: 2 },
+                    { cor: "Azul", grau: 1 },
+                    { cor: "Azul", grau: 2 },
+                    { cor: "Roxa", grau: 1 },
+                    { cor: "Roxa", grau: 2 },
+                    { cor: "Marrom", grau: 1 },
+                    { cor: "Marrom", grau: 2 },
+                    { cor: "Preta", grau: 1 },
+                  ].map((grad) => (
+                    <TouchableOpacity
+                      key={`${grad.cor}-${grad.grau}`}
+                      style={[
+                        styles.modalidadeButton,
+                        (usuario.graduacao as GraduacaoJiuJitsu)?.cor === grad.cor &&
+                        (usuario.graduacao as GraduacaoJiuJitsu)?.grau === grad.grau &&
+                        styles.modalidadeButtonSelected,
+                      ]}
+                      onPress={() =>
+                        setUsuario((prev) =>
+                          prev ? { ...prev, graduacao: grad as GraduacaoJiuJitsu } : prev
+                        )
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.modalidadeButtonText,
+                          (usuario.graduacao as GraduacaoJiuJitsu)?.cor === grad.cor &&
+                          (usuario.graduacao as GraduacaoJiuJitsu)?.grau === grad.grau &&
+                          styles.modalidadeButtonTextSelected,
+                        ]}
+                      >
+                        {grad.cor} {grad.grau}º
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.infoValue}>—</Text>
+              )
+            ) : (
+              <Text style={styles.infoValue}>{formatarGraduacao(usuario.graduacao, usuario.modalidade)}</Text>
+            )}
+          </View>
 
           {editando && (
             <TouchableOpacity style={styles.saveButton} onPress={handleSalvarPerfil}>
@@ -205,6 +328,8 @@ const formatarGraduacao = (
             </TouchableOpacity>
           )}
         </View>
+
+
       </View>
 
       {/* Seção de Filhos */}
@@ -219,7 +344,7 @@ const formatarGraduacao = (
         {usuario.filhos && usuario.filhos.length > 0 ? (
           usuario.filhos.map((filho, index) => (
             <View key={filho.id} style={styles.filhoCard}>
-              <View style={styles.filhoHeader}  key={filho.id || index}>
+              <View style={styles.filhoHeader}>
                 <Text style={styles.filhoName}>{filho.nome}</Text>
                 <View
                   style={[
@@ -242,6 +367,11 @@ const formatarGraduacao = (
                 </Text>
                 <Text style={styles.filhoData}>
                   Registrado em: {formatarData(filho.dataDeRegistro)}
+                </Text>
+                {filho.idade && <Text style={styles.filhoData}>Idade: {filho.idade} anos</Text>}
+                {filho.observacao && <Text style={styles.filhoData}>Observação: {filho.observacao}</Text>}
+                <Text style={styles.filhoData}>
+                  Pagamento: {filho.pagamento ? "Pago" : "Pendente"}
                 </Text>
               </View>
             </View>
@@ -274,6 +404,25 @@ const formatarGraduacao = (
               onChangeText={(text) => setNovoFilho((prev) => ({ ...prev, nome: text }))}
             />
 
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Idade"
+              keyboardType="numeric"
+              value={novoFilho.idade?.toString() || ""}
+              onChangeText={(text) =>
+                setNovoFilho((prev) => ({ ...prev, idade: Number(text) }))
+              }
+            />
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Observação"
+              value={novoFilho.observacao || ""}
+              onChangeText={(text) =>
+                setNovoFilho((prev) => ({ ...prev, observacao: text }))
+              }
+            />
+
             <View style={styles.modalRow}>
               <Text style={styles.modalLabel}>Modalidade:</Text>
               <View style={styles.modalidadeButtons}>
@@ -281,7 +430,7 @@ const formatarGraduacao = (
                   style={[
                     styles.modalidadeButton,
                     novoFilho.modalidade === "Jiu-Jitsu" &&
-                      styles.modalidadeButtonSelected,
+                    styles.modalidadeButtonSelected,
                   ]}
                   onPress={() =>
                     setNovoFilho({
@@ -295,7 +444,7 @@ const formatarGraduacao = (
                     style={[
                       styles.modalidadeButtonText,
                       novoFilho.modalidade === "Jiu-Jitsu" &&
-                        styles.modalidadeButtonTextSelected,
+                      styles.modalidadeButtonTextSelected,
                     ]}
                   >
                     Jiu-Jitsu
@@ -306,7 +455,7 @@ const formatarGraduacao = (
                   style={[
                     styles.modalidadeButton,
                     novoFilho.modalidade === "Muay Thai" &&
-                      styles.modalidadeButtonSelected,
+                    styles.modalidadeButtonSelected,
                   ]}
                   onPress={() =>
                     setNovoFilho({
@@ -320,7 +469,7 @@ const formatarGraduacao = (
                     style={[
                       styles.modalidadeButtonText,
                       novoFilho.modalidade === "Muay Thai" &&
-                        styles.modalidadeButtonTextSelected,
+                      styles.modalidadeButtonTextSelected,
                     ]}
                   >
                     Muay Thai
@@ -351,7 +500,7 @@ const formatarGraduacao = (
   );
 }
 
-// ⚙️ Estilos (os mesmos que você já tinha)
+// ⚙️ Estilos (mantidos do seu código original)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   header: {
