@@ -107,14 +107,15 @@ export default function PerfilScreen() {
 
     const filhoCompleto: Filho = {
       id: Date.now().toString(),
-      nome: novoFilho.nome!,
-      modalidade: novoFilho.modalidade!,
-      graduacao: novoFilho.graduacao!,
+      nome: novoFilho.nome ?? "",
+      modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
+      graduacao: novoFilho.graduacao ?? { cor: "Branca", grau: 1 },
       dataDeRegistro: new Date().toISOString().split("T")[0],
       pagamento: novoFilho.pagamento ?? false,
       idade: novoFilho.idade,
-      observacao: novoFilho.observacao,
+      observacao: novoFilho.observacao ?? "",
     };
+
 
     try {
       const userRef = doc(db, "usuarios", usuario.id);
