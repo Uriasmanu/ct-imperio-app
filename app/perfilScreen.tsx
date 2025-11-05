@@ -219,9 +219,9 @@ const formatarGraduacao = (
         </View>
 
         {usuario.filhos && usuario.filhos.length > 0 ? (
-          usuario.filhos.map((filho) => (
+          usuario.filhos.map((filho, index) => (
             <View key={filho.id} style={styles.filhoCard}>
-              <View style={styles.filhoHeader}>
+              <View style={styles.filhoHeader}  key={filho.id || index}>
                 <Text style={styles.filhoName}>{filho.nome}</Text>
                 <View
                   style={[
