@@ -1,9 +1,12 @@
+import { Ionicons } from "@expo/vector-icons";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,26 +22,32 @@ import {
   GraduacaoJiuJitsu,
   GraduacaoMuayThai,
   Usuario,
-} from "../types/usuarios"; // Assumindo este caminho
+} from "../types/usuarios";
 
-// --- CONSTANTES DE TEMA ---
-const COLOR_PRIMARY = "#FFD700"; // Dourado forte, substitui B8860B em alguns locais para contraste
-const COLOR_SECONDARY = "#B8860B"; // Goldenrod (Bronzde/Dourado mais suave)
-const COLOR_BACKGROUND = "#121212"; // Quase preto (melhor que #000 para Dark Mode)
-const COLOR_CARD_BACKGROUND = "#1e1e1e"; // Cinza escuro para cards/superfícies
-const COLOR_TEXT_HIGH = "#FFFFFF"; // Branco puro para textos principais (alto contraste)
-const COLOR_TEXT_LOW = "#CCCCCC"; // Cinza claro para textos de baixo destaque
-const COLOR_SUCCESS = "#008000"; // Verde para Sucesso
-const COLOR_ERROR = "#8B0000"; // Vermelho escuro para Erro/Pendente
-
-// --- GRADUAÇÃO SELECTOR (Mantido e Estilizado) ---
-
+// 🎯 TIPOS E INTERFACES
 interface GraduacaoSelectorProps {
   modalidade: string;
   graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
   onSelect: (grad: GraduacaoMuayThai | GraduacaoJiuJitsu) => void;
 }
 
+interface GerenciarPagamentoProps {
+  filho: Filho;
+  usuarioId: string;
+  onPagamentoAtualizado: () => void;
+}
+
+interface ModalContentProps {
+  filhoEmEdicao: Filho | null;
+  novoFilho: Partial<Filho>;
+  setFilhoEmEdicao: React.Dispatch<React.SetStateAction<Filho | null>>;
+  setNovoFilho: React.Dispatch<React.SetStateAction<Partial<Filho>>>;
+  setModalFilho: React.Dispatch<React.SetStateAction<boolean>>;
+  handleAdicionarFilho: () => Promise<void>;
+  handleSalvarEdicaoFilho: () => Promise<void>;
+}
+
+// 🎯 COMPONENTE DE SELEÇÃO DE GRADUAÇÃO
 const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
   modalidade,
   graduacaoAtual,
@@ -54,17 +63,21 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
     const grausDaFaixa = graduaçõesJiuJitsu
       .filter(g => g.cor === faixaSelecionada)
       .sort((a, b) => (a.grau ?? 0) - (b.grau ?? 0));
+
     return (
       <View style={styles.graduacaoContainer}>
-        {/* Seleção de Faixa */}
         <Text style={styles.modalLabel}>Faixa:</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.scrollContent}
+        >
           {faixasUnicas.map((grad) => (
             <TouchableOpacity
               key={grad.cor}
               style={[
-                styles.grauButton,
-                faixaSelecionada === grad.cor && styles.modalidadeButtonSelected,
+                styles.graduacaoButton,
+                faixaSelecionada === grad.cor && styles.graduacaoButtonSelected,
               ]}
               onPress={() => {
                 const novoGrau = grausDaFaixa.find(g => g.cor === grad.cor && g.grau === atual?.grau) ? atual.grau : 1;
@@ -72,8 +85,8 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
               }}
             >
               <Text style={[
-                styles.modalidadeButtonText,
-                faixaSelecionada === grad.cor && styles.modalidadeButtonTextSelected,
+                styles.graduacaoButtonText,
+                faixaSelecionada === grad.cor && styles.graduacaoButtonTextSelected,
               ]}>
                 {grad.cor}
               </Text>
@@ -81,23 +94,22 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
           ))}
         </ScrollView>
 
-        {/* Seleção de Grau (Visível apenas se houver uma faixa selecionada e graus > 1) */}
         {grausDaFaixa.length > 1 && (
           <>
-            <Text style={[styles.modalLabel, { marginTop: 12 }]}>Grau:</Text>
+            <Text style={[styles.modalLabel, { marginTop: 16 }]}>Grau:</Text>
             <View style={styles.grauButtonsContainer}>
               {grausDaFaixa.map((grad) => (
                 <TouchableOpacity
                   key={`${grad.cor}-${grad.grau}`}
                   style={[
                     styles.grauButton,
-                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.modalidadeButtonSelected,
+                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.grauButtonSelected,
                   ]}
                   onPress={() => onSelect(grad)}
                 >
                   <Text style={[
-                    styles.modalidadeButtonText,
-                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.modalidadeButtonTextSelected,
+                    styles.grauButtonText,
+                    atual?.cor === grad.cor && atual?.grau === grad.grau && styles.grauButtonTextSelected,
                   ]}>
                     {grad.grau}º
                   </Text>
@@ -119,13 +131,13 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
               key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
               style={[
                 styles.grauButton,
-                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.modalidadeButtonSelected,
+                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.grauButtonSelected,
               ]}
               onPress={() => onSelect(grad)}
             >
               <Text style={[
-                styles.modalidadeButtonText,
-                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.modalidadeButtonTextSelected,
+                styles.grauButtonText,
+                atual?.cor === grad.cor && atual?.pontaBranca === grad.pontaBranca && styles.grauButtonTextSelected,
               ]}>
                 {grad.cor} {grad.pontaBranca ? " (PB)" : ""}
               </Text>
@@ -139,28 +151,234 @@ const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
   return <Text style={styles.infoValue}>Modalidade sem graduação definida.</Text>;
 };
 
+// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO
+const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
+  filho,
+  usuarioId,
+  onPagamentoAtualizado,
+}) => {
+  const [modalPagamento, setModalPagamento] = useState(false);
+  const [processando, setProcessando] = useState(false);
+
+  const handleConfirmarPagamento = async () => {
+    setProcessando(true);
+    try {
+      const userRef = doc(db, "usuarios", usuarioId);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const usuario = userSnap.data() as Usuario;
+        const filhosAtualizados = usuario.filhos?.map(f => 
+          f.id === filho.id 
+            ? { 
+                ...f, 
+                pagamento: true, 
+                dataUltimoPagamento: new Date().toISOString() 
+              } 
+            : f
+        );
+
+        await updateDoc(userRef, { filhos: filhosAtualizados });
+        onPagamentoAtualizado();
+        setModalPagamento(false);
+        Alert.alert("✅ Sucesso", `Pagamento de ${filho.nome} confirmado!`);
+      }
+    } catch (error) {
+      console.error("Erro ao confirmar pagamento:", error);
+      Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const handleMarcarComoPendente = async () => {
+    setProcessando(true);
+    try {
+      const userRef = doc(db, "usuarios", usuarioId);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const usuario = userSnap.data() as Usuario;
+        const filhosAtualizados = usuario.filhos?.map(f => 
+          f.id === filho.id 
+            ? { ...f, pagamento: false } 
+            : f
+        );
+
+        await updateDoc(userRef, { filhos: filhosAtualizados });
+        onPagamentoAtualizado();
+        setModalPagamento(false);
+        Alert.alert("Status Alterado", `Pagamento de ${filho.nome} marcado como pendente.`);
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar pagamento:", error);
+      Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString("pt-BR");
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        style={[
+          styles.pagamentoButton,
+          filho.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
+        ]}
+        onPress={() => setModalPagamento(true)}
+      >
+        <Ionicons 
+          name={filho.pagamento ? "checkmark-circle" : "time-outline"} 
+          size={16} 
+          color={filho.pagamento ? "#22c55e" : "#ef4444"} 
+        />
+        <Text style={[
+          styles.pagamentoButtonText,
+          filho.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
+        ]}>
+          {filho.pagamento ? "Pago" : "Pendente"}
+        </Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalPagamento}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => !processando && setModalPagamento(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gerenciar Pagamento</Text>
+              <TouchableOpacity 
+                onPress={() => !processando && setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.pagamentoInfo}>
+              <View style={styles.alunoInfo}>
+                <Ionicons name="person" size={20} color="#B8860B" />
+                <Text style={styles.pagamentoNome}>{filho.nome}</Text>
+              </View>
+              
+              <View style={[
+                styles.statusBadge,
+                filho.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
+              ]}>
+                <Text style={styles.statusBadgeText}>
+                  {filho.pagamento ? "PAGO" : "PENDENTE"}
+                </Text>
+              </View>
+
+              {filho.dataUltimoPagamento && (
+                <View style={styles.dataInfo}>
+                  <Ionicons name="calendar" size={16} color="#666" />
+                  <Text style={styles.pagamentoData}>
+                    Último pagamento: {formatarData(filho.dataUltimoPagamento)}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Text style={styles.cancelButtonText}>Fechar</Text>
+              </TouchableOpacity>
+
+              {!filho.pagamento ? (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmarPagamento}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={18} color="#000" />
+                      <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.warningButton]}
+                  onPress={handleMarcarComoPendente}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="refresh" size={18} color="#FFF" />
+                      <Text style={styles.warningButtonText}>Marcar como Pendente</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+// 🎯 COMPONENTE PRINCIPAL
 const hoje = new Date();
 const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
-
-// --- PERFIL SCREEN ---
 
 export default function PerfilScreen() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // 🆕 ESTADO PARA EDIÇÃO: Armazena o filho que está sendo editado
+  const [refreshing, setRefreshing] = useState(false);
+  const [atualizacao, setAtualizacao] = useState(0);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
-
   const [novoFilho, setNovoFilho] = useState<Partial<Filho>>({
     nome: "",
     modalidade: "Jiu-Jitsu",
     graduacao: { cor: "Branca", grau: 1 },
   });
 
-  // ... [useEffect para carregar usuário e verificarPagamentosFilhos - MANTIDO] ...
+  // 🔄 FUNÇÃO DE ATUALIZAÇÃO
+  const carregarUsuario = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const userRef = doc(db, "usuarios", user.uid);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+          setUsuario(snap.data() as Usuario);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar usuário:", error);
+        Alert.alert("❌ Erro", "Não foi possível carregar os dados.");
+      }
+    }
+    setLoading(false);
+    setRefreshing(false);
+  };
 
+  // 🔄 PULL TO REFRESH
+  const onRefresh = () => {
+    setRefreshing(true);
+    carregarUsuario();
+  };
+
+  // 📅 VERIFICAÇÃO AUTOMÁTICA DE PAGAMENTOS
   const verificarPagamentosFilhos = async () => {
     if (!usuario?.id || !usuario.filhos) return;
 
@@ -168,7 +386,6 @@ export default function PerfilScreen() {
     let atualizou = false;
 
     const filhosAtualizados = usuario.filhos.map(filho => {
-      // Verifica se o pagamento está vencido (30 dias)
       if (!filho.dataUltimoPagamento) return filho;
 
       const ultimaData = new Date(filho.dataUltimoPagamento);
@@ -193,34 +410,136 @@ export default function PerfilScreen() {
   };
 
   useEffect(() => {
-    // Busca o usuário autenticado e seus dados no Firestore
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          const userRef = doc(db, "usuarios", user.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            setUsuario(snap.data() as Usuario);
-          } else {
-            Alert.alert("Erro", "Usuário não encontrado no banco de dados.");
-          }
-        } catch (error) {
-          console.error(error);
-          Alert.alert("Erro", "Não foi possível carregar os dados do usuário.");
-        }
+        await carregarUsuario();
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
-  
+  }, [atualizacao]);
+
   useEffect(() => {
-    // Roda a verificação de pagamentos sempre que o usuário for carregado/atualizado
-    if(usuario) verificarPagamentosFilhos();
-  }, [usuario?.filhos, usuario?.id]);
+    if (usuario) {
+      verificarPagamentosFilhos();
+    }
+  }, [usuario]);
 
+  // 🎯 HANDLERS
+  const handlePagamentoAtualizado = () => {
+    setAtualizacao(prev => prev + 1);
+  };
 
+  const handleSalvarPerfil = async () => {
+    if (!usuario?.id) {
+      Alert.alert("❌ Erro", "Usuário não encontrado.");
+      return;
+    }
+
+    if (!usuario.modalidade) {
+      Alert.alert("📋 Campo obrigatório", "Selecione uma modalidade antes de salvar.");
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      await updateDoc(userRef, {
+        nome: usuario.nome ?? "",
+        email: usuario.email ?? "",
+        telefone: usuario.telefone ?? "",
+        observacao: usuario.observacao ?? "",
+        modalidade: usuario.modalidade ?? "",
+        graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
+        pagamento: usuario.pagamento ?? false,
+        dataUltimoPagamento: usuario.pagamento ? new Date().toISOString() : usuario.dataUltimoPagamento,
+      });
+
+      Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
+      setEditando(false);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("❌ Erro", "Não foi possível salvar as alterações.");
+    }
+  };
+
+  const handleAdicionarFilho = async () => {
+    if (!usuario?.id) {
+      Alert.alert("❌ Erro", "Usuário não encontrado.");
+      return;
+    }
+
+    if (!novoFilho.nome?.trim()) {
+      Alert.alert("📋 Campo obrigatório", "Por favor, informe o nome do filho.");
+      return;
+    }
+
+    if (!novoFilho.idade || isNaN(Number(novoFilho.idade)) || Number(novoFilho.idade) <= 0) {
+      Alert.alert("📋 Campo obrigatório", "Por favor, informe uma idade válida.");
+      return;
+    }
+
+    const filhoCompleto: Filho = {
+      id: Date.now().toString(),
+      nome: novoFilho.nome.trim(),
+      idade: Number(novoFilho.idade),
+      modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
+      graduacao: novoFilho.graduacao || { cor: "Branca", grau: 1 },
+      dataDeRegistro: new Date().toISOString().split("T")[0],
+      pagamento: false,
+      observacao: novoFilho.observacao?.trim() || "",
+      dataPagamento: dataPagamentoPadrao,
+      dataUltimoPagamento: "",
+    };
+
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
+      await updateDoc(userRef, { filhos: novosFilhos });
+
+      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+      setModalFilho(false);
+      setNovoFilho({
+        nome: "",
+        modalidade: "Jiu-Jitsu",
+        graduacao: { cor: "Branca", grau: 1 },
+      });
+
+      Alert.alert("✅ Sucesso", `${filhoCompleto.nome} foi adicionado com sucesso!`);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("❌ Erro", "Não foi possível adicionar o filho.");
+    }
+  };
+
+  const handleEditarFilho = (filho: Filho) => {
+    setFilhoEmEdicao(filho);
+    setModalFilho(true);
+  };
+
+  const handleSalvarEdicaoFilho = async () => {
+    if (!filhoEmEdicao || !usuario?.id) return;
+
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      const novosFilhos = (usuario.filhos || []).map((f) =>
+        f.id === filhoEmEdicao.id ? filhoEmEdicao : f
+      );
+
+      await updateDoc(userRef, { filhos: novosFilhos });
+      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+      setModalFilho(false);
+      setFilhoEmEdicao(null);
+
+      Alert.alert("✅ Sucesso", "Informações do filho atualizadas!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("❌ Erro", "Não foi possível salvar as alterações.");
+    }
+  };
+
+  // 🎯 RENDER HELPERS
   const formatarData = (data: string) => {
     return new Date(data).toLocaleDateString("pt-BR");
   };
@@ -241,224 +560,63 @@ export default function PerfilScreen() {
     }
   };
 
-  // 🔹 Atualiza os dados pessoais no Firestore
-  const handleSalvarPerfil = async () => {
-    if (!usuario?.id) {
-      Alert.alert("Erro", "Usuário não encontrado. Tente novamente.");
-      return;
-    }
-
-    if (!usuario.modalidade || !usuario.graduacao) {
-      Alert.alert("Campo obrigatório", "Verifique se Modalidade e Graduação estão definidos.");
-      return;
-    }
-
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-
-      await updateDoc(userRef, {
-        nome: usuario.nome ?? "",
-        email: usuario.email ?? "",
-        telefone: usuario.telefone ?? "",
-        observacao: usuario.observacao ?? "",
-        modalidade: usuario.modalidade,
-        graduacao: usuario.graduacao,
-        // Mantém a lógica de atualização da data de pagamento para o próprio usuário
-        dataUltimoPagamento: usuario.pagamento ? new Date().toISOString() : "",
-      });
-
-      Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
-      setEditando(false);
-    } catch (error) {
-      console.error(error);
-      Alert.alert(
-        "Erro ao salvar",
-        "Não foi possível salvar as alterações. Verifique os campos e tente novamente."
-      );
-    }
-  };
-
-
-  // 🔹 Adiciona um novo filho ao usuário
-  const handleAdicionarFilho = async () => {
-    if (!usuario?.id) {
-      Alert.alert("Erro", "Usuário não encontrado. Tente fazer login novamente.");
-      return;
-    }
-    
-    // UX: Validação de campos obrigatórios
-    if (!novoFilho.nome?.trim() || !novoFilho.idade) {
-        Alert.alert("Campos obrigatórios", "Por favor, informe o nome e a idade do filho.");
-        return;
-    }
-
-    // 🔧 Construção segura do objeto Filho
-    const filhoCompleto: Filho = {
-      id: Date.now().toString(),
-      nome: novoFilho.nome.trim(),
-      idade: Number(novoFilho.idade),
-      modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
-      graduacao:
-        novoFilho.graduacao ||
-        (novoFilho.modalidade === "Muay Thai"
-          ? { cor: "Amarela" }
-          : { cor: "Branca", grau: 1 }),
-      dataDeRegistro: new Date().toISOString().split("T")[0],
-      pagamento: novoFilho.pagamento ?? false,
-      observacao: novoFilho.observacao?.trim() || "",
-      dataPagamento: novoFilho.dataPagamento || dataPagamentoPadrao, // Usa o padrão se não for definido
-      dataUltimoPagamento: novoFilho.pagamento ? new Date().toISOString() : "",
-    };
-
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-      const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
-      await updateDoc(userRef, { filhos: novosFilhos });
-
-      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-      setModalFilho(false);
-      setNovoFilho({
-        nome: "",
-        modalidade: "Jiu-Jitsu",
-        graduacao: { cor: "Branca", grau: 1 },
-      });
-
-      Alert.alert("Sucesso", `${filhoCompleto.nome} foi adicionado com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível adicionar o filho. Tente novamente.");
-    }
-  };
-
-
-  // 🆕 FUNÇÃO: Inicia a edição de um filho
-  const handleEditarFilho = (filho: Filho) => {
-    setFilhoEmEdicao(filho);
-    setModalFilho(true);
-  };
-
-  // 🆕 FUNÇÃO: Salva as alterações de um filho no Firestore (APENAS DADOS)
-  const handleSalvarEdicaoFilho = async () => {
-    if (!filhoEmEdicao || !usuario?.id) return;
-    
-    // UX: Validação
-    if (!filhoEmEdicao.nome?.trim() || !filhoEmEdicao.idade) {
-        Alert.alert("Campos obrigatórios", "O nome e a idade são obrigatórios.");
-        return;
-    }
-    if (!filhoEmEdicao.graduacao) {
-        Alert.alert("Incompleto", "A graduação deve ser selecionada.");
-        return;
-    }
-
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-
-      // Mapeia a lista de filhos, substituindo o filho editado
-      const novosFilhos = (usuario.filhos || []).map((f) =>
-        f.id === filhoEmEdicao.id ? filhoEmEdicao : f
-      );
-
-      await updateDoc(userRef, { filhos: novosFilhos });
-
-      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-      // Fechar modal e resetar estados
-      setModalFilho(false);
-      setFilhoEmEdicao(null);
-
-      Alert.alert("Sucesso", "Informações do filho atualizadas com sucesso!");
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível salvar as alterações do filho.");
-    }
-  };
-  
-  // 🆕 FUNÇÃO: Altera o status de pagamento de um filho (AÇÃO SEPARADA)
-  const handleConfirmarPagamentoFilho = async (filhoId: string, statusAtual: boolean) => {
-    if (!usuario?.id) return;
-
-    // UX: Confirmação para evitar cliques acidentais
-    Alert.alert(
-      statusAtual ? "Marcar como Pendente?" : "Confirmar Pagamento?",
-      `Tem certeza que deseja mudar o status de pagamento para ${statusAtual ? "Pendente" : "Pago"}?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: statusAtual ? "Marcar Pendente" : "Confirmar",
-          onPress: async () => {
-            try {
-              const userRef = doc(db, "usuarios", usuario.id);
-              const novosFilhos = (usuario.filhos || []).map((f) => {
-                if (f.id === filhoId) {
-                  const novoStatus = !statusAtual;
-                  return {
-                    ...f,
-                    pagamento: novoStatus,
-                    // Atualiza data apenas se for marcar como Pago
-                    dataUltimoPagamento: novoStatus ? new Date().toISOString() : f.dataUltimoPagamento,
-                  };
-                }
-                return f;
-              });
-
-              await updateDoc(userRef, { filhos: novosFilhos });
-
-              setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-              Alert.alert("Sucesso", `Pagamento atualizado para ${statusAtual ? "Pendente" : "Pago"}!`);
-            } catch (error) {
-              console.error(error);
-              Alert.alert("Erro", "Não foi possível atualizar o pagamento.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-
-  const renderInfoField = (label: string, value: string, editable?: boolean, keyToUpdate?: keyof Usuario, keyboardType: 'default' | 'numeric' = 'default') => (
-    <View style={styles.infoField}>
+  const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
+    <View style={styles.infoField} key={key}>
       <Text style={styles.infoLabel}>{label}</Text>
       {editable && editando ? (
         <TextInput
           style={styles.input}
           value={value}
           onChangeText={(text) =>
-            keyToUpdate && setUsuario((prev) => (prev ? { ...prev, [keyToUpdate]: text } : prev))
+            setUsuario((prev) => prev ? { ...prev, [key || label.toLowerCase()]: text } : prev)
           }
-          keyboardType={keyboardType}
-          placeholder={`Digite o ${label.toLowerCase()}`}
-          placeholderTextColor={COLOR_TEXT_LOW}
+          placeholderTextColor="#666"
         />
       ) : (
-        <Text style={styles.infoValue}>{value || "Não informado"}</Text>
+        <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="tail">
+          {value || "Não informado"}
+        </Text>
       )}
     </View>
   );
 
+  // 🎯 RENDER STATES
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLOR_BACKGROUND, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: COLOR_TEXT_HIGH }}>Carregando...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#B8860B" />
+        <Text style={styles.loadingText}>Carregando perfil...</Text>
       </View>
     );
   }
 
   if (!usuario) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLOR_BACKGROUND, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: COLOR_TEXT_HIGH }}>Usuário não encontrado 😕</Text>
+      <View style={styles.errorContainer}>
+        <Ionicons name="sad-outline" size={64} color="#666" />
+        <Text style={styles.errorText}>Usuário não encontrado</Text>
+        <Text style={styles.errorSubtext}>Tente fazer login novamente</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header do Perfil */}
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["#B8860B"]}
+          tintColor="#B8860B"
+        />
+      }
+    >
+      {/* HEADER DO PERFIL */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {usuario.nome.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2)}
+            {usuario.nome.split(" ").map((n) => n[0]).join("").toUpperCase()}
           </Text>
         </View>
         <Text style={styles.userName}>{usuario.nome}</Text>
@@ -466,14 +624,39 @@ export default function PerfilScreen() {
           {formatarGraduacao(usuario.graduacao, usuario.modalidade)}
         </Text>
         <Text style={styles.userModalidade}>{usuario.modalidade}</Text>
+        
+        <View style={styles.pagamentoHeader}>
+          <Ionicons 
+            name={usuario.pagamento ? "checkmark-circle" : "alert-circle"} 
+            size={16} 
+            color={usuario.pagamento ? "#22c55e" : "#ef4444"} 
+          />
+          <Text style={[
+            styles.pagamentoHeaderText,
+            { color: usuario.pagamento ? "#22c55e" : "#ef4444" }
+          ]}>
+            {usuario.pagamento ? "Pagamento em dia" : "Pagamento pendente"}
+          </Text>
+        </View>
       </View>
 
-      {/* Informações Pessoais */}
+      {/* INFORMAÇÕES PESSOAIS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
-          <TouchableOpacity onPress={() => setEditando(!editando)}>
-            <Text style={styles.editButton}>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="person" size={20} color="#B8860B" />
+            <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => setEditando(!editando)}
+          >
+            <Ionicons 
+              name={editando ? "close" : "create-outline"} 
+              size={20} 
+              color="#B8860B" 
+            />
+            <Text style={styles.editButtonText}>
               {editando ? "Cancelar" : "Editar"}
             </Text>
           </TouchableOpacity>
@@ -482,54 +665,22 @@ export default function PerfilScreen() {
         <View style={styles.infoCard}>
           {renderInfoField("Nome", usuario.nome, true, "nome")}
           {renderInfoField("Email", usuario.email, true, "email")}
-          {renderInfoField("Telefone", usuario.telefone || "", true, "telefone", 'numeric')}
-          {renderInfoField("Data de Registro", formatarData(usuario.dataDeRegistro))}
+          {renderInfoField("Telefone", usuario.telefone || "", true, "telefone")}
+          {renderInfoField("Data de Registro", formatarData(usuario.dataDeRegistro), false)}
           {renderInfoField("Observação", usuario.observacao || "", true, "observacao")}
 
-          {/* ✅ CAMPO DE PAGAMENTO DO USUÁRIO */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Dia de pagamento:</Text>
             <Text style={styles.infoValue}>
               {new Date(usuario.dataPagamento).getDate()} de cada mês
             </Text>
-            
-            <Text style={[styles.infoLabel, {marginTop: 10}]}>Status Pagamento:</Text>
-            {editando ? (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <TouchableOpacity
-                  style={[
-                    styles.modalidadeButton,
-                    usuario.pagamento ? styles.pagoButton : styles.pendenteButton,
-                    { flex: 0.4, minWidth: 100 }
-                  ]}
-                  onPress={() => setUsuario(prev => {
-                    if (!prev) return prev;
-                    const novoStatus = !prev.pagamento;
-                    return {
-                      ...prev,
-                      pagamento: novoStatus,
-                      dataUltimoPagamento: novoStatus ? new Date().toISOString() : prev.dataUltimoPagamento,
-                    };
-                  })}
-                >
-                  <Text style={styles.pagamentoButtonText}>
-                    {usuario.pagamento ? "Pago" : "Pendente"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <Text style={[styles.infoValue, {color: usuario.pagamento ? COLOR_SUCCESS : COLOR_ERROR}]}>
-                {usuario.pagamento ? "Pago" : "Pendente"}
-              </Text>
-            )}
           </View>
 
-          {/* Modalidade editável */}
+          {/* MODALIDADE */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Modalidade</Text>
             {editando ? (
-              <View style={styles.modalidadeGroup}>
-                {/* Otimizando os botões de modalidade */}
+              <View style={styles.modalidadeGrid}>
                 {["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"].map((mod) => (
                   <TouchableOpacity
                     key={mod}
@@ -559,7 +710,7 @@ export default function PerfilScreen() {
             )}
           </View>
 
-          {/* Graduação editável (NOVO COMPONENTE APLICADO) */}
+          {/* GRADUAÇÃO */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Graduação</Text>
             {editando ? (
@@ -573,24 +724,37 @@ export default function PerfilScreen() {
                 }}
               />
             ) : (
-              <Text style={styles.infoValue}>{formatarGraduacao(usuario.graduacao, usuario.modalidade)}</Text>
+              <Text style={styles.infoValue}>
+                {formatarGraduacao(usuario.graduacao, usuario.modalidade)}
+              </Text>
             )}
           </View>
 
           {editando && (
-            <TouchableOpacity style={styles.saveButton} onPress={handleSalvarPerfil}>
+            <TouchableOpacity 
+              style={styles.saveButton} 
+              onPress={handleSalvarPerfil}
+            >
+              <Ionicons name="save" size={20} color="#000" />
               <Text style={styles.saveButtonText}>Salvar Alterações</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Seção de Filhos */}
+      {/* SEÇÃO DE FILHOS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>FILHOS CADASTRADOS</Text>
-          <TouchableOpacity onPress={() => { setFilhoEmEdicao(null); setModalFilho(true); }}>
-            <Text style={styles.addButton}>+ Adicionar</Text>
+          <View style={styles.sectionTitleContainer}>
+            <Ionicons name="people" size={20} color="#B8860B" />
+            <Text style={styles.sectionTitle}>ALUNOS CADASTRADOS</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => { setFilhoEmEdicao(null); setModalFilho(true); }}
+          >
+            <Ionicons name="add" size={20} color="#B8860B" />
+            <Text style={styles.addButtonText}>Adicionar</Text>
           </TouchableOpacity>
         </View>
 
@@ -598,101 +762,92 @@ export default function PerfilScreen() {
           usuario.filhos.map((filho) => (
             <View key={filho.id} style={styles.filhoCard}>
               <View style={styles.filhoHeader}>
-                <Text style={styles.filhoName}>{filho.nome}</Text>
-                
-                {/* 🆕 BOTÕES DE AÇÃO SEPARADOS */}
-                <View style={styles.filhoActions}>
-                    <TouchableOpacity onPress={() => handleEditarFilho(filho)}>
-                        <Text style={styles.editButton}>Editar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => handleConfirmarPagamentoFilho(filho.id, filho.pagamento)}
-                        style={[
-                            styles.pagamentoButton,
-                            filho.pagamento ? styles.pagoButton : styles.pendenteButton
-                        ]}
-                    >
-                        <Text style={styles.pagamentoButtonText}>
-                            {filho.pagamento ? "PAGO" : "PENDENTE"}
-                        </Text>
-                    </TouchableOpacity>
+                <View style={styles.filhoInfoHeader}>
+                  <Text style={styles.filhoName}>{filho.nome}</Text>
+                  {filho.idade && (
+                    <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
+                  )}
                 </View>
+                <TouchableOpacity 
+                  style={styles.editIconButton}
+                  onPress={() => handleEditarFilho(filho)}
+                >
+                  <Ionicons name="create-outline" size={18} color="#B8860B" />
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.filhoInfo}>
-                <View
-                  style={[
-                    styles.modalidadeBadge,
-                    {
-                      backgroundColor:
-                        filho.modalidade === "Muay Thai" ? COLOR_ERROR : COLOR_SECONDARY,
-                    },
-                  ]}
-                >
-                  <Text style={styles.modalidadeBadgeText}>
-                    {filho.modalidade}
+              <View style={styles.filhoContent}>
+                <View style={styles.filhoBadges}>
+                  <View
+                    style={[
+                      styles.modalidadeBadge,
+                      {
+                        backgroundColor:
+                          filho.modalidade === "Muay Thai" ? "#dc2626" : "#1e40af",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.modalidadeBadgeText}>
+                      {filho.modalidade}
+                    </Text>
+                  </View>
+                  <Text style={styles.filhoGraduacao}>
+                    {formatarGraduacao(filho.graduacao, filho.modalidade)}
                   </Text>
                 </View>
-                <Text style={[styles.filhoGraduacao, {marginTop: 8}]}>
-                  {formatarGraduacao(filho.graduacao, filho.modalidade)}
-                </Text>
-                {filho.idade && <Text style={styles.filhoData}>Idade: {filho.idade} anos</Text>}
+
                 <Text style={styles.filhoData}>
                   Registrado em: {formatarData(filho.dataDeRegistro)}
                 </Text>
-                <Text style={styles.filhoData}>
-                  Dia de pagamento: {new Date(filho.dataPagamento).getDate()} de cada mês
-                </Text>
-                {filho.observacao && <Text style={styles.filhoData}>Observação: {filho.observacao}</Text>}
+                
+                {filho.observacao ? (
+                  <Text style={styles.filhoObservacao}>{filho.observacao}</Text>
+                ) : null}
+
+                <View style={styles.pagamentoSection}>
+                  <Text style={styles.infoLabel}>Status do Pagamento:</Text>
+                  <GerenciarPagamento
+                    filho={filho}
+                    usuarioId={usuario.id}
+                    onPagamentoAtualizado={handlePagamentoAtualizado}
+                  />
+                </View>
               </View>
             </View>
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Nenhum filho cadastrado</Text>
+            <Ionicons name="people-outline" size={48} color="#666" />
+            <Text style={styles.emptyStateText}>Nenhum aluno cadastrado</Text>
             <Text style={styles.emptyStateSubtext}>
-              Clique em "Adicionar" para cadastrar um filho
+              Clique em "Adicionar" para cadastrar um aluno
             </Text>
           </View>
         )}
       </View>
 
-      {/* Modal para Adicionar/Editar Filho */}
+      {/* MODAL PARA ADICIONAR/EDITAR FILHO */}
       <Modal
         visible={modalFilho}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setModalFilho(false)}
       >
-        {modalFilho && (
-          <ModalContent
-            filhoEmEdicao={filhoEmEdicao}
-            novoFilho={novoFilho}
-            setFilhoEmEdicao={setFilhoEmEdicao}
-            setNovoFilho={setNovoFilho}
-            setModalFilho={setModalFilho}
-            handleAdicionarFilho={handleAdicionarFilho}
-            handleSalvarEdicaoFilho={handleSalvarEdicaoFilho}
-          />
-        )}
+        <ModalContent
+          filhoEmEdicao={filhoEmEdicao}
+          novoFilho={novoFilho}
+          setFilhoEmEdicao={setFilhoEmEdicao}
+          setNovoFilho={setNovoFilho}
+          setModalFilho={setModalFilho}
+          handleAdicionarFilho={handleAdicionarFilho}
+          handleSalvarEdicaoFilho={handleSalvarEdicaoFilho}
+        />
       </Modal>
     </ScrollView>
   );
 }
 
-
-// --- MODAL CONTENT (SEM PAGAMENTO) ---
-
-interface ModalContentProps {
-  filhoEmEdicao: Filho | null;
-  novoFilho: Partial<Filho>;
-  setFilhoEmEdicao: React.Dispatch<React.SetStateAction<Filho | null>>;
-  setNovoFilho: React.Dispatch<React.SetStateAction<Partial<Filho>>>;
-  setModalFilho: React.Dispatch<React.SetStateAction<boolean>>;
-  handleAdicionarFilho: () => Promise<void>;
-  handleSalvarEdicaoFilho: () => Promise<void>;
-}
-
+// 🎯 COMPONENTE DO MODAL
 const ModalContent: React.FC<ModalContentProps> = ({
   filhoEmEdicao,
   novoFilho,
@@ -702,22 +857,17 @@ const ModalContent: React.FC<ModalContentProps> = ({
   handleAdicionarFilho,
   handleSalvarEdicaoFilho,
 }) => {
-  // Determinar qual objeto usar para leitura e escrita
   const dadosFilho = filhoEmEdicao || novoFilho;
 
-  const setDadosFilho = (updates: Partial<Filho> | ((prev: Partial<Filho>) => Partial<Filho>)) => {
+  const setDadosFilho = (updates: Partial<Filho>) => {
     if (filhoEmEdicao) {
-      setFilhoEmEdicao(prev => {
-        const nextState = typeof updates === "function" ? updates(prev!) : updates;
-        return prev ? ({ ...prev, ...nextState }) : null;
-      });
+      setFilhoEmEdicao(prev => prev ? { ...prev, ...updates } : null);
     } else {
-      setNovoFilho(prev => ({ ...prev, ...(typeof updates === "function" ? updates(prev) : updates) }));
+      setNovoFilho(prev => ({ ...prev, ...updates }));
     }
   };
 
-
-  const modalTitle = filhoEmEdicao ? "Editar Filho" : "Adicionar Filho";
+  const modalTitle = filhoEmEdicao ? "Editar Aluno" : "Adicionar Aluno";
   const handleAcao = filhoEmEdicao ? handleSalvarEdicaoFilho : handleAdicionarFilho;
   const confirmButtonText = filhoEmEdicao ? "Salvar" : "Adicionar";
 
@@ -731,7 +881,6 @@ const ModalContent: React.FC<ModalContentProps> = ({
     });
   };
 
-  // Para garantir que a graduação é válida ao mudar a modalidade
   const handleModalidadeChange = (modalidade: Filho["modalidade"]) => {
     if (modalidade === "Jiu-Jitsu") {
       setDadosFilho({
@@ -741,7 +890,7 @@ const ModalContent: React.FC<ModalContentProps> = ({
     } else if (modalidade === "Muay Thai") {
       setDadosFilho({
         modalidade: modalidade,
-        graduacao: { cor: "Amarela" } // Primeiro kruang
+        graduacao: { cor: "Amarela" }
       });
     } else {
       setDadosFilho({
@@ -751,98 +900,90 @@ const ModalContent: React.FC<ModalContentProps> = ({
     }
   };
 
-
   return (
     <View style={styles.modalOverlay}>
       <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>{modalTitle}</Text>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>{modalTitle}</Text>
+          <TouchableOpacity onPress={closeModal}>
+            <Ionicons name="close" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-          {/* Nome */}
+        <ScrollView 
+          style={styles.modalScrollView}
+          contentContainerStyle={styles.modalScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <TextInput
             style={styles.modalInput}
-            placeholder="Nome do filho"
-            placeholderTextColor={COLOR_TEXT_LOW}
+            placeholder="Nome completo"
+            placeholderTextColor="#666"
             value={dadosFilho.nome}
             onChangeText={(text) => setDadosFilho({ nome: text })}
           />
 
-          {/* Idade */}
           <TextInput
             style={styles.modalInput}
             placeholder="Idade"
-            placeholderTextColor={COLOR_TEXT_LOW}
+            placeholderTextColor="#666"
             keyboardType="numeric"
             value={dadosFilho.idade?.toString() || ""}
-            onChangeText={(text) =>
-              setDadosFilho({ idade: Number(text.replace(/[^0-9]/g, '')) }) // Garante apenas números
-            }
+            onChangeText={(text) => setDadosFilho({ idade: Number(text) })}
           />
-          
-          {/* Dia do Pagamento (Apenas dia, não o status) */}
-          <View style={[styles.modalRow, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
-            <Text style={styles.modalLabel}>Dia de Pagamento (Mês):</Text>
-            <TextInput
-                style={[styles.modalInput, {flex: 0.3, textAlign: 'center'}]}
-                placeholder="10"
-                placeholderTextColor={COLOR_TEXT_LOW}
-                keyboardType="numeric"
-                maxLength={2}
-                value={dadosFilho.dataPagamento ? new Date(dadosFilho.dataPagamento).getDate().toString() : '10'}
-                onChangeText={(text) => {
-                    const dia = Number(text.replace(/[^0-9]/g, ''));
-                    if (dia > 0 && dia <= 31) {
-                        const hoje = new Date();
-                        const novaData = new Date(hoje.getFullYear(), hoje.getMonth(), dia).toISOString();
-                        setDadosFilho({ dataPagamento: novaData });
-                    }
-                }}
-            />
-          </View>
 
-
-          {/* Observação */}
           <TextInput
-            style={[styles.modalInput, {height: 80}]}
-            placeholder="Observação (opcional)"
-            placeholderTextColor={COLOR_TEXT_LOW}
+            style={[styles.modalInput, styles.textArea]}
+            placeholder="Observações (opcional)"
+            placeholderTextColor="#666"
             value={dadosFilho.observacao || ""}
-            onChangeText={(text) =>
-              setDadosFilho({ observacao: text })
-            }
+            onChangeText={(text) => setDadosFilho({ observacao: text })}
             multiline
+            numberOfLines={3}
           />
 
-          {/* Modalidade */}
           <View style={styles.modalRow}>
             <Text style={styles.modalLabel}>Modalidade:</Text>
             <View style={styles.modalidadeButtons}>
-              {["Jiu-Jitsu", "Muay Thai"].map(mod => (
-                <TouchableOpacity
-                    key={mod}
-                    style={[
-                        styles.modalidadeButton,
-                        dadosFilho.modalidade === mod && styles.modalidadeButtonSelected,
-                    ]}
-                    onPress={() => handleModalidadeChange(mod as Filho["modalidade"])}
+              <TouchableOpacity
+                style={[
+                  styles.modalidadeButton,
+                  dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonSelected,
+                ]}
+                onPress={() => handleModalidadeChange("Jiu-Jitsu")}
+              >
+                <Text
+                  style={[
+                    styles.modalidadeButtonText,
+                    dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonTextSelected,
+                  ]}
                 >
-                    <Text
-                    style={[
-                        styles.modalidadeButtonText,
-                        dadosFilho.modalidade === mod && styles.modalidadeButtonTextSelected,
-                    ]}
-                    >
-                    {mod}
-                    </Text>
-                </TouchableOpacity>
-              ))}
+                  Jiu-Jitsu
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalidadeButton,
+                  dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonSelected,
+                ]}
+                onPress={() => handleModalidadeChange("Muay Thai")}
+              >
+                <Text
+                  style={[
+                    styles.modalidadeButtonText,
+                    dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonTextSelected,
+                  ]}
+                >
+                  Muay Thai
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Seleção de Graduação Dinâmica com o novo componente */}
           <View style={styles.modalRow}>
             <GraduacaoSelector
-              modalidade={dadosFilho.modalidade || "Jiu-Jitsu"} // Default
+              modalidade={dadosFilho.modalidade || "Jiu-Jitsu"}
               graduacaoAtual={dadosFilho.graduacao}
               onSelect={(graduacao) => setDadosFilho({ graduacao: graduacao })}
             />
@@ -869,191 +1010,565 @@ const ModalContent: React.FC<ModalContentProps> = ({
   );
 };
 
-
-// --- ESTILOS OTIMIZADOS PARA UI/UX ---
-
+// 🎯 ESTILOS
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLOR_BACKGROUND },
+  // CONTAINERS PRINCIPAIS
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+    padding: 20,
+  },
+  
+  // HEADER
   header: {
-    backgroundColor: COLOR_BACKGROUND,
+    backgroundColor: "#000",
     alignItems: "center",
     paddingVertical: 32,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: COLOR_CARD_BACKGROUND,
+    borderBottomColor: "#333",
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLOR_PRIMARY,
+    backgroundColor: "#B8860B",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+    borderWidth: 3,
+    borderColor: "#DAA520",
   },
-  avatarText: { fontSize: 28, fontWeight: "bold", color: COLOR_BACKGROUND }, // Texto em cor escura no fundo dourado
-  userName: { fontSize: 24, fontWeight: "bold", color: COLOR_TEXT_HIGH, marginBottom: 4 },
-  userGraduacao: { fontSize: 16, color: COLOR_PRIMARY, fontWeight: "600" },
-  userModalidade: { fontSize: 14, color: COLOR_TEXT_LOW },
-  section: { marginVertical: 12, paddingHorizontal: 16 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16, alignItems: 'center' },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: COLOR_SECONDARY, textTransform: "uppercase" },
-  editButton: { fontSize: 14, color: COLOR_PRIMARY, fontWeight: "600" },
-  addButton: { fontSize: 14, color: COLOR_PRIMARY, fontWeight: "600" },
-  
-  // Cards e Inputs
-  infoCard: { backgroundColor: COLOR_CARD_BACKGROUND, padding: 16, borderRadius: 10 },
-  infoField: { marginBottom: 18 },
-  infoLabel: { fontSize: 12, color: COLOR_SECONDARY, fontWeight: "600", marginBottom: 6 },
-  infoValue: { fontSize: 16, color: COLOR_TEXT_HIGH, fontWeight: "500" },
-  input: { 
-    backgroundColor: "#2a2a2a", // Um tom mais escuro que o card para contraste de input
-    borderRadius: 6, 
-    padding: 12, 
-    color: COLOR_TEXT_HIGH,
-    borderWidth: 1,
-    borderColor: '#333',
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#000",
   },
-  
-  // Botões Principais
-  saveButton: {
-    backgroundColor: COLOR_PRIMARY,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 8,
+    textAlign: "center",
   },
-  saveButtonText: { color: COLOR_BACKGROUND, fontSize: 16, fontWeight: "700" }, // Texto em cor escura no fundo dourado
-  
-  // Cards dos Filhos
-  filhoCard: {
-    backgroundColor: COLOR_CARD_BACKGROUND,
-    padding: 16,
-    borderRadius: 10,
+  userGraduacao: {
+    fontSize: 16,
+    color: "#B8860B",
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  userModalidade: {
+    fontSize: 14,
+    color: "#CCC",
     marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: COLOR_SECONDARY,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  filhoHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: 'center', marginBottom: 8 },
-  filhoName: { fontSize: 18, fontWeight: "bold", color: COLOR_TEXT_HIGH },
-  filhoActions: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  filhoInfo: { marginBottom: 8, marginTop: 8 },
-  filhoGraduacao: { fontSize: 14, color: COLOR_PRIMARY, fontWeight: '500', marginBottom: 4 },
-  filhoData: { fontSize: 12, color: COLOR_TEXT_LOW, lineHeight: 18 },
-
-  // Badges e Botões de Pagamento (Ação Separada)
-  modalidadeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start' },
-  modalidadeBadgeText: { fontSize: 12, color: COLOR_TEXT_HIGH, fontWeight: "600" },
-  pagamentoButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 5,
+  pagamentoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#1a1a1a",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  pagoButton: {
-    backgroundColor: COLOR_SUCCESS, 
+  pagamentoHeaderText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  pendenteButton: {
-    backgroundColor: COLOR_ERROR, 
+  
+  // SECTIONS
+  section: {
+    marginVertical: 8,
+    paddingHorizontal: 16,
   },
-  pagamentoButtonText: {
-    color: COLOR_TEXT_HIGH,
-    fontSize: 10, // Menor para encaixar
-    fontWeight: 'bold',
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
-
-  // Modalidade/Graduação Selector
-  modalidadeGroup: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  modalidadeButton: {
-    flex: 1 / 2, // Distribui em duas colunas (cerca de 45% cada)
-    minWidth: '45%',
-    backgroundColor: '#333',
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
+  sectionTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#B8860B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  
+  // BOTÕES DE AÇÃO
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  editButtonText: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "600",
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  addButtonText: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "600",
+  },
+  editIconButton: {
+    padding: 8,
+  },
+  
+  // CARDS DE INFORMAÇÃO
+  infoCard: {
+    backgroundColor: "#1a1a1a",
+    padding: 20,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#444',
-    marginVertical: 4,
+    borderColor: "#333",
+  },
+  infoField: {
+    marginBottom: 20,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "600",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: "#FFF",
+    fontWeight: "500",
+  },
+  input: {
+    backgroundColor: "#2a2a2a",
+    borderRadius: 8,
+    padding: 12,
+    color: "#FFF",
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  
+  // BOTÕES DE MODALIDADE
+  modalidadeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  modalidadeButton: {
+    flex: 1,
+    minWidth: "45%",
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#2a2a2a",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#333",
   },
   modalidadeButtonSelected: {
-    backgroundColor: COLOR_SECONDARY,
-    borderColor: COLOR_PRIMARY,
-    borderWidth: 2,
+    backgroundColor: "#B8860B",
+    borderColor: "#DAA520",
   },
   modalidadeButtonText: {
-    color: COLOR_TEXT_HIGH,
-    fontWeight: '600',
+    color: "#CCC",
+    fontWeight: "500",
     fontSize: 14,
   },
   modalidadeButtonTextSelected: {
-    color: COLOR_BACKGROUND, // Cor escura quando selecionado
-    fontWeight: '700',
+    color: "#000",
+    fontWeight: "600",
   },
-  graduacaoContainer: { marginTop: 8 },
-  scrollContent: { paddingRight: 20, paddingVertical: 4 },
-  grauButtonsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  grauButton: {
-    minWidth: 40,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: '#333',
-    alignItems: 'center',
+  
+  // BOTÃO SALVAR
+  saveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#B8860B",
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  
+  // CARDS DE FILHOS
+  filhoCard: {
+    backgroundColor: "#1a1a1a",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#B8860B",
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: "#333",
   },
-
-  // Modal Estilos
+  filhoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  filhoInfoHeader: {
+    flex: 1,
+  },
+  filhoName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 4,
+  },
+  filhoIdade: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "500",
+  },
+  filhoContent: {
+    gap: 8,
+  },
+  filhoBadges: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  modalidadeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  modalidadeBadgeText: {
+    fontSize: 12,
+    color: "#FFF",
+    fontWeight: "600",
+  },
+  filhoGraduacao: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "500",
+  },
+  filhoData: {
+    fontSize: 12,
+    color: "#888",
+  },
+  filhoObservacao: {
+    fontSize: 14,
+    color: "#CCC",
+    fontStyle: "italic",
+    marginTop: 4,
+  },
+  
+  // SEÇÃO DE PAGAMENTO
+  pagamentoSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+  },
+  pagamentoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  pagamentoPago: {
+    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    borderColor: "#22c55e",
+  },
+  pagamentoPendente: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderColor: "#ef4444",
+  },
+  pagamentoButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  pagamentoButtonTextPago: {
+    color: "#22c55e",
+  },
+  pagamentoButtonTextPendente: {
+    color: "#ef4444",
+  },
+  
+  // ESTADOS VAZIOS
+  emptyState: {
+    backgroundColor: "#1a1a1a",
+    padding: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#333",
+    borderStyle: "dashed",
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#CCC",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  
+  // MODAL
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   modalContent: {
-    backgroundColor: COLOR_CARD_BACKGROUND,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "90%",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
-    maxHeight: '85%', // Limita a altura para scroll
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: COLOR_PRIMARY,
-    marginBottom: 20,
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  modalScrollView: {
+    maxHeight: 400,
+  },
+  modalScrollContent: {
+    padding: 20,
+    gap: 16,
   },
   modalInput: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     borderRadius: 8,
-    padding: 12,
-    color: COLOR_TEXT_HIGH,
-    marginBottom: 15,
+    padding: 16,
+    color: "#FFF",
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
-  modalRow: { marginBottom: 15 },
-  modalLabel: { fontSize: 14, color: COLOR_SECONDARY, fontWeight: "600", marginBottom: 8 },
-  modalitySelector: { flexDirection: 'row', justifyContent: 'space-around' },
-  modalidadeButtons: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
-  modalButton: { paddingVertical: 14, borderRadius: 8, flex: 1, marginHorizontal: 5, alignItems: 'center' },
-  confirmButton: { backgroundColor: COLOR_PRIMARY },
-  confirmButtonText: { color: COLOR_BACKGROUND, fontSize: 16, fontWeight: '700' },
-  cancelButton: { backgroundColor: '#333', borderWidth: 1, borderColor: '#555' },
-  cancelButtonText: { color: COLOR_TEXT_LOW, fontSize: 16, fontWeight: '600' },
-
-  // Empty State
-  emptyState: {
-    backgroundColor: COLOR_CARD_BACKGROUND,
-    padding: 32,
-    borderRadius: 10,
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  modalRow: {
+    gap: 12,
+  },
+  modalLabel: {
+    fontSize: 16,
+    color: "#B8860B",
+    fontWeight: "600",
+  },
+  modalidadeButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#2a2a2a",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  confirmButton: {
+    backgroundColor: "#B8860B",
+  },
+  warningButton: {
+    backgroundColor: "#ef4444",
+  },
+  cancelButtonText: {
+    color: "#CCC",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  confirmButtonText: {
+    color: "#000",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  warningButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  
+  // COMPONENTE DE PAGAMENTO NO MODAL
+  pagamentoInfo: {
+    backgroundColor: "#2a2a2a",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    gap: 12,
+  },
+  alunoInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pagamentoNome: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusBadgePago: {
+    backgroundColor: "rgba(34, 197, 94, 0.2)",
+  },
+  statusBadgePendente: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#FFF",
+    textTransform: "uppercase",
+  },
+  dataInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pagamentoData: {
+    fontSize: 14,
+    color: "#666",
+  },
+  
+  // SELEÇÃO DE GRADUAÇÃO
+  graduacaoContainer: {
+    gap: 12,
+  },
+  scrollContent: {
+    gap: 8,
+  },
+  graduacaoButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#2a2a2a",
+    borderWidth: 1,
+    borderColor: "#333",
+    marginRight: 8,
+  },
+  graduacaoButtonSelected: {
+    backgroundColor: "#B8860B",
+    borderColor: "#DAA520",
+  },
+  graduacaoButtonText: {
+    color: "#CCC",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  graduacaoButtonTextSelected: {
+    color: "#000",
+    fontWeight: "600",
+  },
+  grauButtonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  grauButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#2a2a2a",
+    borderWidth: 1,
+    borderColor: "#333",
+    minWidth: 60,
     alignItems: "center",
   },
-  emptyStateText: { fontSize: 16, color: COLOR_TEXT_LOW, marginBottom: 8 },
-  emptyStateSubtext: { fontSize: 14, color: '#666' },
+  grauButtonSelected: {
+    backgroundColor: "#B8860B",
+    borderColor: "#DAA520",
+  },
+  grauButtonText: {
+    color: "#CCC",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  grauButtonTextSelected: {
+    color: "#000",
+    fontWeight: "600",
+  },
+  
+  // TEXTO DE CARREGAMENTO E ERRO
+  loadingText: {
+    color: "#B8860B",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  errorText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  errorSubtext: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+  },
 });
