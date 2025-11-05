@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore"; // Adicionado getDoc
+import { useRouter } from 'expo-router';
+import { collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -15,7 +16,7 @@ import {
 } from "react-native";
 
 import { db } from "@/config/firebaseConfig";
-// Importe a interface Filho do seu arquivo de tipos, assim como no primeiro código
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Filho, Usuario } from "../types/usuarios";
 
 // 🎯 TIPOS E INTERFACES
@@ -23,10 +24,9 @@ interface UsuarioCompleto extends Usuario {
     id: string;
 }
 
-// Nova interface para o componente unificado de gerenciamento
 interface GerenciarPagamentoProps {
     usuario: UsuarioCompleto;
-    filho?: Filho; // Opcional, para indicar se é o usuário principal ou um filho
+    filho?: Filho;
     onPagamentoAtualizado: () => void;
 }
 
@@ -36,16 +36,59 @@ interface FiltrosState {
     modalidade: "todas" | Usuario["modalidade"];
 }
 
+// 🎯 COMPONENTE DE ACESSO NEGADO
+const AcessoNegado = ({ onRetry }: { onRetry: () => void }) => {
+  const router = useRouter();
+
+  return (
+    <View style={styles.acessoNegadoContainer}>
+      <Ionicons name="shield" size={64} color="#ef4444" />
+      <Text style={styles.acessoNegadoTitle}>Acesso Restrito</Text>
+      <Text style={styles.acessoNegadoText}>
+        Esta área é exclusiva para administradores.
+      </Text>
+      <Text style={styles.acessoNegadoSubtext}>
+        Você precisa ter permissão de administrador para acessar este painel.
+      </Text>
+      
+      <View style={styles.acessoNegadoButtons}>
+        <TouchableOpacity
+          style={[styles.acessoNegadoButton, styles.retryButton]}
+          onPress={onRetry}
+        >
+          <Ionicons name="refresh" size={20} color="#000" />
+          <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.acessoNegadoButton, styles.backButton]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={20} color="#B8860B" />
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+// 🎯 COMPONENTE DE CARREGAMENTO
+const LoadingScreen = () => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#B8860B" />
+    <Text style={styles.loadingText}>Verificando permissões...</Text>
+  </View>
+);
+
 // 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO (UNIFICADO)
 const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
     usuario,
-    filho, // Recebe o filho
+    filho,
     onPagamentoAtualizado,
 }) => {
     const [modalPagamento, setModalPagamento] = useState(false);
     const [processando, setProcessando] = useState(false);
 
-    // Determinar o nome e o status de pagamento a ser gerenciado
     const nomeParaExibir = filho ? filho.nome : usuario.nome;
     const pagamentoAtual = filho ? filho.pagamento : usuario.pagamento;
     const dataPagamentoAtual = filho ? filho.dataUltimoPagamento : usuario.dataUltimoPagamento;
@@ -68,14 +111,12 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
         return `${diffDias} dias atrás`;
     };
 
-    // 🔄 FUNÇÃO PARA ATUALIZAR O STATUS (PAGO/PENDENTE)
     const handleTogglePagamento = async (status: boolean) => {
         setProcessando(true);
         try {
             const userRef = doc(db, "usuarios", usuario.id);
 
             if (filho) {
-                // LÓGICA PARA ATUALIZAR PAGAMENTO DO FILHO
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     const usuarioData = userSnap.data() as Usuario;
@@ -95,7 +136,6 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                     );
                 }
             } else {
-                // LÓGICA PARA ATUALIZAR PAGAMENTO DO USUÁRIO PRINCIPAL
                 await updateDoc(userRef, {
                     pagamento: status,
                     dataUltimoPagamento: status ? new Date().toISOString() : undefined,
@@ -186,7 +226,6 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                                 </Text>
                             </View>
 
-                            {/* Mostrar dia de pagamento apenas para o usuário principal, se a info for pertinente */}
                             {!filho && (
                                 <View style={styles.dataInfo}>
                                     <Ionicons name="card" size={16} color="#666" />
@@ -281,10 +320,6 @@ const UsuarioCard: React.FC<{
         return "#ef4444";
     };
 
-    const getFilhoStatusColor = (pagamento: boolean) => {
-        return pagamento ? "#22c55e" : "#ef4444";
-    }
-
     return (
         <View style={styles.usuarioCard}>
             <View style={styles.usuarioHeader}>
@@ -300,7 +335,6 @@ const UsuarioCard: React.FC<{
                         <Text style={styles.usuarioEmail}>{usuario.email}</Text>
                     </View>
                 </View>
-                {/* Botão de pagamento do usuário principal */}
                 <GerenciarPagamento
                     usuario={usuario}
                     onPagamentoAtualizado={onPagamentoAtualizado}
@@ -337,7 +371,6 @@ const UsuarioCard: React.FC<{
                 </View>
             </View>
 
-            {/* SEÇÃO DE FILHOS COM BOTÃO DE PAGAMENTO INDIVIDUAL */}
             {usuario.filhos && usuario.filhos.length > 0 && (
                 <View style={styles.filhosSection}>
                     <Text style={styles.filhosTitle}>
@@ -355,7 +388,6 @@ const UsuarioCard: React.FC<{
                                     </Text>
                                 </View>
                             </View>
-                            {/* Adicionado o componente de Gerenciar Pagamento para o Filho */}
                             <GerenciarPagamento
                                 usuario={usuario}
                                 filho={filho}
@@ -369,7 +401,7 @@ const UsuarioCard: React.FC<{
     );
 };
 
-// 🎯 COMPONENTE DE FILTROS (MANTIDO IGUAL)
+// 🎯 COMPONENTE DE FILTROS
 const Filtros: React.FC<{
     filtros: FiltrosState;
     onFiltrosChange: (filtros: FiltrosState) => void;
@@ -397,7 +429,6 @@ const Filtros: React.FC<{
 
             {mostrarFiltros && (
                 <View style={styles.filtrosAvançados}>
-                    {/* Filtro por Status de Pagamento */}
                     <View style={styles.filtroGrupo}>
                         <Text style={styles.filtroLabel}>Status de Pagamento</Text>
                         <View style={styles.filtroBotoes}>
@@ -430,7 +461,6 @@ const Filtros: React.FC<{
                         </View>
                     </View>
 
-                    {/* Filtro por Modalidade */}
                     <View style={styles.filtroGrupo}>
                         <Text style={styles.filtroLabel}>Modalidade</Text>
                         <View style={styles.filtroBotoes}>
@@ -465,8 +495,10 @@ const Filtros: React.FC<{
     );
 };
 
-// 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN (MANTIDO IGUAL, EXCETO USAR O NOVO COMPONENTE)
+// 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
+    const router = useRouter();
+    const { user, isAdmin, loading: authLoading } = useAdminAuth();
     const [usuarios, setUsuarios] = useState<UsuarioCompleto[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -476,8 +508,17 @@ export default function AdminScreen() {
         modalidade: "todas"
     });
 
-    // 🔄 CARREGAR USUÁRIOS
+    // 🔄 VERIFICAR ACESSO
+    useEffect(() => {
+        if (!authLoading && !isAdmin) {
+            setLoading(false);
+        }
+    }, [authLoading, isAdmin]);
+
+    // 🔄 CARREGAR USUÁRIOS (apenas se for admin)
     const carregarUsuarios = async () => {
+        if (!isAdmin) return;
+        
         try {
             const querySnapshot = await getDocs(collection(db, "usuarios"));
             const usuariosData: UsuarioCompleto[] = [];
@@ -489,7 +530,6 @@ export default function AdminScreen() {
                 } as UsuarioCompleto);
             });
 
-            // Ordenar por nome
             usuariosData.sort((a, b) => a.nome.localeCompare(b.nome));
             setUsuarios(usuariosData);
         } catch (error) {
@@ -503,17 +543,19 @@ export default function AdminScreen() {
 
     // 🔄 PULL TO REFRESH
     const onRefresh = () => {
+        if (!isAdmin) return;
         setRefreshing(true);
         carregarUsuarios();
     };
 
     useEffect(() => {
-        carregarUsuarios();
-    }, []);
+        if (isAdmin) {
+            carregarUsuarios();
+        }
+    }, [isAdmin]);
 
     // 🎯 APLICAR FILTROS
     const usuariosFiltrados = usuarios.filter(usuario => {
-        // Filtro por busca
         if (filtros.busca &&
             !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
             !usuario.email.toLowerCase().includes(filtros.busca.toLowerCase())
@@ -521,13 +563,11 @@ export default function AdminScreen() {
             return false;
         }
 
-        // Filtro por status de pagamento
         if (filtros.statusPagamento !== "todos") {
             if (filtros.statusPagamento === "pagos" && !usuario.pagamento) return false;
             if (filtros.statusPagamento === "pendentes" && usuario.pagamento) return false;
         }
 
-        // Filtro por modalidade
         if (filtros.modalidade !== "todas" && usuario.modalidade !== filtros.modalidade) {
             return false;
         }
@@ -543,17 +583,16 @@ export default function AdminScreen() {
         comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
         totalAlunos: usuarios.reduce((total, usuario) =>
             total + (usuario.filhos ? usuario.filhos.length : 0), 0
-        ) + usuarios.length // Adiciona os usuários principais
+        ) + usuarios.length
     };
 
     // 🎯 RENDER STATES
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#B8860B" />
-                <Text style={styles.loadingText}>Carregando usuários...</Text>
-            </View>
-        );
+    if (authLoading || loading) {
+        return <LoadingScreen />;
+    }
+
+    if (!isAdmin) {
+        return <AcessoNegado onRetry={carregarUsuarios} />;
     }
 
     return (
@@ -563,7 +602,9 @@ export default function AdminScreen() {
                 <View style={styles.headerContent}>
                     <Ionicons name="shield-checkmark" size={32} color="#B8860B" />
                     <Text style={styles.headerTitle}>Painel Administrativo</Text>
-                    <Text style={styles.headerSubtitle}>Gestão de Alunos e Pagamentos</Text>
+                    <Text style={styles.headerSubtitle}>
+                        Logado como: {user?.email}
+                    </Text>
                 </View>
             </View>
 
@@ -644,9 +685,9 @@ export default function AdminScreen() {
     );
 }
 
-// 🎯 ESTILOS (Adicionados estilos para os filhos)
+// 🎯 ESTILOS (manter os mesmos estilos que você já tem)
 const styles = StyleSheet.create({
-    // ... estilos existentes
+    // ... (seus estilos existentes)
     container: { flex: 1, backgroundColor: "#000", padding: 16 },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" },
     loadingText: { color: "#FFF", marginTop: 10 },
@@ -814,4 +855,65 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontStyle: 'italic',
     },
+    acessoNegadoContainer: {
+        flex: 1,
+        backgroundColor: '#000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    acessoNegadoTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#ef4444',
+        marginTop: 20,
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    acessoNegadoText: {
+        fontSize: 18,
+        color: '#FFF',
+        textAlign: 'center',
+        marginBottom: 8,
+        fontWeight: '600',
+    },
+    acessoNegadoSubtext: {
+        fontSize: 14,
+        color: '#CCC',
+        textAlign: 'center',
+        marginBottom: 30,
+        lineHeight: 20,
+    },
+    acessoNegadoButtons: {
+        width: '100%',
+        gap: 12,
+    },
+    acessoNegadoButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    retryButton: {
+        backgroundColor: '#B8860B',
+        borderColor: '#B8860B',
+    },
+    backButton: {
+        backgroundColor: 'transparent',
+        borderColor: '#B8860B',
+    },
+    retryButtonText: {
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    backButtonText: {
+        color: '#B8860B',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+
 });

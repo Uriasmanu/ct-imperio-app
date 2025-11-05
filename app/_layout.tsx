@@ -1,6 +1,8 @@
-import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
+import { useAdminAuth } from '@/hooks/useAdminAuth'; // Importe o hook
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
 import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -19,6 +21,89 @@ function HeaderLeftWithImage({ onPress }: { onPress: () => void }) {
         resizeMode="cover"
       />
     </TouchableOpacity>
+  );
+}
+
+// Componente de Drawer personalizado
+function CustomDrawerContent(props: any) {
+  const { isAdmin, loading } = useAdminAuth();
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setShowAdmin(isAdmin);
+    }
+  }, [isAdmin, loading]);
+
+  // Filtra as rotas que devem aparecer no drawer
+  const { state, ...rest } = props;
+  const filteredRoutes = state.routes.filter((route: any) => {
+    // Se for a tela AdminScreen, só mostra se for admin
+    if (route.name === 'AdminScreen') {
+      return showAdmin;
+    }
+    // Para outras telas, sempre mostra (exceto as que estão configuradas para não aparecer)
+    return route.name !== 'SettingsScreen' && 
+           route.name !== 'PerfilScreen' && 
+           route.name !== 'RegistroScreen';
+  });
+
+  return (
+    <DrawerContentScrollView
+      {...props}
+      contentContainerStyle={{
+        flex: 1,
+        backgroundColor: '#000000',
+      }}
+    >
+      {/* Header do Drawer */}
+      <View style={styles.drawerHeader}>
+        <Image
+          source={require('@/assets/images/icon.png')}
+          style={styles.drawerHeaderImage}
+          resizeMode="cover"
+        />
+        <View style={styles.drawerHeaderText}>
+          <Text style={styles.drawerTitle}>CT Imperio</Text>
+          <Text style={styles.drawerSubtitle}>
+            {showAdmin ? 'Administrador' : 'Bem-vindo(a)'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Lista de itens filtrada */}
+      {filteredRoutes.map((route: any, index: number) => {
+        const { options } = props.descriptors[route.key];
+        
+        // Se for uma tela que não deve aparecer no drawer, não renderiza
+        if (options.drawerItemStyle?.display === 'none') {
+          return null;
+        }
+
+        return (
+          <DrawerItem
+            key={route.key}
+            label={options.drawerLabel || route.name}
+            icon={options.drawerIcon}
+            focused={state.index === index}
+            onPress={() => props.navigation.navigate(route.name)}
+            labelStyle={styles.drawerLabel}
+          />
+        );
+      })}
+
+      <View style={{ flex: 1 }} />
+
+      {/* Item de Configurações */}
+      <DrawerItem
+        label="Configurações"
+        icon={({ color, size }) => (
+          <Settings size={size} color='#fff' />
+        )}
+        onPress={() => props.navigation.navigate('SettingsScreen')}
+        labelStyle={styles.drawerLabel}
+      />
+    </DrawerContentScrollView>
   );
 }
 
@@ -52,43 +137,7 @@ export default function RootLayout() {
                 drawerActiveTintColor: '#FFFFFF',
                 drawerInactiveTintColor: '#CCCCCC',
               }}
-              drawerContent={(props) => (
-                <DrawerContentScrollView
-                  {...props}
-                  contentContainerStyle={{
-                    flex: 1,
-                    backgroundColor: '#000000',
-                  }}
-                >
-                  {/* Header do Drawer */}
-                  <View style={styles.drawerHeader}>
-                    <Image
-                      source={require('@/assets/images/icon.png')}
-                      style={styles.drawerHeaderImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.drawerHeaderText}>
-                      <Text style={styles.drawerTitle}>CT Imperio</Text>
-                      <Text style={styles.drawerSubtitle}>Bem-vindo(a)</Text>
-                    </View>
-                  </View>
-
-                  {/* Lista de itens */}
-                  <DrawerItemList {...props} />
-
-                  <View style={{ flex: 1 }} />
-
-                  {/* Item de Configurações */}
-                  <DrawerItem
-                    label="Configurações"
-                    icon={({ color, size }) => (
-                      <Settings size={size} color='#fff' />
-                    )}
-                    onPress={() => props.navigation.navigate('SettingsScreen')}
-                    labelStyle={styles.drawerLabel}
-                  />
-                </DrawerContentScrollView>
-              )}
+              drawerContent={(props) => <CustomDrawerContent {...props} />}
             >
               <Drawer.Screen
                 name="index"
@@ -140,6 +189,20 @@ export default function RootLayout() {
                   ),
                 }}
               />
+              
+              {/* Tela Admin - sempre definida, mas só aparece no drawer para admins */}
+              <Drawer.Screen
+                name="AdminScreen"
+                options={{
+                  drawerLabel: "Painel Admin",
+                  title: "Painel Administrativo",
+                  drawerIcon: ({ color, size }) => (
+                    <ShieldCheck size={size} color={color} />
+                  ),
+                }}
+              />
+
+              {/* Telas que não aparecem no drawer */}
               <Drawer.Screen
                 name="SettingsScreen"
                 options={{
@@ -153,6 +216,7 @@ export default function RootLayout() {
                 options={{
                   drawerLabel: () => null,
                   drawerItemStyle: { display: 'none' },
+                  title: 'Perfil',
                 }}
               />
               <Drawer.Screen
@@ -160,9 +224,9 @@ export default function RootLayout() {
                 options={{
                   drawerLabel: () => null,
                   drawerItemStyle: { display: 'none' },
+                  title: 'Registro',
                 }}
               />
-
             </Drawer>
           </View>
 
