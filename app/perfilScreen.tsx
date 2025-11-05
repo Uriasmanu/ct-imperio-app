@@ -213,6 +213,7 @@ export default function PerfilScreen() {
         observacao: usuario.observacao,
         modalidade: usuario.modalidade,
         graduacao: usuario.graduacao,
+        pagamento: usuario.pagamento, // ✅ Incluído pagamento no update
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -346,7 +347,7 @@ export default function PerfilScreen() {
         <Text style={styles.userModalidade}>{usuario.modalidade}</Text>
       </View>
 
-      {/* Informações Pessoais (Sem alterações relevantes aqui) */}
+      {/* Informações Pessoais */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
@@ -363,7 +364,29 @@ export default function PerfilScreen() {
           {renderInfoField("Telefone", usuario.telefone || "", true)}
           {renderInfoField("Data de Registro", formatarData(usuario.dataDeRegistro))}
           {renderInfoField("Observação", usuario.observacao || "", true)}
-          {renderInfoField("Pagamento", usuario.pagamento ? "Pago" : "Pendente")}
+
+          {/* ✅ NOVO CAMPO DE PAGAMENTO */}
+          <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Pagamento</Text>
+            {editando ? (
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <TouchableOpacity
+                  style={[
+                    styles.modalidadeButton,
+                    usuario.pagamento && styles.modalidadeButtonSelected,
+                    { flex: 0.4, minWidth: 100 }
+                  ]}
+                  onPress={() => setUsuario(prev => prev ? { ...prev, pagamento: !prev.pagamento } : prev)}
+                >
+                  <Text style={[styles.modalidadeButtonText, usuario.pagamento && styles.modalidadeButtonTextSelected]}>
+                    {usuario.pagamento ? "Pago" : "Pendente"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text style={styles.infoValue}>{usuario.pagamento ? "Pago" : "Pendente"}</Text>
+            )}
+          </View>
 
           {/* Modalidade editável */}
           <View style={styles.infoField}>
@@ -737,7 +760,7 @@ const styles = StyleSheet.create({
   addButton: { fontSize: 14, color: "#B8860B", fontWeight: "600" },
   infoCard: { backgroundColor: "#1a1a1a", padding: 16, borderRadius: 8 },
   infoField: { marginBottom: 16 },
-  infoLabel: { fontSize: 12, color: "#B8860B", fontWeight: "600" },
+  infoLabel: { fontSize: 12, color: "#B8860B", fontWeight: "600", marginBottom: 10 },
   infoValue: { fontSize: 16, color: "#FFF", fontWeight: "500" },
   input: { backgroundColor: "#2a2a2a", borderRadius: 6, padding: 12, color: "#FFF" },
   saveButton: {
