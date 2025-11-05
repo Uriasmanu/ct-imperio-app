@@ -12,7 +12,9 @@ export const criarUsuario = async (
 ): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
     // Gera um ID único se não foi fornecido
-    const usuarioId = id || `user_${Date.now()}`;
+    if (!id) throw new Error("É obrigatório informar o UID do usuário para criar o documento.");
+    const usuarioId = id;
+
 
     // Remove o campo "senha" se vier por engano
     const { senha, ...dadosSemSenha } = usuarioData;

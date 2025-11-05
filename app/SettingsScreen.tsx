@@ -21,8 +21,6 @@ import { appConfig, gymData } from './../utils/constants';
 
 const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
-  const [selectedUnit, setSelectedUnit] = useState('Unidade Centro');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState('');
