@@ -126,13 +126,22 @@ export const classSchedule: ClassSchedule[] = [
     days: ['Segunda', 'Quarta', 'Sexta'],
     current: true,
   },
-    {
+  {
     id: '14',
     title: 'Boxe Misto (Manhã)',
     instructor: 'Instrutor Jagunço (Gustavo)',
     startTime: '8:00',
     endTime: '09:00',
     days: ['Terça', 'Quinta'],
+    current: true,
+  },
+  {
+    id: '15',
+    title: 'MMA (Manhã)',
+    instructor: 'Instrutor Maradona (Gustavo)',
+    startTime: '10:00',
+    endTime: '11:00',
+    days: ['Sabado'],
     current: true,
   },
 ];
