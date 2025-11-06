@@ -31,7 +31,7 @@ export default function perfilScreen() {
   const [atualizacao, setAtualizacao] = useState(0);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
-    const {
+  const {
     usuario,
     setUsuario,
     loading,
@@ -39,7 +39,9 @@ export default function perfilScreen() {
     carregarUsuario,
     onRefresh,
     setLoading,
-    handlePagamentoAtualizado
+    handlePagamentoAtualizado,
+    adicionarFilho,
+    editarFilho
   } = useUsuario();
 
 
@@ -66,7 +68,10 @@ export default function perfilScreen() {
       try {
         const userRef = doc(db, "usuarios", usuario.id);
         await updateDoc(userRef, { filhos: filhosAtualizados });
-        setUsuario(prev => prev ? { ...prev, filhos: filhosAtualizados } : prev);
+
+        // CORREÇÃO: Use o usuário atualizado diretamente
+        const usuarioAtualizado = { ...usuario, filhos: filhosAtualizados };
+        setUsuario(usuarioAtualizado);
       } catch (error) {
         console.error("Erro ao atualizar pagamentos:", error);
       }
@@ -188,9 +193,9 @@ export default function perfilScreen() {
                 styles.modalidadeBadge,
                 {
                   backgroundColor:
-                    modalidadeAluno.modalidade === "Muay Thai" ? "#dc2626" : 
-                    modalidadeAluno.modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                    modalidadeAluno.modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                    modalidadeAluno.modalidade === "Muay Thai" ? "#dc2626" :
+                      modalidadeAluno.modalidade === "Jiu-Jitsu" ? "#1e40af" :
+                        modalidadeAluno.modalidade === "Boxe" ? "#059669" : "#7c3aed",
                 },
               ]}
             >
@@ -214,9 +219,13 @@ export default function perfilScreen() {
         <TextInput
           style={styles.input}
           value={value}
-          onChangeText={(text) =>
-            setUsuario((prev) => prev ? { ...prev, [key || label.toLowerCase()]: text } : prev)
-          }
+          onChangeText={(text) => {
+            if (usuario && key) {
+              // CORREÇÃO: Criar novo objeto diretamente
+              const usuarioAtualizado = { ...usuario, [key]: text };
+              setUsuario(usuarioAtualizado);
+            }
+          }}
           placeholderTextColor="#666"
         />
       ) : (
@@ -285,8 +294,8 @@ export default function perfilScreen() {
           {formatarGraduacao(getPrimeiraGraduacaoAtiva(), getPrimeiraModalidadeAtiva())}
         </Text>
         <Text style={styles.userModalidade}>
-          {usuario.modalidades?.length > 1 
-            ? `${usuario.modalidades.length} modalidades` 
+          {usuario.modalidades?.length > 1
+            ? `${usuario.modalidades.length} modalidades`
             : getPrimeiraModalidadeAtiva()
           }
         </Text>
@@ -356,7 +365,11 @@ export default function perfilScreen() {
               <MultiModalidadeSelector
                 modalidades={usuario.modalidades || []}
                 onModalidadesChange={(modalidades) => {
-                  setUsuario((prev) => prev ? { ...prev, modalidades } : prev);
+                  // CORREÇÃO: Criar novo objeto diretamente
+                  if (usuario) {
+                    const usuarioAtualizado = { ...usuario, modalidades };
+                    setUsuario(usuarioAtualizado);
+                  }
                 }}
               />
             ) : (
@@ -451,27 +464,20 @@ export default function perfilScreen() {
           setFilhoEmEdicao(null);
         }}
         onAdicionarFilho={async (filhoData) => {
-          if (!usuario?.id) return;
-
-          const filhoCompleto: Filho = {
-            ...filhoData,
-            id: Date.now().toString(),
-          };
-
-          const userRef = doc(db, "usuarios", usuario.id);
-          const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
-          await updateDoc(userRef, { filhos: novosFilhos });
-          setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+          const sucesso = await adicionarFilho(filhoData);
+          if (sucesso) {
+            Alert.alert("Sucesso", "Aluno adicionado com sucesso!");
+          } else {
+            Alert.alert("Erro", "Não foi possível adicionar o aluno.");
+          }
         }}
         onSalvarEdicaoFilho={async (filhoEditado) => {
-          if (!usuario?.id) return;
-
-          const userRef = doc(db, "usuarios", usuario.id);
-          const novosFilhos = (usuario.filhos || []).map((f) =>
-            f.id === filhoEditado.id ? filhoEditado : f
-          );
-          await updateDoc(userRef, { filhos: novosFilhos });
-          setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+          const sucesso = await editarFilho(filhoEditado);
+          if (sucesso) {
+            Alert.alert("Sucesso", "Aluno atualizado com sucesso!");
+          } else {
+            Alert.alert("Erro", "Não foi possível atualizar o aluno.");
+          }
         }}
       />
     </ScrollView>
