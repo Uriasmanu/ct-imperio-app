@@ -29,6 +29,49 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
     const [modalPagamento, setModalPagamento] = useState(false);
     const [processando, setProcessando] = useState(false);
 
+    const handleAvisarPagamento = async () => {
+        setProcessando(true);
+        try {
+            if (tipo === "usuario") {
+                // Atualizar usuário principal
+                const userRef = doc(db, "usuarios", item.id);
+                await updateDoc(userRef, {
+                    avisoPagamento: true,
+                    dataUltimoPagamento: new Date().toISOString()
+                });
+            } else {
+                // Atualizar filho
+                if (!usuarioId) throw new Error("ID do usuário é necessário para filhos");
+
+                const userRef = doc(db, "usuarios", usuarioId);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    const usuario = userSnap.data() as Usuario;
+                    const filhosAtualizados = usuario.filhos?.map(f =>
+                        f.id === item.id
+                            ? {
+                                ...f,
+                                avisoPagamento: true,
+                                dataUltimoPagamento: new Date().toISOString()
+                            }
+                            : f
+                    );
+
+                    await updateDoc(userRef, { filhos: filhosAtualizados });
+                }
+            }
+
+            onPagamentoAtualizado();
+            Alert.alert("Sucesso", `Pagamento de ${item.nome} foi avisado e está aguardando confirmação!`);
+        } catch (error) {
+            console.error("Erro ao avisar pagamento:", error);
+            Alert.alert("Erro", "Não foi possível avisar o pagamento.");
+        } finally {
+            setProcessando(false);
+        }
+    };
+
     const handleConfirmarPagamento = async () => {
         setProcessando(true);
         try {
@@ -37,6 +80,7 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                 const userRef = doc(db, "usuarios", item.id);
                 await updateDoc(userRef, {
                     pagamento: true,
+                    avisoPagamento: false,
                     dataUltimoPagamento: new Date().toISOString()
                 });
             } else {
@@ -53,6 +97,7 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                             ? {
                                 ...f,
                                 pagamento: true,
+                                avisoPagamento: false,
                                 dataUltimoPagamento: new Date().toISOString()
                             }
                             : f
@@ -67,7 +112,7 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
             Alert.alert("Sucesso", `Pagamento de ${item.nome} confirmado!`);
         } catch (error) {
             console.error("Erro ao confirmar pagamento:", error);
-            Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
+            Alert.alert("Erro", "Não foi possível confirmar o pagamento.");
         } finally {
             setProcessando(false);
         }
@@ -80,7 +125,8 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                 // Atualizar usuário principal
                 const userRef = doc(db, "usuarios", item.id);
                 await updateDoc(userRef, {
-                    pagamento: false
+                    pagamento: false,
+                    avisoPagamento: false
                 });
             } else {
                 // Atualizar filho
@@ -93,7 +139,11 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                     const usuario = userSnap.data() as Usuario;
                     const filhosAtualizados = usuario.filhos?.map(f =>
                         f.id === item.id
-                            ? { ...f, pagamento: false }
+                            ? { 
+                                ...f, 
+                                pagamento: false,
+                                avisoPagamento: false 
+                            }
                             : f
                     );
 
@@ -103,10 +153,10 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 
             onPagamentoAtualizado();
             setModalPagamento(false);
-            Alert.alert("🔄 Status Alterado", `Pagamento de ${item.nome} marcado como pendente.`);
+            Alert.alert("Status Alterado", `Pagamento de ${item.nome} marcado como pendente.`);
         } catch (error) {
             console.error("Erro ao atualizar pagamento:", error);
-            Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
+            Alert.alert("Erro", "Não foi possível atualizar o status do pagamento.");
         } finally {
             setProcessando(false);
         }
@@ -118,27 +168,82 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 
     const dataUltimoPagamento = 'dataUltimoPagamento' in item ? item.dataUltimoPagamento : undefined;
 
+    // Determinar o texto a ser exibido baseado no status
+    const getStatusText = () => {
+        if (item.pagamento) {
+            return "Pago";
+        } else if (item.avisoPagamento) {
+            return "Aguardando";
+        } else {
+            return "Pendente";
+        }
+    };
+
+    // Determinar a cor baseada no status
+    const getStatusColor = () => {
+        if (item.pagamento) {
+            return "#22c55e"; // Verde para pago
+        } else if (item.avisoPagamento) {
+            return "#f59e0b"; // Âmbar para aguardando
+        } else {
+            return "#ef4444"; // Vermelho para pendente
+        }
+    };
+
+    // Determinar o ícone baseado no status
+    const getStatusIcon = () => {
+        if (item.pagamento) {
+            return "checkmark-circle";
+        } else if (item.avisoPagamento) {
+            return "time";
+        } else {
+            return "alert-circle";
+        }
+    };
+
     return (
         <>
-            <TouchableOpacity
-                style={[
-                    styles.pagamentoButton,
-                    item.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
-                ]}
-                onPress={() => setModalPagamento(true)}
-            >
-                <Ionicons
-                    name={item.pagamento ? "checkmark-circle" : "time-outline"}
-                    size={16}
-                    color={item.pagamento ? "#22c55e" : "#ef4444"}
-                />
-                <Text style={[
-                    styles.pagamentoButtonText,
-                    item.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
-                ]}>
-                    {item.pagamento ? "Pago" : "Pendente"}
-                </Text>
-            </TouchableOpacity>
+            <View style={styles.container}>
+                {/* Status do Pagamento */}
+                <TouchableOpacity
+                    style={[
+                        styles.pagamentoButton,
+                        item.pagamento ? styles.pagamentoPago : 
+                        item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
+                    ]}
+                    onPress={() => setModalPagamento(true)}
+                >
+                    <Ionicons
+                        name={getStatusIcon()}
+                        size={16}
+                        color={getStatusColor()}
+                    />
+                    <Text style={[
+                        styles.pagamentoButtonText,
+                        { color: getStatusColor() }
+                    ]}>
+                        {getStatusText()}
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Botão Avisar que Pagou - aparece apenas quando está pendente e não aguardando */}
+                {!item.pagamento && !item.avisoPagamento && (
+                    <TouchableOpacity
+                        style={styles.avisarButton}
+                        onPress={handleAvisarPagamento}
+                        disabled={processando}
+                    >
+                        {processando ? (
+                            <ActivityIndicator size="small" color="#000" />
+                        ) : (
+                            <>
+                                <Ionicons name="notifications" size={14} color="#000" />
+                                <Text style={styles.avisarButtonText}>Avisar que pagou</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                )}
+            </View>
 
             <Modal
                 visible={modalPagamento}
@@ -166,10 +271,11 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 
                             <View style={[
                                 styles.statusBadge,
-                                item.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
+                                item.pagamento ? styles.statusBadgePago : 
+                                item.avisoPagamento ? styles.statusBadgeAguardando : styles.statusBadgePendente
                             ]}>
                                 <Text style={styles.statusBadgeText}>
-                                    {item.pagamento ? "PAGO" : "PENDENTE"}
+                                    {getStatusText().toUpperCase()}
                                 </Text>
                             </View>
 
@@ -232,15 +338,14 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 };
 
 const styles = {
+    container: {
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: "space-between",
+    },
     pagamentoButtonText: {
         fontSize: 16,
         fontWeight: "600",
-    },
-    pagamentoButtonTextPago: {
-        color: "#22c55e",
-    },
-    pagamentoButtonTextPendente: {
-        color: "#ef4444",
     },
     pagamentoButton: {
         flexDirection: "row",
@@ -249,14 +354,33 @@ const styles = {
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
+        alignSelf: 'flex-start',
     },
     pagamentoPago: {
         backgroundColor: "rgba(34, 197, 94, 0.1)",
         borderColor: "#22c55e",
     },
+    pagamentoAguardando: {
+        backgroundColor: "rgba(245, 158, 11, 0.1)",
+        borderColor: "#f59e0b",
+    },
     pagamentoPendente: {
         backgroundColor: "rgba(239, 68, 68, 0.1)",
         borderColor: "#ef4444",
+    },
+    avisarButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        padding: 14,
+        borderRadius: 6,
+        backgroundColor: "#f59e0b",
+        alignSelf: 'flex-start',
+    },
+    avisarButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#000",
     },
     modalOverlay: {
         flex: 1,
@@ -287,22 +411,6 @@ const styles = {
         fontWeight: "bold",
         color: "#FFF",
     },
-    modalScrollView: {
-        maxHeight: 400,
-    },
-    modalScrollContent: {
-        padding: 20,
-        gap: 16,
-    },
-    modalInput: {
-        backgroundColor: "#2a2a2a",
-        borderRadius: 8,
-        padding: 16,
-        color: "#FFF",
-        fontSize: 16,
-        borderWidth: 1,
-        borderColor: "#333",
-    },
     pagamentoInfo: {
         backgroundColor: "#2a2a2a",
         padding: 16,
@@ -328,6 +436,9 @@ const styles = {
     },
     statusBadgePago: {
         backgroundColor: "rgba(34, 197, 94, 0.2)",
+    },
+    statusBadgeAguardando: {
+        backgroundColor: "rgba(245, 158, 11, 0.2)",
     },
     statusBadgePendente: {
         backgroundColor: "rgba(239, 68, 68, 0.2)",
@@ -382,7 +493,6 @@ const styles = {
     warningButton: {
         backgroundColor: "#ef4444",
     },
-
     warningButtonText: {
         color: "#FFF",
         fontWeight: "600",
