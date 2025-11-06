@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { GraduacaoSelector } from "@/components/perfil/GraduacaoSelector";
+import { ModalFilho } from "@/components/perfil/ModalFilho";
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { auth, db } from "@/config/firebaseConfig";
 import {
@@ -562,186 +563,43 @@ export default function PerfilScreen() {
         transparent={true}
         onRequestClose={() => setModalFilho(false)}
       >
-        <ModalContent
+        <ModalFilho
+          visible={modalFilho}
           filhoEmEdicao={filhoEmEdicao}
-          novoFilho={novoFilho}
-          setFilhoEmEdicao={setFilhoEmEdicao}
-          setNovoFilho={setNovoFilho}
-          setModalFilho={setModalFilho}
-          handleAdicionarFilho={handleAdicionarFilho}
-          handleSalvarEdicaoFilho={handleSalvarEdicaoFilho}
+          onClose={() => {
+            setModalFilho(false);
+            setFilhoEmEdicao(null);
+          }}
+          onAdicionarFilho={async (filhoData) => {
+            if (!usuario?.id) return;
+
+            const filhoCompleto: Filho = {
+              ...filhoData,
+              id: Date.now().toString(),
+            };
+
+            const userRef = doc(db, "usuarios", usuario.id);
+            const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
+            await updateDoc(userRef, { filhos: novosFilhos });
+            setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+          }}
+          onSalvarEdicaoFilho={async (filhoEditado) => {
+            if (!usuario?.id) return;
+
+            const userRef = doc(db, "usuarios", usuario.id);
+            const novosFilhos = (usuario.filhos || []).map((f) =>
+              f.id === filhoEditado.id ? filhoEditado : f
+            );
+            await updateDoc(userRef, { filhos: novosFilhos });
+            setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+          }}
         />
       </Modal>
     </ScrollView>
   );
 }
 
-// 🎯 COMPONENTE DO MODAL
-const ModalContent: React.FC<ModalContentProps> = ({
-  filhoEmEdicao,
-  novoFilho,
-  setFilhoEmEdicao,
-  setNovoFilho,
-  setModalFilho,
-  handleAdicionarFilho,
-  handleSalvarEdicaoFilho,
-}) => {
-  const dadosFilho = filhoEmEdicao || novoFilho;
-
-  const setDadosFilho = (updates: Partial<Filho>) => {
-    if (filhoEmEdicao) {
-      setFilhoEmEdicao(prev => prev ? { ...prev, ...updates } : null);
-    } else {
-      setNovoFilho(prev => ({ ...prev, ...updates }));
-    }
-  };
-
-  const modalTitle = filhoEmEdicao ? "Editar Aluno" : "Adicionar Aluno";
-  const handleAcao = filhoEmEdicao ? handleSalvarEdicaoFilho : handleAdicionarFilho;
-  const confirmButtonText = filhoEmEdicao ? "Salvar" : "Adicionar";
-
-  const closeModal = () => {
-    setModalFilho(false);
-    setFilhoEmEdicao(null);
-    setNovoFilho({
-      nome: "",
-      modalidade: "Jiu-Jitsu",
-      graduacao: { cor: "Branca", grau: 1 },
-    });
-  };
-
-  const handleModalidadeChange = (modalidade: Filho["modalidade"]) => {
-    if (modalidade === "Jiu-Jitsu") {
-      setDadosFilho({
-        modalidade: modalidade,
-        graduacao: { cor: "Branca", grau: 1 }
-      });
-    } else if (modalidade === "Muay Thai") {
-      setDadosFilho({
-        modalidade: modalidade,
-        graduacao: { cor: "Amarela" }
-      });
-    } else {
-      setDadosFilho({
-        modalidade: modalidade,
-        graduacao: undefined
-      });
-    }
-  };
-
-  return (
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{modalTitle}</Text>
-          <TouchableOpacity onPress={closeModal}>
-            <Ionicons name="close" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.modalScrollView}
-          contentContainerStyle={styles.modalScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Nome completo"
-            placeholderTextColor="#666"
-            value={dadosFilho.nome}
-            onChangeText={(text) => setDadosFilho({ nome: text })}
-          />
-
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Idade"
-            placeholderTextColor="#666"
-            keyboardType="numeric"
-            value={dadosFilho.idade?.toString() || ""}
-            onChangeText={(text) => setDadosFilho({ idade: Number(text) })}
-          />
-
-          <TextInput
-            style={[styles.modalInput, styles.textArea]}
-            placeholder="Observações (opcional)"
-            placeholderTextColor="#666"
-            value={dadosFilho.observacao || ""}
-            onChangeText={(text) => setDadosFilho({ observacao: text })}
-            multiline
-            numberOfLines={3}
-          />
-
-          <View style={styles.modalRow}>
-            <Text style={styles.modalLabel}>Modalidade:</Text>
-            <View style={styles.modalidadeButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.modalidadeButton,
-                  dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonSelected,
-                ]}
-                onPress={() => handleModalidadeChange("Jiu-Jitsu")}
-              >
-                <Text
-                  style={[
-                    styles.modalidadeButtonText,
-                    dadosFilho.modalidade === "Jiu-Jitsu" && styles.modalidadeButtonTextSelected,
-                  ]}
-                >
-                  Jiu-Jitsu
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.modalidadeButton,
-                  dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonSelected,
-                ]}
-                onPress={() => handleModalidadeChange("Muay Thai")}
-              >
-                <Text
-                  style={[
-                    styles.modalidadeButtonText,
-                    dadosFilho.modalidade === "Muay Thai" && styles.modalidadeButtonTextSelected,
-                  ]}
-                >
-                  Muay Thai
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.modalRow}>
-            <GraduacaoSelector
-              modalidade={dadosFilho.modalidade || "Jiu-Jitsu"}
-              graduacaoAtual={dadosFilho.graduacao}
-              onSelect={(graduacao) => setDadosFilho({ graduacao: graduacao })}
-            />
-          </View>
-        </ScrollView>
-
-        <View style={styles.modalActions}>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={closeModal}
-          >
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modalButton, styles.confirmButton]}
-            onPress={handleAcao}
-          >
-            <Text style={styles.confirmButtonText}>{confirmButtonText}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// 🎯 ESTILOS
 const styles = StyleSheet.create({
-  // ... (todos os estilos anteriores mantidos exatamente iguais)
   container: {
     flex: 1,
     backgroundColor: "#000",
@@ -902,29 +760,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  modalidadeButton: {
-    flex: 1,
-    minWidth: "45%",
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  modalidadeButtonSelected: {
-    backgroundColor: "#B8860B",
-    borderColor: "#DAA520",
-  },
-  modalidadeButtonText: {
-    color: "#CCC",
-    fontWeight: "500",
-    fontSize: 14,
-  },
-  modalidadeButtonTextSelected: {
-    color: "#000",
-    fontWeight: "600",
-  },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -1010,9 +845,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#333",
   },
-
-
-
   emptyState: {
     backgroundColor: "#1a1a1a",
     padding: 40,
@@ -1034,20 +866,6 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
-
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  modalRow: {
-    gap: 12,
-  },
-
-  modalidadeButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
-
   loadingText: {
     color: "#B8860B",
     fontSize: 16,
@@ -1064,95 +882,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  modalLabel: {
-    fontSize: 16,
-    color: "#B8860B",
-    fontWeight: "600",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    width: "100%",
-    maxWidth: 400,
-    maxHeight: "90%",
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFF",
-  },
-  modalScrollView: {
-    maxHeight: 400,
-  },
-  modalScrollContent: {
-    padding: 20,
-    gap: 16,
-  },
-  modalInput: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 8,
-    padding: 16,
-    color: "#FFF",
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#333",
-  },
-  modalButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#2a2a2a",
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  confirmButton: {
-    backgroundColor: "#B8860B",
-  },
-  cancelButtonText: {
-    color: "#CCC",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  confirmButtonText: {
-    color: "#000",
-    fontWeight: "600",
-    fontSize: 16,
-  },
   warningButton: {
     backgroundColor: "#ef4444",
   },
-
   warningButtonText: {
     color: "#FFF",
     fontWeight: "600",
     fontSize: 16,
+  },
+  modalidadeButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  modalidadeButtonSelected: {
+    backgroundColor: '#B8860B',
+    borderColor: '#DAA520',
+  },
+  modalidadeButtonText: {
+    color: '#CCC',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  modalidadeButtonTextSelected: {
+    color: '#000',
+    fontWeight: '600',
   },
 });
