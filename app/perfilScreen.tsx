@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,67 +18,30 @@ import { ModalFilho } from "@/components/perfil/ModalFilho";
 import { MultiModalidadeSelector } from "@/components/perfil/MultiModalidadeSelector";
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { auth, db } from "@/config/firebaseConfig";
+import { useUsuario } from "@/hooks/useUsuario";
 import {
   Filho,
   GraduacaoJiuJitsu,
-  GraduacaoMuayThai,
-  ModalidadeAluno,
-  Usuario,
+  GraduacaoMuayThai
 } from "../types/usuarios";
 
 export default function perfilScreen() {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [atualizacao, setAtualizacao] = useState(0);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
-  const carregarUsuario = async () => {
-  const user = auth.currentUser;
-  if (user) {
-    try {
-      const userRef = doc(db, "usuarios", user.uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        const userData = snap.data() as any; // Usamos any temporariamente para a migração
-        
-        // Migração: converter modalidade única para array de modalidades
-        if (userData.modalidade && !userData.modalidades) {
-          const modalidadeUnica: ModalidadeAluno = {
-            modalidade: userData.modalidade,
-            graduacao: userData.graduacao,
-            dataInicio: userData.dataDeRegistro,
-            ativo: true
-          };
-          userData.modalidades = [modalidadeUnica];
-          
-          // Atualizar no Firebase para migração permanente
-          await updateDoc(userRef, {
-            modalidades: [modalidadeUnica]
-          });
-        }
-        
-        // Garantir que modalidades sempre exista
-        if (!userData.modalidades) {
-          userData.modalidades = [];
-        }
-        
-        setUsuario(userData as Usuario);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar usuário:", error);
-      Alert.alert("Erro", "Não foi possível carregar os dados.");
-    }
-  }
-  setLoading(false);
-  setRefreshing(false);
-};
-  const onRefresh = () => {
-    setRefreshing(true);
-    carregarUsuario();
-  };
+    const {
+    usuario,
+    setUsuario,
+    loading,
+    refreshing,
+    carregarUsuario,
+    onRefresh,
+    setLoading,
+    handlePagamentoAtualizado
+  } = useUsuario();
+
 
   const verificarPagamentosFilhos = async () => {
     if (!usuario?.id || !usuario.filhos) return;
@@ -128,9 +91,6 @@ export default function perfilScreen() {
     }
   }, [usuario]);
 
-  const handlePagamentoAtualizado = () => {
-    setAtualizacao(prev => prev + 1);
-  };
 
   const handleSalvarPerfil = async () => {
     if (!usuario?.id) {
@@ -420,7 +380,7 @@ export default function perfilScreen() {
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleContainer}>
             <Ionicons name="people" size={20} color="#B8860B" />
-            <Text style={styles.sectionTitle}>ALUNOS CADASTRADOS</Text>
+            <Text style={styles.sectionTitle}>FILHOS CADASTRADOS</Text>
           </View>
           <TouchableOpacity
             style={styles.addButton}
