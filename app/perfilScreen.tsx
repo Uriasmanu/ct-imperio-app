@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { GraduacaoSelector } from "@/components/perfil/GraduacaoSelector";
+import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { auth, db } from "@/config/firebaseConfig";
 import {
   Filho,
@@ -52,357 +53,6 @@ interface ModalContentProps {
   handleSalvarEdicaoFilho: () => Promise<void>;
 }
 
-
-// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO DO USUÁRIO PRINCIPAL
-const GerenciarPagamentoUsuario: React.FC<GerenciarPagamentoUsuarioProps> = ({
-  usuario,
-  onPagamentoAtualizado,
-}) => {
-  const [modalPagamento, setModalPagamento] = useState(false);
-  const [processando, setProcessando] = useState(false);
-
-  const handleConfirmarPagamento = async () => {
-    setProcessando(true);
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-
-      await updateDoc(userRef, {
-        pagamento: true,
-        dataUltimoPagamento: new Date().toISOString()
-      });
-
-      onPagamentoAtualizado();
-      setModalPagamento(false);
-      Alert.alert("Sucesso", `Pagamento de ${usuario.nome} confirmado!`);
-    } catch (error) {
-      console.error("Erro ao confirmar pagamento:", error);
-      Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const handleMarcarComoPendente = async () => {
-    setProcessando(true);
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-
-      await updateDoc(userRef, {
-        pagamento: false
-      });
-
-      onPagamentoAtualizado();
-      setModalPagamento(false);
-      Alert.alert("🔄 Status Alterado", `Pagamento de ${usuario.nome} marcado como pendente.`);
-    } catch (error) {
-      console.error("Erro ao atualizar pagamento:", error);
-      Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString("pt-BR");
-  };
-
-  return (
-    <>
-      <TouchableOpacity
-        style={[
-          styles.pagamentoButton,
-          usuario.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
-        ]}
-        onPress={() => setModalPagamento(true)}
-      >
-        <Ionicons
-          name={usuario.pagamento ? "checkmark-circle" : "time-outline"}
-          size={16}
-          color={usuario.pagamento ? "#22c55e" : "#ef4444"}
-        />
-        <Text style={[
-          styles.pagamentoButtonText,
-          usuario.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
-        ]}>
-          {usuario.pagamento ? "Pago" : "Pendente"}
-        </Text>
-      </TouchableOpacity>
-
-      <Modal
-        visible={modalPagamento}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => !processando && setModalPagamento(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Gerenciar Pagamento</Text>
-              <TouchableOpacity
-                onPress={() => !processando && setModalPagamento(false)}
-                disabled={processando}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.pagamentoInfo}>
-              <View style={styles.alunoInfo}>
-                <Ionicons name="person" size={20} color="#B8860B" />
-                <Text style={styles.pagamentoNome}>{usuario.nome}</Text>
-              </View>
-
-              <View style={[
-                styles.statusBadge,
-                usuario.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
-              ]}>
-                <Text style={styles.statusBadgeText}>
-                  {usuario.pagamento ? "PAGO" : "PENDENTE"}
-                </Text>
-              </View>
-
-              {usuario.dataUltimoPagamento && (
-                <View style={styles.dataInfo}>
-                  <Ionicons name="calendar" size={16} color="#666" />
-                  <Text style={styles.pagamentoData}>
-                    Último pagamento: {formatarData(usuario.dataUltimoPagamento)}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalPagamento(false)}
-                disabled={processando}
-              >
-                <Text style={styles.cancelButtonText}>Fechar</Text>
-              </TouchableOpacity>
-
-              {!usuario.pagamento ? (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirmarPagamento}
-                  disabled={processando}
-                >
-                  {processando ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={18} color="#000" />
-                      <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.warningButton]}
-                  onPress={handleMarcarComoPendente}
-                  disabled={processando}
-                >
-                  {processando ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="refresh" size={18} color="#FFF" />
-                      <Text style={styles.warningButtonText}>Marcar como Pendente</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
-};
-
-// 🎯 COMPONENTE DE GERENCIAMENTO DE PAGAMENTO DOS FILHOS
-const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
-  filho,
-  usuarioId,
-  onPagamentoAtualizado,
-}) => {
-  const [modalPagamento, setModalPagamento] = useState(false);
-  const [processando, setProcessando] = useState(false);
-
-  const handleConfirmarPagamento = async () => {
-    setProcessando(true);
-    try {
-      const userRef = doc(db, "usuarios", usuarioId);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const usuario = userSnap.data() as Usuario;
-        const filhosAtualizados = usuario.filhos?.map(f =>
-          f.id === filho.id
-            ? {
-              ...f,
-              pagamento: true,
-              dataUltimoPagamento: new Date().toISOString()
-            }
-            : f
-        );
-
-        await updateDoc(userRef, { filhos: filhosAtualizados });
-        onPagamentoAtualizado();
-        setModalPagamento(false);
-        Alert.alert("Sucesso", `Pagamento de ${filho.nome} confirmado!`);
-      }
-    } catch (error) {
-      console.error("Erro ao confirmar pagamento:", error);
-      Alert.alert("❌ Erro", "Não foi possível confirmar o pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const handleMarcarComoPendente = async () => {
-    setProcessando(true);
-    try {
-      const userRef = doc(db, "usuarios", usuarioId);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const usuario = userSnap.data() as Usuario;
-        const filhosAtualizados = usuario.filhos?.map(f =>
-          f.id === filho.id
-            ? { ...f, pagamento: false }
-            : f
-        );
-
-        await updateDoc(userRef, { filhos: filhosAtualizados });
-        onPagamentoAtualizado();
-        setModalPagamento(false);
-        Alert.alert("Status Alterado", `Pagamento de ${filho.nome} marcado como pendente.`);
-      }
-    } catch (error) {
-      console.error("Erro ao atualizar pagamento:", error);
-      Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString("pt-BR");
-  };
-
-  return (
-    <>
-      <TouchableOpacity
-        style={[
-          styles.pagamentoButton,
-          filho.pagamento ? styles.pagamentoPago : styles.pagamentoPendente
-        ]}
-        onPress={() => setModalPagamento(true)}
-      >
-        <Ionicons
-          name={filho.pagamento ? "checkmark-circle" : "time-outline"}
-          size={16}
-          color={filho.pagamento ? "#22c55e" : "#ef4444"}
-        />
-        <Text style={[
-          styles.pagamentoButtonText,
-          filho.pagamento ? styles.pagamentoButtonTextPago : styles.pagamentoButtonTextPendente
-        ]}>
-          {filho.pagamento ? "Pago" : "Pendente"}
-        </Text>
-      </TouchableOpacity>
-
-      <Modal
-        visible={modalPagamento}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => !processando && setModalPagamento(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Gerenciar Pagamento</Text>
-              <TouchableOpacity
-                onPress={() => !processando && setModalPagamento(false)}
-                disabled={processando}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.pagamentoInfo}>
-              <View style={styles.alunoInfo}>
-                <Ionicons name="person" size={20} color="#B8860B" />
-                <Text style={styles.pagamentoNome}>{filho.nome}</Text>
-              </View>
-
-              <View style={[
-                styles.statusBadge,
-                filho.pagamento ? styles.statusBadgePago : styles.statusBadgePendente
-              ]}>
-                <Text style={styles.statusBadgeText}>
-                  {filho.pagamento ? "PAGO" : "PENDENTE"}
-                </Text>
-              </View>
-
-              {filho.dataUltimoPagamento && (
-                <View style={styles.dataInfo}>
-                  <Ionicons name="calendar" size={16} color="#666" />
-                  <Text style={styles.pagamentoData}>
-                    Último pagamento: {formatarData(filho.dataUltimoPagamento)}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalPagamento(false)}
-                disabled={processando}
-              >
-                <Text style={styles.cancelButtonText}>Fechar</Text>
-              </TouchableOpacity>
-
-              {!filho.pagamento ? (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleConfirmarPagamento}
-                  disabled={processando}
-                >
-                  {processando ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={18} color="#000" />
-                      <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.warningButton]}
-                  onPress={handleMarcarComoPendente}
-                  disabled={processando}
-                >
-                  {processando ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="refresh" size={18} color="#FFF" />
-                      <Text style={styles.warningButtonText}>Marcar como Pendente</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
-};
-
 // 🎯 COMPONENTE PRINCIPAL
 const hoje = new Date();
 const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
@@ -433,7 +83,7 @@ export default function PerfilScreen() {
         }
       } catch (error) {
         console.error("Erro ao carregar usuário:", error);
-        Alert.alert("❌ Erro", "Não foi possível carregar os dados.");
+        Alert.alert("Erro", "Não foi possível carregar os dados.");
       }
     }
     setLoading(false);
@@ -502,12 +152,12 @@ export default function PerfilScreen() {
 
   const handleSalvarPerfil = async () => {
     if (!usuario?.id) {
-      Alert.alert("❌ Erro", "Usuário não encontrado.");
+      Alert.alert("Erro", "Usuário não encontrado.");
       return;
     }
 
     if (!usuario.modalidade) {
-      Alert.alert("📋 Campo obrigatório", "Selecione uma modalidade antes de salvar.");
+      Alert.alert("Campo obrigatório", "Selecione uma modalidade antes de salvar.");
       return;
     }
 
@@ -527,23 +177,23 @@ export default function PerfilScreen() {
       setEditando(false);
     } catch (error) {
       console.error(error);
-      Alert.alert("❌ Erro", "Não foi possível salvar as alterações.");
+      Alert.alert("Erro", "Não foi possível salvar as alterações.");
     }
   };
 
   const handleAdicionarFilho = async () => {
     if (!usuario?.id) {
-      Alert.alert("❌ Erro", "Usuário não encontrado.");
+      Alert.alert("Erro", "Usuário não encontrado.");
       return;
     }
 
     if (!novoFilho.nome?.trim()) {
-      Alert.alert("📋 Campo obrigatório", "Por favor, informe o nome do filho.");
+      Alert.alert("Campo obrigatório", "Por favor, informe o nome do filho.");
       return;
     }
 
     if (!novoFilho.idade || isNaN(Number(novoFilho.idade)) || Number(novoFilho.idade) <= 0) {
-      Alert.alert("📋 Campo obrigatório", "Por favor, informe uma idade válida.");
+      Alert.alert("Campo obrigatório", "Por favor, informe uma idade válida.");
       return;
     }
 
@@ -576,7 +226,7 @@ export default function PerfilScreen() {
       Alert.alert("Sucesso", `${filhoCompleto.nome} foi adicionado com sucesso!`);
     } catch (error) {
       console.error(error);
-      Alert.alert("❌ Erro", "Não foi possível adicionar o filho.");
+      Alert.alert("Erro", "Não foi possível adicionar o filho.");
     }
   };
 
@@ -602,7 +252,7 @@ export default function PerfilScreen() {
       Alert.alert("Sucesso", "Informações do filho atualizadas!");
     } catch (error) {
       console.error(error);
-      Alert.alert("❌ Erro", "Não foi possível salvar as alterações.");
+      Alert.alert("Erro", "Não foi possível salvar as alterações.");
     }
   };
 
@@ -746,10 +396,12 @@ export default function PerfilScreen() {
           {/* PAGAMENTO DO USUÁRIO PRINCIPAL - SEPARADO */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Status do Pagamento</Text>
-            <GerenciarPagamentoUsuario
-              usuario={usuario}
+            <GerenciarPagamento
+              item={usuario}
               onPagamentoAtualizado={handlePagamentoAtualizado}
+              tipo="usuario"
             />
+
           </View>
 
           {/* MODALIDADE */}
@@ -883,9 +535,10 @@ export default function PerfilScreen() {
                 <View style={styles.pagamentoSection}>
                   <Text style={styles.infoLabel}>Status do Pagamento:</Text>
                   <GerenciarPagamento
-                    filho={filho}
+                    item={filho}
                     usuarioId={usuario.id}
                     onPagamentoAtualizado={handlePagamentoAtualizado}
+                    tipo="filho"
                   />
                 </View>
               </View>
@@ -1357,32 +1010,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#333",
   },
-  pagamentoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  pagamentoPago: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
-    borderColor: "#22c55e",
-  },
-  pagamentoPendente: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "#ef4444",
-  },
-  pagamentoButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  pagamentoButtonTextPago: {
-    color: "#22c55e",
-  },
-  pagamentoButtonTextPendente: {
-    color: "#ef4444",
-  },
+
+
+
   emptyState: {
     backgroundColor: "#1a1a1a",
     padding: 40,
@@ -1403,6 +1033,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     textAlign: "center",
+  },
+
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  modalRow: {
+    gap: 12,
+  },
+
+  modalidadeButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  loadingText: {
+    color: "#B8860B",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  errorText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  errorSubtext: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  modalLabel: {
+    fontSize: 16,
+    color: "#B8860B",
+    fontWeight: "600",
   },
   modalOverlay: {
     flex: 1,
@@ -1449,18 +1114,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  modalRow: {
-    gap: 12,
-  },
-
-  modalidadeButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
   modalActions: {
     flexDirection: "row",
     gap: 12,
@@ -1483,9 +1136,6 @@ const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: "#B8860B",
   },
-  warningButton: {
-    backgroundColor: "#ef4444",
-  },
   cancelButtonText: {
     color: "#CCC",
     fontWeight: "600",
@@ -1496,75 +1146,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
+  warningButton: {
+    backgroundColor: "#ef4444",
+  },
+
   warningButtonText: {
     color: "#FFF",
     fontWeight: "600",
     fontSize: 16,
-  },
-  pagamentoInfo: {
-    backgroundColor: "#2a2a2a",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 20,
-    gap: 12,
-  },
-  alunoInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  pagamentoNome: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFF",
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusBadgePago: {
-    backgroundColor: "rgba(34, 197, 94, 0.2)",
-  },
-  statusBadgePendente: {
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FFF",
-    textTransform: "uppercase",
-  },
-  dataInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  pagamentoData: {
-    fontSize: 14,
-    color: "#666",
-  },
-
-  loadingText: {
-    color: "#B8860B",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  errorText: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  errorSubtext: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  modalLabel: {
-    fontSize: 16,
-    color: "#B8860B",
-    fontWeight: "600",
   },
 });
