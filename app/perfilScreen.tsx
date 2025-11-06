@@ -5,14 +5,13 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 import { GraduacaoSelector } from "@/components/perfil/GraduacaoSelector";
@@ -27,9 +26,6 @@ import {
 } from "../types/usuarios";
 
 
-const hoje = new Date();
-const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
-
 export default function PerfilScreen() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [editando, setEditando] = useState(false);
@@ -38,11 +34,6 @@ export default function PerfilScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [atualizacao, setAtualizacao] = useState(0);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
-  const [novoFilho, setNovoFilho] = useState<Partial<Filho>>({
-    nome: "",
-    modalidade: "Jiu-Jitsu",
-    graduacao: { cor: "Branca", grau: 1 },
-  });
 
   const carregarUsuario = async () => {
     const user = auth.currentUser;
@@ -446,44 +437,38 @@ export default function PerfilScreen() {
         )}
       </View>
 
-      <Modal
+      <ModalFilho
         visible={modalFilho}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalFilho(false)}
-      >
-        <ModalFilho
-          visible={modalFilho}
-          filhoEmEdicao={filhoEmEdicao}
-          onClose={() => {
-            setModalFilho(false);
-            setFilhoEmEdicao(null);
-          }}
-          onAdicionarFilho={async (filhoData) => {
-            if (!usuario?.id) return;
+        filhoEmEdicao={filhoEmEdicao}
+        onClose={() => {
+          setModalFilho(false);
+          setFilhoEmEdicao(null);
+        }}
+        onAdicionarFilho={async (filhoData) => {
+          if (!usuario?.id) return;
 
-            const filhoCompleto: Filho = {
-              ...filhoData,
-              id: Date.now().toString(),
-            };
+          const filhoCompleto: Filho = {
+            ...filhoData,
+            id: Date.now().toString(),
+          };
 
-            const userRef = doc(db, "usuarios", usuario.id);
-            const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
-            await updateDoc(userRef, { filhos: novosFilhos });
-            setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-          }}
-          onSalvarEdicaoFilho={async (filhoEditado) => {
-            if (!usuario?.id) return;
+          const userRef = doc(db, "usuarios", usuario.id);
+          const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
+          await updateDoc(userRef, { filhos: novosFilhos });
+          setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+        }}
+        onSalvarEdicaoFilho={async (filhoEditado) => {
+          if (!usuario?.id) return;
 
-            const userRef = doc(db, "usuarios", usuario.id);
-            const novosFilhos = (usuario.filhos || []).map((f) =>
-              f.id === filhoEditado.id ? filhoEditado : f
-            );
-            await updateDoc(userRef, { filhos: novosFilhos });
-            setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-          }}
-        />
-      </Modal>
+          const userRef = doc(db, "usuarios", usuario.id);
+          const novosFilhos = (usuario.filhos || []).map((f) =>
+            f.id === filhoEditado.id ? filhoEditado : f
+          );
+          await updateDoc(userRef, { filhos: novosFilhos });
+          setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
+        }}
+      />
+
     </ScrollView>
   );
 }
