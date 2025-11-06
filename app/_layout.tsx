@@ -1,4 +1,4 @@
-import { useAdminAuth } from '@/hooks/useAdminAuth'; // Importe o hook
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
 import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
@@ -36,8 +36,7 @@ function CustomDrawerContent(props: any) {
   }, [isAdmin, loading]);
 
   // Filtra as rotas que devem aparecer no drawer
-  const { state, ...rest } = props;
-  const filteredRoutes = state.routes.filter((route: any) => {
+  const filteredRoutes = props.state.routes.filter((route: any) => {
     // Se for a tela AdminScreen, só mostra se for admin
     if (route.name === 'AdminScreen') {
       return showAdmin;
@@ -71,9 +70,10 @@ function CustomDrawerContent(props: any) {
         </View>
       </View>
 
-      {/* Lista de itens filtrada */}
+      {/* Renderiza os itens manualmente */}
       {filteredRoutes.map((route: any, index: number) => {
         const { options } = props.descriptors[route.key];
+        const isFocused = props.state.index === index;
         
         // Se for uma tela que não deve aparecer no drawer, não renderiza
         if (options.drawerItemStyle?.display === 'none') {
@@ -83,11 +83,24 @@ function CustomDrawerContent(props: any) {
         return (
           <DrawerItem
             key={route.key}
-            label={options.drawerLabel || route.name}
-            icon={options.drawerIcon}
-            focused={state.index === index}
+            label={
+              typeof options.drawerLabel === 'function'
+                ? options.drawerLabel({ focused: isFocused, color: '#FFFFFF' })
+                : options.drawerLabel || route.name
+            }
+            icon={({ color, size }) => {
+              if (options.drawerIcon) {
+                return options.drawerIcon({ color, size });
+              }
+              return null;
+            }}
+            focused={isFocused}
             onPress={() => props.navigation.navigate(route.name)}
-            labelStyle={styles.drawerLabel}
+            labelStyle={[styles.drawerLabel, { color: '#FFFFFF' }]}
+            activeTintColor="#FFFFFF"
+            inactiveTintColor="#FFFFFF"
+            activeBackgroundColor="#1A1A1A"
+            inactiveBackgroundColor="transparent"
           />
         );
       })}
@@ -98,10 +111,14 @@ function CustomDrawerContent(props: any) {
       <DrawerItem
         label="Configurações"
         icon={({ color, size }) => (
-          <Settings size={size} color='#fff' />
+          <Settings size={size} color={color} />
         )}
         onPress={() => props.navigation.navigate('SettingsScreen')}
-        labelStyle={styles.drawerLabel}
+        labelStyle={[styles.drawerLabel, { color: '#FFFFFF' }]}
+        activeTintColor="#FFFFFF"
+        inactiveTintColor="#FFFFFF"
+        activeBackgroundColor="#1A1A1A"
+        inactiveBackgroundColor="transparent"
       />
     </DrawerContentScrollView>
   );
@@ -135,7 +152,7 @@ export default function RootLayout() {
                 },
                 drawerActiveBackgroundColor: '#1A1A1A',
                 drawerActiveTintColor: '#FFFFFF',
-                drawerInactiveTintColor: '#CCCCCC',
+                drawerInactiveTintColor: '#FFFFFF',
               }}
               drawerContent={(props) => <CustomDrawerContent {...props} />}
             >
