@@ -26,35 +26,7 @@ import {
   Usuario,
 } from "../types/usuarios";
 
-// 🎯 TIPOS E INTERFACES
-interface GraduacaoSelectorProps {
-  modalidade: string;
-  graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
-  onSelect: (grad: GraduacaoMuayThai | GraduacaoJiuJitsu) => void;
-}
 
-interface GerenciarPagamentoProps {
-  filho: Filho;
-  usuarioId: string;
-  onPagamentoAtualizado: () => void;
-}
-
-interface GerenciarPagamentoUsuarioProps {
-  usuario: Usuario;
-  onPagamentoAtualizado: () => void;
-}
-
-interface ModalContentProps {
-  filhoEmEdicao: Filho | null;
-  novoFilho: Partial<Filho>;
-  setFilhoEmEdicao: React.Dispatch<React.SetStateAction<Filho | null>>;
-  setNovoFilho: React.Dispatch<React.SetStateAction<Partial<Filho>>>;
-  setModalFilho: React.Dispatch<React.SetStateAction<boolean>>;
-  handleAdicionarFilho: () => Promise<void>;
-  handleSalvarEdicaoFilho: () => Promise<void>;
-}
-
-// 🎯 COMPONENTE PRINCIPAL
 const hoje = new Date();
 const dataPagamentoPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 10).toISOString();
 
@@ -72,7 +44,6 @@ export default function PerfilScreen() {
     graduacao: { cor: "Branca", grau: 1 },
   });
 
-  // 🔄 FUNÇÃO DE ATUALIZAÇÃO
   const carregarUsuario = async () => {
     const user = auth.currentUser;
     if (user) {
@@ -91,13 +62,12 @@ export default function PerfilScreen() {
     setRefreshing(false);
   };
 
-  // 🔄 PULL TO REFRESH
   const onRefresh = () => {
     setRefreshing(true);
     carregarUsuario();
   };
 
-  // 📅 VERIFICAÇÃO AUTOMÁTICA DE PAGAMENTOS
+
   const verificarPagamentosFilhos = async () => {
     if (!usuario?.id || !usuario.filhos) return;
 
@@ -146,7 +116,6 @@ export default function PerfilScreen() {
     }
   }, [usuario]);
 
-  // 🎯 HANDLERS
   const handlePagamentoAtualizado = () => {
     setAtualizacao(prev => prev + 1);
   };
@@ -171,7 +140,6 @@ export default function PerfilScreen() {
         observacao: usuario.observacao ?? "",
         modalidade: usuario.modalidade ?? "",
         graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
-        // Não altera o pagamento aqui - só no componente dedicado
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -182,82 +150,11 @@ export default function PerfilScreen() {
     }
   };
 
-  const handleAdicionarFilho = async () => {
-    if (!usuario?.id) {
-      Alert.alert("Erro", "Usuário não encontrado.");
-      return;
-    }
-
-    if (!novoFilho.nome?.trim()) {
-      Alert.alert("Campo obrigatório", "Por favor, informe o nome do filho.");
-      return;
-    }
-
-    if (!novoFilho.idade || isNaN(Number(novoFilho.idade)) || Number(novoFilho.idade) <= 0) {
-      Alert.alert("Campo obrigatório", "Por favor, informe uma idade válida.");
-      return;
-    }
-
-    const filhoCompleto: Filho = {
-      id: Date.now().toString(),
-      nome: novoFilho.nome.trim(),
-      idade: Number(novoFilho.idade),
-      modalidade: novoFilho.modalidade ?? "Jiu-Jitsu",
-      graduacao: novoFilho.graduacao || { cor: "Branca", grau: 1 },
-      dataDeRegistro: new Date().toISOString().split("T")[0],
-      pagamento: false,
-      observacao: novoFilho.observacao?.trim() || "",
-      dataPagamento: dataPagamentoPadrao,
-      dataUltimoPagamento: "",
-    };
-
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-      const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
-      await updateDoc(userRef, { filhos: novosFilhos });
-
-      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-      setModalFilho(false);
-      setNovoFilho({
-        nome: "",
-        modalidade: "Jiu-Jitsu",
-        graduacao: { cor: "Branca", grau: 1 },
-      });
-
-      Alert.alert("Sucesso", `${filhoCompleto.nome} foi adicionado com sucesso!`);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível adicionar o filho.");
-    }
-  };
-
   const handleEditarFilho = (filho: Filho) => {
     setFilhoEmEdicao(filho);
     setModalFilho(true);
   };
 
-  const handleSalvarEdicaoFilho = async () => {
-    if (!filhoEmEdicao || !usuario?.id) return;
-
-    try {
-      const userRef = doc(db, "usuarios", usuario.id);
-      const novosFilhos = (usuario.filhos || []).map((f) =>
-        f.id === filhoEmEdicao.id ? filhoEmEdicao : f
-      );
-
-      await updateDoc(userRef, { filhos: novosFilhos });
-      setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
-      setModalFilho(false);
-      setFilhoEmEdicao(null);
-
-      Alert.alert("Sucesso", "Informações do filho atualizadas!");
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível salvar as alterações.");
-    }
-  };
-
-  // 🎯 RENDER HELPERS
   const formatarData = (data: string) => {
     return new Date(data).toLocaleDateString("pt-BR");
   };
@@ -298,7 +195,6 @@ export default function PerfilScreen() {
     </View>
   );
 
-  // 🎯 RENDER STATES
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -330,7 +226,6 @@ export default function PerfilScreen() {
         />
       }
     >
-      {/* HEADER DO PERFIL */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -358,7 +253,6 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      {/* INFORMAÇÕES PESSOAIS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleContainer}>
@@ -394,7 +288,6 @@ export default function PerfilScreen() {
             </Text>
           </View>
 
-          {/* PAGAMENTO DO USUÁRIO PRINCIPAL - SEPARADO */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Status do Pagamento</Text>
             <GerenciarPagamento
@@ -405,7 +298,6 @@ export default function PerfilScreen() {
 
           </View>
 
-          {/* MODALIDADE */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Modalidade</Text>
             {editando ? (
@@ -439,7 +331,6 @@ export default function PerfilScreen() {
             )}
           </View>
 
-          {/* GRADUAÇÃO */}
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Graduação</Text>
             {editando ? (
@@ -471,7 +362,6 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      {/* SEÇÃO DE FILHOS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleContainer}>
@@ -556,7 +446,6 @@ export default function PerfilScreen() {
         )}
       </View>
 
-      {/* MODAL PARA ADICIONAR/EDITAR FILHO */}
       <Modal
         visible={modalFilho}
         animationType="slide"
