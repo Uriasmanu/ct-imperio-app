@@ -131,7 +131,7 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                     );
                     await updateDoc(userRef, { filhos: novosFilhos });
                     Alert.alert(
-                        "✅ Sucesso",
+                        "Sucesso",
                         `Pagamento de ${filho.nome} ${status ? "confirmado" : "marcado como pendente"}!`
                     );
                 }
@@ -141,7 +141,7 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                     dataUltimoPagamento: status ? new Date().toISOString() : undefined,
                 });
                 Alert.alert(
-                    "✅ Sucesso",
+                    "Sucesso",
                     `Pagamento de ${usuario.nome} ${status ? "confirmado" : "marcado como pendente"}!`
                 );
             }
@@ -150,7 +150,7 @@ const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
             setModalPagamento(false);
         } catch (error) {
             console.error("Erro ao atualizar pagamento:", error);
-            Alert.alert("❌ Erro", "Não foi possível atualizar o status do pagamento.");
+            Alert.alert("Erro", "Não foi possível atualizar o status do pagamento.");
         } finally {
             setProcessando(false);
         }
@@ -534,7 +534,7 @@ export default function AdminScreen() {
             setUsuarios(usuariosData);
         } catch (error) {
             console.error("Erro ao carregar usuários:", error);
-            Alert.alert("❌ Erro", "Não foi possível carregar a lista de usuários.");
+            Alert.alert("Erro", "Não foi possível carregar a lista de usuários.");
         } finally {
             setLoading(false);
             setRefreshing(false);
