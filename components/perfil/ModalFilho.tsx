@@ -1,26 +1,25 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+// src/components/perfil/ModalFilho.tsx
+import { Filho, ModalidadeAluno } from "@/types/usuarios";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
+  Alert,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-
-import { GraduacaoSelector } from '@/components/perfil/GraduacaoSelector';
-import { Filho, GraduacaoJiuJitsu, GraduacaoMuayThai } from '@/types/usuarios';
+} from "react-native";
+import { MultiModalidadeSelector } from "./MultiModalidadeSelector";
 
 interface ModalFilhoProps {
   visible: boolean;
   filhoEmEdicao: Filho | null;
   onClose: () => void;
-  onAdicionarFilho: (filho: Omit<Filho, 'id'>) => Promise<void>;
-  onSalvarEdicaoFilho: (filho: Filho) => Promise<void>;
+  onAdicionarFilho: (filho: Omit<Filho, "id">) => void;
+  onSalvarEdicaoFilho: (filho: Filho) => void;
 }
 
 export const ModalFilho: React.FC<ModalFilhoProps> = ({
@@ -30,100 +29,68 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
   onAdicionarFilho,
   onSalvarEdicaoFilho,
 }) => {
-  // Estado local para gerenciar os dados do formulário
-  const [dadosFilho, setDadosFilho] = useState<Omit<Filho, 'id'> | Filho>({
-    nome: '',
-    idade: 0,
-    modalidade: 'Jiu-Jitsu',
-    graduacao: { cor: 'Branca', grau: 1 },
-    dataDeRegistro: new Date().toISOString().split('T')[0],
-    pagamento: false,
-    observacao: '',
-    dataPagamento: new Date(new Date().getFullYear(), new Date().getMonth(), 10).toISOString(),
-    dataUltimoPagamento: '',
-  });
+  const [nome, setNome] = useState("");
+  const [idade, setIdade] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [modalidades, setModalidades] = useState<ModalidadeAluno[]>([]);
 
-  // Atualiza os dados quando o filhoEmEdicao muda
   useEffect(() => {
     if (filhoEmEdicao) {
-      setDadosFilho(filhoEmEdicao);
+      setNome(filhoEmEdicao.nome);
+      setIdade(filhoEmEdicao.idade?.toString() || "");
+      setObservacao(filhoEmEdicao.observacao || "");
+      setModalidades(filhoEmEdicao.modalidades || []);
     } else {
-      // Reset para valores padrão quando for adicionar novo
-      setDadosFilho({
-        nome: '',
-        idade: 0,
-        modalidade: 'Jiu-Jitsu',
-        graduacao: { cor: 'Branca', grau: 1 },
-        dataDeRegistro: new Date().toISOString().split('T')[0],
-        pagamento: false,
-        observacao: '',
-        dataPagamento: new Date(new Date().getFullYear(), new Date().getMonth(), 10).toISOString(),
-        dataUltimoPagamento: '',
-      });
+      resetForm();
     }
   }, [filhoEmEdicao, visible]);
 
-  const modalTitle = filhoEmEdicao ? 'Editar Aluno' : 'Adicionar Aluno';
+  const resetForm = () => {
+    setNome("");
+    setIdade("");
+    setObservacao("");
+    setModalidades([]);
+  };
 
-  const closeModal = () => {
+  const handleSalvar = () => {
+    if (!nome.trim()) {
+      Alert.alert("Erro", "Por favor, informe o nome do aluno.");
+      return;
+    }
+
+    if (modalidades.length === 0) {
+      Alert.alert("Erro", "Por favor, selecione pelo menos uma modalidade.");
+      return;
+    }
+
+    const filhoData = {
+      nome: nome.trim(),
+      idade: idade ? parseInt(idade) : undefined,
+      observacao: observacao.trim(),
+      modalidades: modalidades,
+      dataDeRegistro: filhoEmEdicao?.dataDeRegistro || new Date().toISOString(),
+      pagamento: filhoEmEdicao?.pagamento || false,
+      avisoPagamento: filhoEmEdicao?.avisoPagamento || false,
+      dataPagamento: filhoEmEdicao?.dataPagamento || new Date().toISOString(),
+      dataUltimoPagamento: filhoEmEdicao?.dataUltimoPagamento || new Date().toISOString(),
+    };
+
+    if (filhoEmEdicao) {
+      onSalvarEdicaoFilho({
+        ...filhoData,
+        id: filhoEmEdicao.id,
+      });
+    } else {
+      onAdicionarFilho(filhoData);
+    }
+
+    resetForm();
     onClose();
   };
 
-  const handleSubmit = async () => {
-    if (!dadosFilho.nome?.trim()) {
-      alert('Por favor, informe o nome do aluno.');
-      return;
-    }
-
-    if (!dadosFilho.idade || dadosFilho.idade <= 0) {
-      alert('Por favor, informe uma idade válida.');
-      return;
-    }
-
-    try {
-      if (filhoEmEdicao) {
-        // Edição - garante que o ID seja preservado
-        await onSalvarEdicaoFilho({
-          ...dadosFilho,
-          id: filhoEmEdicao.id,
-        } as Filho);
-      } else {
-        // Novo - gera um ID temporário
-        await onAdicionarFilho(dadosFilho);
-      }
-      closeModal();
-    } catch (error) {
-      console.error('Erro ao salvar aluno:', error);
-    }
-  };
-
-  const handleModalidadeChange = (modalidade: Filho['modalidade']) => {
-    if (modalidade === 'Jiu-Jitsu') {
-      setDadosFilho(prev => ({
-        ...prev,
-        modalidade: modalidade,
-        graduacao: { cor: 'Branca', grau: 1 }
-      }));
-    } else if (modalidade === 'Muay Thai') {
-      setDadosFilho(prev => ({
-        ...prev,
-        modalidade: modalidade,
-        graduacao: { cor: 'Amarela', pontaBranca: false }
-      }));
-    } else {
-      setDadosFilho(prev => ({
-        ...prev,
-        modalidade: modalidade,
-        graduacao: undefined
-      }));
-    }
-  };
-
-  const handleGraduacaoChange = (graduacao: GraduacaoJiuJitsu | GraduacaoMuayThai) => {
-    setDadosFilho(prev => ({
-      ...prev,
-      graduacao: graduacao
-    }));
+  const handleFechar = () => {
+    resetForm();
+    onClose();
   };
 
   return (
@@ -131,244 +98,183 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={closeModal}
-      statusBarTranslucent={true}
+      onRequestClose={handleFechar}
     >
-      <KeyboardAvoidingView
-        style={styles.modalOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{modalTitle}</Text>
-            <TouchableOpacity onPress={closeModal}>
-              <Ionicons name="close" size={24} color="#666" />
+            <Text style={styles.modalTitle}>
+              {filhoEmEdicao ? "Editar Aluno" : "Adicionar Aluno"}
+            </Text>
+            <TouchableOpacity onPress={handleFechar} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            style={styles.modalScrollView}
-            contentContainerStyle={styles.modalScrollContent}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-            bounces={true}
-          >
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Nome completo *"
-              placeholderTextColor="#666"
-              value={dadosFilho.nome}
-              onChangeText={(text) => setDadosFilho(prev => ({ ...prev, nome: text }))}
-              returnKeyType="next"
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Idade *"
-              placeholderTextColor="#666"
-              keyboardType="numeric"
-              value={dadosFilho.idade?.toString() || ''}
-              onChangeText={(text) => setDadosFilho(prev => ({ ...prev, idade: Number(text) || 0 }))}
-              returnKeyType="next"
-            />
-
-            <TextInput
-              style={[styles.modalInput, styles.textArea]}
-              placeholder="Observações (opcional)"
-              placeholderTextColor="#666"
-              value={dadosFilho.observacao || ''}
-              onChangeText={(text) => setDadosFilho(prev => ({ ...prev, observacao: text }))}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              returnKeyType="done"
-            />
-
-            <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>Modalidade:</Text>
-              <View style={styles.modalidadeButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.modalidadeButton,
-                    dadosFilho.modalidade === 'Jiu-Jitsu' && styles.modalidadeButtonSelected,
-                  ]}
-                  onPress={() => handleModalidadeChange('Jiu-Jitsu')}
-                >
-                  <Text
-                    style={[
-                      styles.modalidadeButtonText,
-                      dadosFilho.modalidade === 'Jiu-Jitsu' && styles.modalidadeButtonTextSelected,
-                    ]}
-                  >
-                    Jiu-Jitsu
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.modalidadeButton,
-                    dadosFilho.modalidade === 'Muay Thai' && styles.modalidadeButtonSelected,
-                  ]}
-                  onPress={() => handleModalidadeChange('Muay Thai')}
-                >
-                  <Text
-                    style={[
-                      styles.modalidadeButtonText,
-                      dadosFilho.modalidade === 'Muay Thai' && styles.modalidadeButtonTextSelected,
-                    ]}
-                  >
-                    Muay Thai
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.modalSection}>
-              <Text style={styles.modalLabel}>Graduação:</Text>
-              <GraduacaoSelector
-                modalidade={dadosFilho.modalidade}
-                graduacaoAtual={dadosFilho.graduacao}
-                onSelect={handleGraduacaoChange}
+          <ScrollView style={styles.modalBody}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nome *</Text>
+              <TextInput
+                style={styles.input}
+                value={nome}
+                onChangeText={setNome}
+                placeholder="Digite o nome do aluno"
+                placeholderTextColor="#666"
               />
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Idade</Text>
+              <TextInput
+                style={styles.input}
+                value={idade}
+                onChangeText={setIdade}
+                placeholder="Idade (opcional)"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Modalidades *</Text>
+              <MultiModalidadeSelector
+                modalidades={modalidades}
+                onModalidadesChange={setModalidades}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Observações</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={observacao}
+                onChangeText={setObservacao}
+                placeholder="Observações adicionais (opcional)"
+                placeholderTextColor="#666"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={handleFechar}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={handleSalvar}
+              >
+                <Ionicons
+                  name={filhoEmEdicao ? "save" : "add"}
+                  size={20}
+                  color="#000"
+                />
+                <Text style={styles.saveButtonText}>
+                  {filhoEmEdicao ? "Salvar" : "Adicionar"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={closeModal}
-            >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modalButton, styles.confirmButton]}
-              onPress={handleSubmit}
-            >
-              <Text style={styles.confirmButtonText}>
-                {filhoEmEdicao ? 'Salvar' : 'Adicionar'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '90%',
-    minHeight: '60%', // Garante uma altura mínima
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
+    width: "100%",
+    maxHeight: "80%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: "#333",
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#B8860B",
   },
-  modalScrollView: {
-    flex: 1, // Agora ocupa todo o espaço disponível
+  closeButton: {
+    padding: 4,
   },
-  modalScrollContent: {
+  modalBody: {
     padding: 20,
-    gap: 20,
-    paddingBottom: 10, // Espaço extra no final
   },
-  modalSection: {
-    gap: 12,
+  inputGroup: {
+    marginBottom: 20,
   },
-  modalInput: {
-    backgroundColor: '#2a2a2a',
+  label: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "600",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: "#2a2a2a",
     borderRadius: 8,
-    padding: 16,
-    color: '#FFF',
+    padding: 12,
+    color: "#FFF",
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   textArea: {
-    minHeight: 120, // Altura maior para área de texto
-    textAlignVertical: 'top',
+    minHeight: 80,
   },
-  modalLabel: {
-    fontSize: 16,
-    color: '#B8860B',
-    fontWeight: '600',
-  },
-  modalidadeButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modalidadeButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  modalidadeButtonSelected: {
-    backgroundColor: '#B8860B',
-    borderColor: '#DAA520',
-  },
-  modalidadeButtonText: {
-    color: '#CCC',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  modalidadeButtonTextSelected: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  modalActions: {
-    flexDirection: 'row',
+  buttonContainer: {
+    flexDirection: "row",
     gap: 12,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
+    marginTop: 20,
+    marginBottom: 35
   },
-  modalButton: {
+  button: {
     flex: 1,
-    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#666",
   },
-  confirmButton: {
-    backgroundColor: '#B8860B',
+  saveButton: {
+    backgroundColor: "#B8860B",
   },
   cancelButtonText: {
-    color: '#CCC',
-    fontWeight: '600',
+    color: "#CCC",
     fontSize: 16,
+    fontWeight: "600",
   },
-  confirmButtonText: {
-    color: '#000',
-    fontWeight: '600',
+  saveButtonText: {
+    color: "#000",
     fontSize: 16,
+    fontWeight: "600",
   },
 });
