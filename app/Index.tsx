@@ -252,7 +252,7 @@ export default function IndexScreen() {
             <Text style={styles.sectionTitle}>Aulas de Hoje</Text>
             <TouchableOpacity
               style={styles.seeAllButton}
-              onPress={() => router.push('/AulasScreen')}
+              onPress={() => router.push('/aulasScreen')}
             >
               <Text style={styles.seeAllText}>Ver todas</Text>
             </TouchableOpacity>
@@ -267,7 +267,7 @@ export default function IndexScreen() {
                 <TouchableOpacity
                   key={getClassId(classItem)}
                   activeOpacity={0.8}
-                  onPress={() => router.push('/AulasScreen')}
+                  onPress={() => router.push('/aulasScreen')}
                   style={[
                     styles.currentClassContainer,
                     { backgroundColor: getGradientColor(progressMap[classItem.title] || 0) }
@@ -314,7 +314,7 @@ export default function IndexScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.scheduleButton}
-                onPress={() => router.push('/AulasScreen')}
+                onPress={() => router.push('/aulasScreen')}
               >
                 <Text style={styles.scheduleButtonText}>Ver Grade Completa</Text>
               </TouchableOpacity>

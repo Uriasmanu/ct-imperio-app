@@ -39,7 +39,7 @@ const theme = {
 
 const daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
-export default function AulasScreen() {
+export default function aulasScreen() {
   const todayIndex = new Date().getDay();
   const adjustedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
   const [selectedDay, setSelectedDay] = useState(daysOfWeek[adjustedIndex]);

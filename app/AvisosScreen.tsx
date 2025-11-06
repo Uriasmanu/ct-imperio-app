@@ -92,7 +92,7 @@ const NoticeCard: React.FC<{ notice: Notice; onPress: (id: string) => void }> = 
 };
 
 // Tela principal
-export default function AvisosScreen() {
+export default function avisosScreen() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);

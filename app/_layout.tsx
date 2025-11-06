@@ -37,14 +37,14 @@ function CustomDrawerContent(props: any) {
 
   // Filtra as rotas que devem aparecer no drawer
   const filteredRoutes = props.state.routes.filter((route: any) => {
-    // Se for a tela AdminScreen, só mostra se for admin
-    if (route.name === 'AdminScreen') {
+    // Se for a tela adminScreen, só mostra se for admin
+    if (route.name === 'adminScreen') {
       return showAdmin;
     }
     // Para outras telas, sempre mostra (exceto as que estão configuradas para não aparecer)
-    return route.name !== 'SettingsScreen' && 
-           route.name !== 'PerfilScreen' && 
-           route.name !== 'RegistroScreen';
+    return route.name !== 'settingsScreen' && 
+           route.name !== 'perfilScreen' && 
+           route.name !== 'registroScreen';
   });
 
   return (
@@ -113,7 +113,7 @@ function CustomDrawerContent(props: any) {
         icon={({ color, size }) => (
           <Settings size={size} color={color} />
         )}
-        onPress={() => props.navigation.navigate('SettingsScreen')}
+        onPress={() => props.navigation.navigate('settingsScreen')}
         labelStyle={[styles.drawerLabel, { color: '#FFFFFF' }]}
         activeTintColor="#FFFFFF"
         inactiveTintColor="#FFFFFF"
@@ -167,7 +167,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="AulasScreen"
+                name="aulasScreen"
                 options={{
                   drawerLabel: 'Aulas',
                   title: '',
@@ -177,7 +177,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="FaqScreen"
+                name="faqScreen"
                 options={{
                   drawerLabel: 'Dúvidas Frequentes',
                   title: '',
@@ -187,7 +187,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="TatameScreen"
+                name="tatameScreen"
                 options={{
                   drawerLabel: 'Regras do Tatame',
                   title: '',
@@ -197,7 +197,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="AvisosScreen"
+                name="avisosScreen"
                 options={{
                   drawerLabel: 'Avisos',
                   title: '',
@@ -209,7 +209,7 @@ export default function RootLayout() {
               
               {/* Tela Admin - sempre definida, mas só aparece no drawer para admins */}
               <Drawer.Screen
-                name="AdminScreen"
+                name="adminScreen"
                 options={{
                   drawerLabel: "Painel Admin",
                   title: "Painel Administrativo",
@@ -221,7 +221,7 @@ export default function RootLayout() {
 
               {/* Telas que não aparecem no drawer */}
               <Drawer.Screen
-                name="SettingsScreen"
+                name="settingsScreen"
                 options={{
                   drawerLabel: () => null,
                   drawerItemStyle: { display: 'none' },
@@ -229,7 +229,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="PerfilScreen"
+                name="perfilScreen"
                 options={{
                   drawerLabel: () => null,
                   drawerItemStyle: { display: 'none' },
@@ -237,7 +237,7 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
-                name="RegistroScreen"
+                name="registroScreen"
                 options={{
                   drawerLabel: () => null,
                   drawerItemStyle: { display: 'none' },

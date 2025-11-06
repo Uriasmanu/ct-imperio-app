@@ -14,19 +14,19 @@ import {
   View
 } from "react-native";
 
-import { GraduacaoSelector } from "@/components/perfil/GraduacaoSelector";
 import { ModalFilho } from "@/components/perfil/ModalFilho";
+import { MultiModalidadeSelector } from "@/components/perfil/MultiModalidadeSelector";
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { auth, db } from "@/config/firebaseConfig";
 import {
   Filho,
   GraduacaoJiuJitsu,
   GraduacaoMuayThai,
+  ModalidadeAluno,
   Usuario,
 } from "../types/usuarios";
 
-
-export default function PerfilScreen() {
+export default function perfilScreen() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
@@ -36,28 +36,49 @@ export default function PerfilScreen() {
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
   const carregarUsuario = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        const userRef = doc(db, "usuarios", user.uid);
-        const snap = await getDoc(userRef);
-        if (snap.exists()) {
-          setUsuario(snap.data() as Usuario);
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      const userRef = doc(db, "usuarios", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) {
+        const userData = snap.data() as any; // Usamos any temporariamente para a migração
+        
+        // Migração: converter modalidade única para array de modalidades
+        if (userData.modalidade && !userData.modalidades) {
+          const modalidadeUnica: ModalidadeAluno = {
+            modalidade: userData.modalidade,
+            graduacao: userData.graduacao,
+            dataInicio: userData.dataDeRegistro,
+            ativo: true
+          };
+          userData.modalidades = [modalidadeUnica];
+          
+          // Atualizar no Firebase para migração permanente
+          await updateDoc(userRef, {
+            modalidades: [modalidadeUnica]
+          });
         }
-      } catch (error) {
-        console.error("Erro ao carregar usuário:", error);
-        Alert.alert("Erro", "Não foi possível carregar os dados.");
+        
+        // Garantir que modalidades sempre exista
+        if (!userData.modalidades) {
+          userData.modalidades = [];
+        }
+        
+        setUsuario(userData as Usuario);
       }
+    } catch (error) {
+      console.error("Erro ao carregar usuário:", error);
+      Alert.alert("Erro", "Não foi possível carregar os dados.");
     }
-    setLoading(false);
-    setRefreshing(false);
-  };
-
+  }
+  setLoading(false);
+  setRefreshing(false);
+};
   const onRefresh = () => {
     setRefreshing(true);
     carregarUsuario();
   };
-
 
   const verificarPagamentosFilhos = async () => {
     if (!usuario?.id || !usuario.filhos) return;
@@ -117,8 +138,9 @@ export default function PerfilScreen() {
       return;
     }
 
-    if (!usuario.modalidade) {
-      Alert.alert("Campo obrigatório", "Selecione uma modalidade antes de salvar.");
+    // Verifica se tem pelo menos uma modalidade
+    if (!usuario.modalidades || usuario.modalidades.length === 0) {
+      Alert.alert("Campo obrigatório", "Selecione pelo menos uma modalidade antes de salvar.");
       return;
     }
 
@@ -129,8 +151,7 @@ export default function PerfilScreen() {
         email: usuario.email ?? "",
         telefone: usuario.telefone ?? "",
         observacao: usuario.observacao ?? "",
-        modalidade: usuario.modalidade ?? "",
-        graduacao: usuario.graduacao ?? { cor: "Branca", grau: 1 },
+        modalidades: usuario.modalidades ?? [],
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -166,6 +187,66 @@ export default function PerfilScreen() {
     }
   };
 
+  const renderModalidadesUsuario = () => {
+    if (!usuario || !usuario.modalidades || usuario.modalidades.length === 0) {
+      return <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>;
+    }
+
+    return (
+      <View style={styles.modalidadesList}>
+        {usuario.modalidades.map((modalidadeAluno, index) => (
+          <View key={`${modalidadeAluno.modalidade}-${index}`} style={styles.modalidadeItem}>
+            <View style={styles.modalidadeHeader}>
+              <Text style={styles.modalidadeNome}>{modalidadeAluno.modalidade}</Text>
+              <Text style={styles.modalidadeStatus}>
+                {modalidadeAluno.ativo ? '✅ Ativo' : '⏸️ Inativo'}
+              </Text>
+            </View>
+            <Text style={styles.modalidadeGraduacao}>
+              {formatarGraduacao(modalidadeAluno.graduacao, modalidadeAluno.modalidade)}
+            </Text>
+            <Text style={styles.modalidadeData}>
+              Desde: {formatarData(modalidadeAluno.dataInicio)}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderFilhoModalidades = (filho: Filho) => {
+    if (!filho.modalidades || filho.modalidades.length === 0) {
+      return <Text style={styles.filhoGraduacao}>Sem modalidades</Text>;
+    }
+
+    return (
+      <View style={styles.filhoModalidades}>
+        {filho.modalidades.map((modalidadeAluno, index) => (
+          <View key={`${modalidadeAluno.modalidade}-${index}`} style={styles.filhoModalidadeItem}>
+            <View
+              style={[
+                styles.modalidadeBadge,
+                {
+                  backgroundColor:
+                    modalidadeAluno.modalidade === "Muay Thai" ? "#dc2626" : 
+                    modalidadeAluno.modalidade === "Jiu-Jitsu" ? "#1e40af" :
+                    modalidadeAluno.modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                },
+              ]}
+            >
+              <Text style={styles.modalidadeBadgeText}>
+                {modalidadeAluno.modalidade}
+              </Text>
+            </View>
+            <Text style={styles.filhoGraduacao}>
+              {formatarGraduacao(modalidadeAluno.graduacao, modalidadeAluno.modalidade)}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
     <View style={styles.infoField} key={key}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -185,6 +266,22 @@ export default function PerfilScreen() {
       )}
     </View>
   );
+
+  const getPrimeiraModalidadeAtiva = () => {
+    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
+      return "Sem modalidade";
+    }
+    const ativa = usuario.modalidades.find(m => m.ativo);
+    return ativa ? ativa.modalidade : usuario.modalidades[0].modalidade;
+  };
+
+  const getPrimeiraGraduacaoAtiva = () => {
+    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
+      return undefined;
+    }
+    const ativa = usuario.modalidades.find(m => m.ativo);
+    return ativa ? ativa.graduacao : usuario.modalidades[0].graduacao;
+  };
 
   if (loading) {
     return (
@@ -225,9 +322,14 @@ export default function PerfilScreen() {
         </View>
         <Text style={styles.userName}>{usuario.nome}</Text>
         <Text style={styles.userGraduacao}>
-          {formatarGraduacao(usuario.graduacao, usuario.modalidade)}
+          {formatarGraduacao(getPrimeiraGraduacaoAtiva(), getPrimeiraModalidadeAtiva())}
         </Text>
-        <Text style={styles.userModalidade}>{usuario.modalidade}</Text>
+        <Text style={styles.userModalidade}>
+          {usuario.modalidades?.length > 1 
+            ? `${usuario.modalidades.length} modalidades` 
+            : getPrimeiraModalidadeAtiva()
+          }
+        </Text>
 
         <View style={styles.pagamentoHeader}>
           <Ionicons
@@ -286,58 +388,19 @@ export default function PerfilScreen() {
               onPagamentoAtualizado={handlePagamentoAtualizado}
               tipo="usuario"
             />
-
           </View>
 
           <View style={styles.infoField}>
-            <Text style={styles.infoLabel}>Modalidade</Text>
+            <Text style={styles.infoLabel}>Modalidades</Text>
             {editando ? (
-              <View style={styles.modalidadeGrid}>
-                {["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"].map((mod) => (
-                  <TouchableOpacity
-                    key={mod}
-                    style={[
-                      styles.modalidadeButton,
-                      usuario.modalidade === mod && styles.modalidadeButtonSelected,
-                    ]}
-                    onPress={() =>
-                      setUsuario((prev) =>
-                        prev ? { ...prev, modalidade: mod as Usuario["modalidade"] } : prev
-                      )
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.modalidadeButtonText,
-                        usuario.modalidade === mod && styles.modalidadeButtonTextSelected,
-                      ]}
-                    >
-                      {mod}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.infoValue}>{usuario.modalidade}</Text>
-            )}
-          </View>
-
-          <View style={styles.infoField}>
-            <Text style={styles.infoLabel}>Graduação</Text>
-            {editando ? (
-              <GraduacaoSelector
-                modalidade={usuario.modalidade}
-                graduacaoAtual={usuario.graduacao}
-                onSelect={(graduacao) => {
-                  setUsuario((prev) =>
-                    prev ? { ...prev, graduacao: graduacao } : prev
-                  );
+              <MultiModalidadeSelector
+                modalidades={usuario.modalidades || []}
+                onModalidadesChange={(modalidades) => {
+                  setUsuario((prev) => prev ? { ...prev, modalidades } : prev);
                 }}
               />
             ) : (
-              <Text style={styles.infoValue}>
-                {formatarGraduacao(usuario.graduacao, usuario.modalidade)}
-              </Text>
+              renderModalidadesUsuario()
             )}
           </View>
 
@@ -387,24 +450,7 @@ export default function PerfilScreen() {
               </View>
 
               <View style={styles.filhoContent}>
-                <View style={styles.filhoBadges}>
-                  <View
-                    style={[
-                      styles.modalidadeBadge,
-                      {
-                        backgroundColor:
-                          filho.modalidade === "Muay Thai" ? "#dc2626" : "#1e40af",
-                      },
-                    ]}
-                  >
-                    <Text style={styles.modalidadeBadgeText}>
-                      {filho.modalidade}
-                    </Text>
-                  </View>
-                  <Text style={styles.filhoGraduacao}>
-                    {formatarGraduacao(filho.graduacao, filho.modalidade)}
-                  </Text>
-                </View>
+                {renderFilhoModalidades(filho)}
 
                 <Text style={styles.filhoData}>
                   Registrado em: {formatarData(filho.dataDeRegistro)}
@@ -468,7 +514,6 @@ export default function PerfilScreen() {
           setUsuario((prev) => (prev ? { ...prev, filhos: novosFilhos } : prev));
         }}
       />
-
     </ScrollView>
   );
 }
@@ -629,10 +674,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  modalidadeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  modalidadesList: {
+    gap: 12,
+  },
+  modalidadeItem: {
+    backgroundColor: '#2a2a2a',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  modalidadeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalidadeNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  modalidadeStatus: {
+    fontSize: 12,
+    color: '#888',
+  },
+  modalidadeGraduacao: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  modalidadeData: {
+    fontSize: 12,
+    color: '#666',
   },
   saveButton: {
     flexDirection: "row",
@@ -682,7 +757,10 @@ const styles = StyleSheet.create({
   filhoContent: {
     gap: 8,
   },
-  filhoBadges: {
+  filhoModalidades: {
+    gap: 8,
+  },
+  filhoModalidadeItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -755,35 +833,5 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
     textAlign: "center",
-  },
-  warningButton: {
-    backgroundColor: "#ef4444",
-  },
-  warningButtonText: {
-    color: "#FFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  modalidadeButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  modalidadeButtonSelected: {
-    backgroundColor: '#B8860B',
-    borderColor: '#DAA520',
-  },
-  modalidadeButtonText: {
-    color: '#CCC',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  modalidadeButtonTextSelected: {
-    color: '#000',
-    fontWeight: '600',
   },
 });

@@ -4,7 +4,7 @@ import { useRootNavigationState, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const RegistroScreen = () => {
+const registroScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,7 +39,7 @@ const RegistroScreen = () => {
 
       // ⚡ Espera o RootLayout montar antes de navegar
       if (rootNavigationState?.key) {
-        router.replace("/SettingsScreen");
+        router.replace("/settingsScreen");
       }
     } else {
       Alert.alert("Erro no Registro", result.error);
@@ -121,14 +121,14 @@ const RegistroScreen = () => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/SettingsScreen')} style={{ marginTop: 20 }}>
+      <TouchableOpacity onPress={() => router.push('/settingsScreen')} style={{ marginTop: 20 }}>
         <Text style={styles.backText}>Já tem uma conta? Voltar para Login</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-// Estilos de exemplo para RegistroScreen
+// Estilos de exemplo para registroScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -195,4 +195,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default RegistroScreen;
+export default registroScreen;

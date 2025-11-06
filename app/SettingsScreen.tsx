@@ -19,7 +19,7 @@ import { signOut } from 'firebase/auth';
 import { appConfig, gymData } from './../utils/constants';
 
 
-const SettingsScreen = () => {
+const settingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -130,13 +130,13 @@ const SettingsScreen = () => {
 
 
   const handleRegister = () => {
-    router.push('/RegistroScreen')
+    router.push('/registroScreen')
 
   };
 
   const handleProfile = () => {
     if (isLoggedIn) {
-      router.push('/PerfilScreen')
+      router.push('/perfilScreen')
     } else {
       Alert.alert('Atenção', 'Você precisa estar logado para acessar o perfil.');
     }
@@ -759,4 +759,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default SettingsScreen;
+export default settingsScreen;
