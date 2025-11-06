@@ -72,52 +72,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
         }
     };
 
-    const handleConfirmarPagamento = async () => {
-        setProcessando(true);
-        try {
-            if (tipo === "usuario") {
-                // Atualizar usuário principal
-                const userRef = doc(db, "usuarios", item.id);
-                await updateDoc(userRef, {
-                    pagamento: true,
-                    avisoPagamento: false,
-                    dataUltimoPagamento: new Date().toISOString()
-                });
-            } else {
-                // Atualizar filho
-                if (!usuarioId) throw new Error("ID do usuário é necessário para filhos");
-
-                const userRef = doc(db, "usuarios", usuarioId);
-                const userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    const usuario = userSnap.data() as Usuario;
-                    const filhosAtualizados = usuario.filhos?.map(f =>
-                        f.id === item.id
-                            ? {
-                                ...f,
-                                pagamento: true,
-                                avisoPagamento: false,
-                                dataUltimoPagamento: new Date().toISOString()
-                            }
-                            : f
-                    );
-
-                    await updateDoc(userRef, { filhos: filhosAtualizados });
-                }
-            }
-
-            onPagamentoAtualizado();
-            setModalPagamento(false);
-            Alert.alert("Sucesso", `Pagamento de ${item.nome} confirmado!`);
-        } catch (error) {
-            console.error("Erro ao confirmar pagamento:", error);
-            Alert.alert("Erro", "Não foi possível confirmar o pagamento.");
-        } finally {
-            setProcessando(false);
-        }
-    };
-
     const formatarData = (data: string) => {
         return new Date(data).toLocaleDateString("pt-BR");
     };
@@ -173,40 +127,42 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                         </Text>
                     </View>
                 ) : (
-                    <TouchableOpacity
-                        style={[
-                            styles.statusContainer,
-                            item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
-                        ]}
-                        onPress={() => setModalPagamento(true)}
-                    >
-                        <Ionicons
-                            name={getStatusIcon()}
-                            size={16}
-                            color={getStatusColor()}
-                        />
-                        <Text style={[styles.statusText, { color: getStatusColor() }]}>
-                            {getStatusText()}
-                        </Text>
-                    </TouchableOpacity>
-                )}
+                    <View style={styles.statusRow}>
+                        <TouchableOpacity
+                            style={[
+                                styles.statusContainer,
+                                item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
+                            ]}
+                            onPress={() => setModalPagamento(true)}
+                        >
+                            <Ionicons
+                                name={getStatusIcon()}
+                                size={16}
+                                color={getStatusColor()}
+                            />
+                            <Text style={[styles.statusText, { color: getStatusColor() }]}>
+                                {getStatusText()}
+                            </Text>
+                        </TouchableOpacity>
 
-                {/* Botão Avisar que Pagou - aparece apenas quando está pendente */}
-                {!item.pagamento && !item.avisoPagamento && (
-                    <TouchableOpacity
-                        style={styles.avisarButton}
-                        onPress={handleAvisarPagamento}
-                        disabled={processando}
-                    >
-                        {processando ? (
-                            <ActivityIndicator size="small" color="#000" />
-                        ) : (
-                            <>
-                                <Ionicons name="notifications" size={14} color="#000" />
-                                <Text style={styles.avisarButtonText}>Avisar que pagou</Text>
-                            </>
+                        {/* Botão Avisar que Pagou - aparece apenas quando está pendente */}
+                        {!item.avisoPagamento && (
+                            <TouchableOpacity
+                                style={styles.avisarButton}
+                                onPress={handleAvisarPagamento}
+                                disabled={processando}
+                            >
+                                {processando ? (
+                                    <ActivityIndicator size="small" color="#000" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="notifications" size={14} color="#000" />
+                                        <Text style={styles.avisarButtonText}>Avisar que pagou</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
                         )}
-                    </TouchableOpacity>
+                    </View>
                 )}
             </View>
 
@@ -262,24 +218,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                             >
                                 <Text style={styles.cancelButtonText}>Fechar</Text>
                             </TouchableOpacity>
-
-                            {/* Botão de confirmar pagamento - aparece apenas para admin quando status é Aguardando */}
-                            {item.avisoPagamento && (
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.confirmButton]}
-                                    onPress={handleConfirmarPagamento}
-                                    disabled={processando}
-                                >
-                                    {processando ? (
-                                        <ActivityIndicator size="small" color="#000" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="checkmark" size={18} color="#000" />
-                                            <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            )}
                         </View>
                     </View>
                 </View>
@@ -290,19 +228,24 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 
 const styles = {
     container: {
+        flexDirection: 'column',
+        gap: 8,
+    },
+    statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        justifyContent: "space-between",
     },
     statusContainer: {
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         borderRadius: 8,
         borderWidth: 1,
         flex: 1,
+        minHeight: 44,
     },
     statusText: {
         fontSize: 16,
@@ -326,11 +269,16 @@ const styles = {
         gap: 6,
         paddingHorizontal: 12,
         paddingVertical: 10,
-        borderRadius: 6,
+        borderRadius: 8,
         backgroundColor: "#f59e0b",
+        borderWidth: 1,
+        borderColor: "#f59e0b",
+        flex: 1,
+        minHeight: 44,
+        justifyContent: 'center',
     },
     avisarButtonText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "600",
         color: "#000",
     },
