@@ -118,50 +118,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
         }
     };
 
-    const handleMarcarComoPendente = async () => {
-        setProcessando(true);
-        try {
-            if (tipo === "usuario") {
-                // Atualizar usuário principal
-                const userRef = doc(db, "usuarios", item.id);
-                await updateDoc(userRef, {
-                    pagamento: false,
-                    avisoPagamento: false
-                });
-            } else {
-                // Atualizar filho
-                if (!usuarioId) throw new Error("ID do usuário é necessário para filhos");
-
-                const userRef = doc(db, "usuarios", usuarioId);
-                const userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    const usuario = userSnap.data() as Usuario;
-                    const filhosAtualizados = usuario.filhos?.map(f =>
-                        f.id === item.id
-                            ? { 
-                                ...f, 
-                                pagamento: false,
-                                avisoPagamento: false 
-                            }
-                            : f
-                    );
-
-                    await updateDoc(userRef, { filhos: filhosAtualizados });
-                }
-            }
-
-            onPagamentoAtualizado();
-            setModalPagamento(false);
-            Alert.alert("Status Alterado", `Pagamento de ${item.nome} marcado como pendente.`);
-        } catch (error) {
-            console.error("Erro ao atualizar pagamento:", error);
-            Alert.alert("Erro", "Não foi possível atualizar o status do pagamento.");
-        } finally {
-            setProcessando(false);
-        }
-    };
-
     const formatarData = (data: string) => {
         return new Date(data).toLocaleDateString("pt-BR");
     };
@@ -204,29 +160,38 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
     return (
         <>
             <View style={styles.container}>
-                {/* Status do Pagamento */}
-                <TouchableOpacity
-                    style={[
-                        styles.pagamentoButton,
-                        item.pagamento ? styles.pagamentoPago : 
-                        item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
-                    ]}
-                    onPress={() => setModalPagamento(true)}
-                >
-                    <Ionicons
-                        name={getStatusIcon()}
-                        size={16}
-                        color={getStatusColor()}
-                    />
-                    <Text style={[
-                        styles.pagamentoButtonText,
-                        { color: getStatusColor() }
-                    ]}>
-                        {getStatusText()}
-                    </Text>
-                </TouchableOpacity>
+                {/* Status do Pagamento - Agora é apenas texto quando está pago */}
+                {item.pagamento ? (
+                    <View style={[styles.statusContainer, styles.pagamentoPago]}>
+                        <Ionicons
+                            name={getStatusIcon()}
+                            size={16}
+                            color={getStatusColor()}
+                        />
+                        <Text style={[styles.statusText, { color: getStatusColor() }]}>
+                            {getStatusText()}
+                        </Text>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        style={[
+                            styles.statusContainer,
+                            item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
+                        ]}
+                        onPress={() => setModalPagamento(true)}
+                    >
+                        <Ionicons
+                            name={getStatusIcon()}
+                            size={16}
+                            color={getStatusColor()}
+                        />
+                        <Text style={[styles.statusText, { color: getStatusColor() }]}>
+                            {getStatusText()}
+                        </Text>
+                    </TouchableOpacity>
+                )}
 
-                {/* Botão Avisar que Pagou - aparece apenas quando está pendente e não aguardando */}
+                {/* Botão Avisar que Pagou - aparece apenas quando está pendente */}
                 {!item.pagamento && !item.avisoPagamento && (
                     <TouchableOpacity
                         style={styles.avisarButton}
@@ -298,7 +263,8 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                                 <Text style={styles.cancelButtonText}>Fechar</Text>
                             </TouchableOpacity>
 
-                            {!item.pagamento ? (
+                            {/* Botão de confirmar pagamento - aparece apenas para admin quando status é Aguardando */}
+                            {item.avisoPagamento && (
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.confirmButton]}
                                     onPress={handleConfirmarPagamento}
@@ -310,21 +276,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                                         <>
                                             <Ionicons name="checkmark" size={18} color="#000" />
                                             <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.warningButton]}
-                                    onPress={handleMarcarComoPendente}
-                                    disabled={processando}
-                                >
-                                    {processando ? (
-                                        <ActivityIndicator size="small" color="#FFF" />
-                                    ) : (
-                                        <>
-                                            <Ionicons name="refresh" size={18} color="#FFF" />
-                                            <Text style={styles.warningButtonText}>Marcar como Pendente</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
@@ -340,21 +291,22 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 const styles = {
     container: {
         flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
         justifyContent: "space-between",
     },
-    pagamentoButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    pagamentoButton: {
+    statusContainer: {
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
-        alignSelf: 'flex-start',
+        flex: 1,
+    },
+    statusText: {
+        fontSize: 16,
+        fontWeight: "600",
     },
     pagamentoPago: {
         backgroundColor: "rgba(34, 197, 94, 0.1)",
@@ -372,10 +324,10 @@ const styles = {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        padding: 14,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
         borderRadius: 6,
         backgroundColor: "#f59e0b",
-        alignSelf: 'flex-start',
     },
     avisarButtonText: {
         fontSize: 14,
@@ -487,14 +439,6 @@ const styles = {
     },
     confirmButtonText: {
         color: "#000",
-        fontWeight: "600",
-        fontSize: 16,
-    },
-    warningButton: {
-        backgroundColor: "#ef4444",
-    },
-    warningButtonText: {
-        color: "#FFF",
         fontWeight: "600",
         fontSize: 16,
     },
