@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -11,28 +10,30 @@ import {
 } from 'react-native';
 
 import LoginModal from '@/components/Settings/LoginModal';
-import { auth } from '@/config/firebaseConfig';
-import { loginUsuario } from '@/services/usuarioService';
-import { signOut } from 'firebase/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { appConfig, gymData } from './../utils/constants';
 
 
 const settingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
 
-  const [user, setUser] = useState<{
-    name: string;
-    email: string;
-    since: string;
-    avatar: string;
-  } | null>(null);
+  const {
+    isLoggedIn,
+    showLoginModal,
+    email,
+    password,
+    loading,
+    user,
+    setShowLoginModal,
+    setEmail,
+    setPassword,
+    handleLogin,
+    handleConfirmLogin,
+    handleLogout,
+    handleRegister,
+    handleProfile,
+  } = useAuth();
 
 
   const handlePrivacyPolicy = async () => {
@@ -60,82 +61,6 @@ const settingsScreen = () => {
 
   const toggleVersionInfo = () => {
     setShowVersionInfo(!showVersionInfo);
-  };
-
-  const handleLogin = () => {
-    setShowLoginModal(true);
-  };
-
-  const handleConfirmLogin = async () => {
-    try {
-      if (!email || !password) {
-        Alert.alert('Campos obrigatórios', 'Informe e-mail e senha.');
-        return;
-      }
-
-      setLoading(true);
-      const { success, user: firebaseUser, error } = await loginUsuario(email, password);
-
-      if (!success || !firebaseUser) {
-        Alert.alert('Erro no login', error || 'Não foi possível fazer login.');
-        return;
-      }
-
-      setIsLoggedIn(true);
-      setUser({
-        name: firebaseUser?.email
-          ? firebaseUser.email.split('@')[0]
-          : 'Usuário',
-        email: firebaseUser?.email ?? 'E-mail não disponível',
-        since: new Date().toISOString().split('T')[0],
-        avatar: '👤',
-      });
-
-
-      setShowLoginModal(false);
-      setEmail('');
-      setPassword('');
-      Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
-    } catch (error) {
-      Alert.alert('Erro', 'Falha ao fazer login. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  const handleLogout = async () => {
-    Alert.alert('Sair', 'Tem certeza que deseja sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut(auth);
-            setIsLoggedIn(false);
-            setUser(null);
-            Alert.alert('Logout realizado', 'Você saiu da sua conta.');
-          } catch (err) {
-            Alert.alert('Erro', 'Não foi possível sair.');
-          }
-        },
-      },
-    ]);
-  };
-
-
-  const handleRegister = () => {
-    router.push('/registroScreen')
-
-  };
-
-  const handleProfile = () => {
-    if (isLoggedIn) {
-      router.push('/perfilScreen')
-    } else {
-      Alert.alert('Atenção', 'Você precisa estar logado para acessar o perfil.');
-    }
   };
 
   const toggleShowConfirmPassword = () => {
@@ -304,10 +229,10 @@ const settingsScreen = () => {
         onClose={() => setShowLoginModal(false)}
         onLogin={handleConfirmLogin}
         loading={loading}
-        email={email} 
-        onEmailChange={setEmail} 
-        password={password} 
-        onPasswordChange={setPassword} 
+        email={email}
+        onEmailChange={setEmail}
+        password={password}
+        onPasswordChange={setPassword}
       />
 
     </ScrollView>
