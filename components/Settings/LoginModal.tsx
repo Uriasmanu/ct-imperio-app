@@ -16,10 +16,10 @@ interface LoginModalProps {
     onClose: () => void;
     onLogin: (email: string, password: string) => Promise<void>;
     loading?: boolean;
-    email: string; // ← Adicionar esta linha
-    onEmailChange: (email: string) => void; // ← Adicionar esta linha
-    password: string; // ← Adicionar esta linha
-    onPasswordChange: (password: string) => void; // ← Adicionar esta linha
+    email: string; 
+    onEmailChange: (email: string) => void; 
+    password: string; 
+    onPasswordChange: (password: string) => void; 
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({
@@ -27,10 +27,10 @@ const LoginModal: React.FC<LoginModalProps> = ({
     onClose,
     onLogin,
     loading = false,
-    email, // ← Adicionar
-    onEmailChange, // ← Adicionar
-    password, // ← Adicionar
-    onPasswordChange, // ← Adicionar
+    email, 
+    onEmailChange, 
+    password, 
+    onPasswordChange, 
 }) => {
     const [showPassword, setShowPassword] = React.useState(false);
 
@@ -48,8 +48,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
     };
 
     const handleClose = () => {
-        onEmailChange(''); // ← Limpar via props
-        onPasswordChange(''); // ← Limpar via props
+        onEmailChange(''); 
+        onPasswordChange(''); 
         setShowPassword(false);
         onClose();
     };
@@ -71,8 +71,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
                         placeholderTextColor="#aaa"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        value={email} // ← Usar prop
-                        onChangeText={onEmailChange} // ← Usar prop
+                        value={email} 
+                        onChangeText={onEmailChange} 
                     />
 
                     <View style={styles.passwordContainer}>
@@ -81,8 +81,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
                             placeholder="Senha"
                             placeholderTextColor="#aaa"
                             secureTextEntry={!showPassword}
-                            value={password} // ← Usar prop
-                            onChangeText={onPasswordChange} // ← Usar prop
+                            value={password} 
+                            onChangeText={onPasswordChange} 
                         />
                         <TouchableOpacity
                             style={styles.eyeButton}
