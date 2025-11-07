@@ -82,7 +82,7 @@ const UsuarioCard: React.FC<{
         <View style={styles.usuarioInfo}>
           <Text style={styles.usuarioNome}>{usuario.nome}</Text>
           <View style={styles.usuarioMeta}>
-            {usuario.modalidades.map((m, i) => (
+            {usuario.modalidades?.map((m, i) => (
               <View
                 key={i}
                 style={[
@@ -96,6 +96,7 @@ const UsuarioCard: React.FC<{
                 <Text style={styles.modalidadeBadgeText}>{m.modalidade}</Text>
               </View>
             ))}
+
             <Text style={styles.usuarioEmail}>{usuario.email}</Text>
           </View>
 
@@ -147,7 +148,10 @@ const UsuarioCard: React.FC<{
               <View style={styles.filhoItemContent}>
                 <Text style={styles.filhoNome}>{filho.nome}</Text>
                 <View style={styles.filhoMeta}>
-                  <Text style={styles.filhoModalidade}>{filho.modalidades.map(m => m.modalidade).join(", ")}</Text>
+                  <Text style={styles.filhoModalidade}><Text style={styles.filhoModalidade}>
+                    {filho.modalidades?.map(m => m.modalidade).join(", ") || "Sem modalidade"}
+                  </Text>
+                  </Text>
                   <Text style={styles.filhoPagamentoData}>
                     Último: {formatarData(filho.dataUltimoPagamento || "")}
                   </Text>
