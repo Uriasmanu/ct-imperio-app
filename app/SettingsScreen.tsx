@@ -64,9 +64,7 @@ const settingsScreen = () => {
     setShowVersionInfo(!showVersionInfo);
   };
 
-  const toggleShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword);
-  };
+
 
   return (
     <ScrollView style={styles.container}>
