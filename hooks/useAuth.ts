@@ -15,7 +15,7 @@ interface User {
 
 export const useAuth = () => {
   const router = useRouter();
-  
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState('');
@@ -48,7 +48,7 @@ export const useAuth = () => {
         // Tratamento específico para diferentes tipos de erro do Firebase
         let errorMessage = 'Não foi possível fazer login.';
         let showCreateAccountOption = false;
-        
+
         // Verifica o código de erro do Firebase
         if (error?.includes('invalid-credential') || error?.includes('auth/invalid-credential')) {
           errorMessage = 'E-mail ou senha incorretos. Verifique suas credenciais.';
@@ -74,8 +74,8 @@ export const useAuth = () => {
             errorMessage + '\n\nDeseja criar uma conta?',
             [
               { text: 'Cancelar', style: 'cancel' },
-              { 
-                text: 'Criar conta', 
+              {
+                text: 'Criar conta',
                 onPress: () => {
                   setShowLoginModal(false);
                   setTimeout(() => handleRegister(), 300);
@@ -91,14 +91,17 @@ export const useAuth = () => {
 
       // Login bem-sucedido
       setIsLoggedIn(true);
+      const nomeUsuario = firebaseUser?.email
+        ? firebaseUser.email.split('@')[0]
+        : 'Usuário';
+
       setUser({
-        name: firebaseUser?.email
-          ? firebaseUser.email.split('@')[0]
-          : 'Usuário',
+        name: nomeUsuario,
         email: firebaseUser?.email ?? 'E-mail não disponível',
         since: new Date().toISOString().split('T')[0],
-        avatar: '👤',
+        avatar: nomeUsuario.charAt(0).toUpperCase(),
       });
+
 
       setShowLoginModal(false);
       setEmail('');
@@ -106,15 +109,15 @@ export const useAuth = () => {
       Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
     } catch (error) {
       console.error('Erro no login:', error);
-      
+
       // Tratamento de erros genéricos
       let errorMessage = 'Falha ao fazer login. Tente novamente.';
       let errorCode = '';
-      
+
       // Extrai o código de erro do Firebase se disponível
       if (error instanceof Error) {
         const errorString = error.toString();
-        
+
         if (errorString.includes('auth/invalid-credential')) {
           errorMessage = 'E-mail ou senha incorretos. Verifique suas credenciais.';
           errorCode = 'invalid-credential';
@@ -125,7 +128,7 @@ export const useAuth = () => {
           errorMessage = 'Sem conexão com a internet. Verifique sua rede e tente novamente.';
         }
       }
-      
+
       // Se for usuário não encontrado no catch, também oferece criar conta
       if (errorCode === 'user-not-found') {
         Alert.alert(
@@ -133,8 +136,8 @@ export const useAuth = () => {
           errorMessage,
           [
             { text: 'Cancelar', style: 'cancel' },
-            { 
-              text: 'Criar conta', 
+            {
+              text: 'Criar conta',
               onPress: () => {
                 setShowLoginModal(false);
                 setTimeout(() => handleRegister(), 300);
@@ -184,9 +187,9 @@ export const useAuth = () => {
         'Você precisa estar logado para acessar o perfil.',
         [
           { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Fazer login', 
-            onPress: handleLogin 
+          {
+            text: 'Fazer login',
+            onPress: handleLogin
           }
         ]
       );
@@ -201,12 +204,12 @@ export const useAuth = () => {
     password,
     loading,
     user,
-    
+
     // Setters
     setShowLoginModal,
     setEmail,
     setPassword,
-    
+
     // Handlers
     handleLogin,
     handleConfirmLogin,

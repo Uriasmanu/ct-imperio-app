@@ -24,6 +24,11 @@ const AccountSection: React.FC<AccountSectionProps> = ({
   handleRegister,
   handleLogin,
 }) => {
+  // Função para obter a primeira letra do nome
+  const getFirstLetter = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>MINHA CONTA</Text>
@@ -31,7 +36,11 @@ const AccountSection: React.FC<AccountSectionProps> = ({
       {isLoggedIn && user ? (
         <View style={styles.userCard}>
           <View style={styles.userInfo}>
-            <Text style={styles.userAvatar}>{user.avatar}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {getFirstLetter(user.name)}
+              </Text>
+            </View>
             <View style={styles.userDetails}>
               <Text style={styles.userName}>{user.name}</Text>
               <Text style={styles.userEmail}>{user.email}</Text>
@@ -109,9 +118,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  userAvatar: {
-    fontSize: 40,
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#B8860B',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#DAA520',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
   },
   userDetails: {
     flex: 1,
@@ -125,6 +146,12 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: '#CCCCCC',
+    marginBottom: 2,
+  },
+  userSince: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   authButtons: {
     flexDirection: 'row',
