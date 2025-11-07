@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { onAuthStateChanged } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +16,7 @@ import {
 import { ModalFilho } from "@/components/perfil/ModalFilho";
 import { MultiModalidadeSelector } from "@/components/perfil/MultiModalidadeSelector";
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
-import { auth, db } from "@/config/firebaseConfig";
+import { db } from "@/config/firebaseConfig";
 
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -37,69 +36,14 @@ export default function perfilScreen() {
     setUsuario: atualizarUsuario,
     loading,
     refreshing,
-    carregarUsuario,
     onRefresh,
     handlePagamentoAtualizado,
+    verificarPagamentosFilhos,
     setLoading,
     adicionarFilho,
     editarFilho,
   } = useAuth();
 
-  // Atualiza status de pagamentos dos filhos
-  const verificarPagamentosFilhos = async () => {
-    if (!usuario?.id || !usuario.filhos) return;
-
-    const hoje = new Date();
-    let atualizou = false;
-
-    const filhosAtualizados = usuario.filhos.map(filho => {
-      if (!filho.dataUltimoPagamento) return filho;
-
-      const ultimaData = new Date(filho.dataUltimoPagamento);
-      const diffDias = Math.floor((hoje.getTime() - ultimaData.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (diffDias >= 30 && filho.pagamento) {
-        atualizou = true;
-        return { ...filho, pagamento: false };
-      }
-      return filho;
-    });
-
-    if (atualizou) {
-      try {
-        const userRef = doc(db, "usuarios", usuario.id);
-        await updateDoc(userRef, { filhos: filhosAtualizados });
-        atualizarUsuario({ ...usuario, filhos: filhosAtualizados });
-      } catch (error) {
-        console.error("Erro ao atualizar pagamentos:", error);
-      }
-    }
-  };
-
-  // Carrega usuário logado
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          await carregarUsuario();
-          setUsuarioNaoEncontrado(false);
-        } catch {
-          setUsuarioNaoEncontrado(true);
-        }
-      } else {
-        setUsuarioNaoEncontrado(true);
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    if (usuario) {
-      verificarPagamentosFilhos();
-    }
-  }, [usuario]);
 
   const handleSalvarPerfil = async () => {
     if (!usuario?.id) {
@@ -258,16 +202,6 @@ export default function perfilScreen() {
     );
   }
 
-  if (usuarioNaoEncontrado) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="sad-outline" size={64} color="#666" />
-        <Text style={styles.errorText}>Usuário não encontrado</Text>
-        <Text style={styles.errorSubtext}>Tente fazer login novamente</Text>
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       style={styles.container}
@@ -323,11 +257,12 @@ export default function perfilScreen() {
         </View>
 
         <View style={styles.infoCard}>
-          {renderInfoField("Nome", usuario!.nome, true, "nome")}
-          {renderInfoField("Email", usuario!.email, true, "email")}
-          {renderInfoField("Telefone", usuario!.telefone || "", true, "telefone")}
-          {renderInfoField("Data de Registro", formatarData(usuario!.dataDeRegistro), false)}
-          {renderInfoField("Observação", usuario!.observacao || "", true, "observacao")}
+          {renderInfoField("Nome", usuario?.nome ?? "", true, "nome")}
+          {renderInfoField("Email", usuario?.email ?? "", true, "email")}
+          {renderInfoField("Telefone", usuario?.telefone ?? "", true, "telefone")}
+          {renderInfoField("Data de Registro", usuario?.dataDeRegistro ? formatarData(usuario.dataDeRegistro) : "", false)}
+          {renderInfoField("Observação", usuario?.observacao ?? "", true, "observacao")}
+
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Dia de pagamento:</Text>

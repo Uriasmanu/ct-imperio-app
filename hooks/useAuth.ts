@@ -146,51 +146,44 @@ export const useAuth = () => {
     }
 
     try {
-      let usuarioCache: Usuario | null = null;
-      if (!forcarAtualizacao) usuarioCache = await carregarUsuarioDoCache();
-
-      if (usuarioCache && !forcarAtualizacao) {
-        setUsuario(usuarioCache);
-        setEstaOnline(false);
-      }
-
       const netInfo = await NetInfo.fetch();
       if (netInfo.isConnected && netInfo.isInternetReachable) {
-        try {
-          const userRef = doc(db, "usuarios", user.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const userData = snap.data() as any;
-            await migrarModalidadeUnicaParaArray(userData, userRef);
-            const usuarioAtualizado = userData as Usuario;
-            setUsuario(usuarioAtualizado);
-            setEstaOnline(true);
-            await salvarUsuarioNoCache(usuarioAtualizado);
-            console.log('🌐 Dados atualizados do Firebase e salvos no cache');
-          }
-        } catch (firebaseError) {
-          console.error("❌ Erro ao carregar do Firebase:", firebaseError);
-          if (!usuarioCache) {
-            Alert.alert("Erro de conexão", "Não foi possível carregar os dados. Verifique sua conexão com a internet.");
-          } else {
-            console.log('📱 Usando dados do cache devido a erro no Firebase');
-          }
+        // Tenta carregar do Firebase
+        const userRef = doc(db, "usuarios", user.uid);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+          const userData = snap.data() as any;
+          await migrarModalidadeUnicaParaArray(userData, userRef);
+          const usuarioAtualizado = userData as Usuario;
+
+          setUsuario(usuarioAtualizado);
+          setEstaOnline(true);
+          await salvarUsuarioNoCache(usuarioAtualizado);
+
+          console.log('🌐 Dados atualizados do Firebase e salvos no cache');
+        } else {
+          console.warn('Usuário não encontrado no Firebase');
         }
       } else {
-        if (!usuarioCache) {
-          Alert.alert("Sem conexão", "Você está offline e não há dados salvos localmente.");
+        // Offline → carrega do cache
+        const usuarioCache = await carregarUsuarioDoCache();
+        if (usuarioCache) {
+          setUsuario(usuarioCache);
+          setEstaOnline(false);
+          console.log('📱 Offline - usando cache');
         } else {
-          console.log('📱 Modo offline - usando dados do cache');
+          Alert.alert("Sem conexão", "Você está offline e não há dados salvos localmente.");
         }
       }
     } catch (error) {
       console.error("❌ Erro geral ao carregar usuário:", error);
-      if (!usuario) Alert.alert("Erro", "Não foi possível carregar os dados.");
+      Alert.alert("Erro", "Não foi possível carregar os dados.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [atualizacao]);
+
 
   // Verifica pagamentos filhos (mantida)
   const verificarPagamentosFilhos = useCallback(async (usuarioParam: Usuario | null) => {
@@ -372,6 +365,7 @@ export const useAuth = () => {
     carregarUsuario,
     onRefresh,
     handlePagamentoAtualizado,
+    verificarPagamentosFilhos,
     setLoading,
     estaOnline,
     adicionarFilho,
