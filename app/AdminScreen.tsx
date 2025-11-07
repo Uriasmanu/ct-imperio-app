@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 
+import { AcessoNegado } from "@/components/Admin/AcessoNegado";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Filho, Usuario } from "../types/usuarios";
@@ -35,42 +36,6 @@ interface FiltrosState {
     statusPagamento: "todos" | "pagos" | "pendentes";
     modalidade: "todas" | Usuario["modalidade"];
 }
-
-// 🎯 COMPONENTE DE ACESSO NEGADO
-const AcessoNegado = ({ onRetry }: { onRetry: () => void }) => {
-  const router = useRouter();
-
-  return (
-    <View style={styles.acessoNegadoContainer}>
-      <Ionicons name="shield" size={64} color="#ef4444" />
-      <Text style={styles.acessoNegadoTitle}>Acesso Restrito</Text>
-      <Text style={styles.acessoNegadoText}>
-        Esta área é exclusiva para administradores.
-      </Text>
-      <Text style={styles.acessoNegadoSubtext}>
-        Você precisa ter permissão de administrador para acessar este painel.
-      </Text>
-      
-      <View style={styles.acessoNegadoButtons}>
-        <TouchableOpacity
-          style={[styles.acessoNegadoButton, styles.retryButton]}
-          onPress={onRetry}
-        >
-          <Ionicons name="refresh" size={20} color="#000" />
-          <Text style={styles.retryButtonText}>Tentar Novamente</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.acessoNegadoButton, styles.backButton]}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={20} color="#B8860B" />
-          <Text style={styles.backButtonText}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
 
 // 🎯 COMPONENTE DE CARREGAMENTO
 const LoadingScreen = () => (
