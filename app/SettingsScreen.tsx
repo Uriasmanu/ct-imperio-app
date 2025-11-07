@@ -9,6 +9,7 @@ import {
   View
 } from 'react-native';
 
+import AccountSection from '@/components/Settings/AccountSection';
 import LoginModal from '@/components/Settings/LoginModal';
 import { useAuth } from '@/hooks/useAuth';
 import { appConfig, gymData } from './../utils/constants';
@@ -69,60 +70,14 @@ const settingsScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>MINHA CONTA</Text>
-
-        {isLoggedIn && user ? (
-          <View style={styles.userCard}>
-            <View style={styles.userInfo}>
-              <Text style={styles.userAvatar}>{user.avatar}</Text>
-              <View style={styles.userDetails}>
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
-              </View>
-            </View>
-
-            <View style={styles.authButtons}>
-              <TouchableOpacity
-                style={[styles.authButton, styles.profileButton]}
-                onPress={handleProfile}
-              >
-                <Text style={styles.profileButtonText}>Ver Perfil</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.authButton, styles.logoutButton]}
-                onPress={handleLogout}
-              >
-                <Text style={styles.logoutButtonText}>Sair</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.loginCard}>
-            <Text style={styles.loginTitle}>Acesse sua conta</Text>
-            <Text style={styles.loginSubtitle}>
-              Faça login para acessar todas as funcionalidades
-            </Text>
-
-            <View style={styles.authButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.authButton, styles.registerButton]}
-                onPress={handleRegister}
-              >
-                <Text style={styles.authButtonText}>Registrar-se</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.authButton, styles.loginButton]}
-                onPress={handleLogin}
-              >
-                <Text style={styles.authButtonText}>Fazer Login</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </View>
+      <AccountSection
+        isLoggedIn={isLoggedIn}
+        user={user}
+        handleProfile={handleProfile}
+        handleLogout={handleLogout}
+        handleRegister={handleRegister}
+        handleLogin={handleLogin}
+      />
 
       {/* Seção de Informações da Academia */}
       <View style={styles.section}>
@@ -244,135 +199,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  section: {
-    backgroundColor: '#000000',
-    marginVertical: 8,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#B8860B',
-    marginVertical: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  // Estilos para a seção de autenticação
-  userCard: {
-    backgroundColor: '#1a1a1a',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#B8860B',
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  userAvatar: {
-    fontSize: 40,
-    marginRight: 12,
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#CCCCCC',
-    marginBottom: 2,
-  },
   userMembership: {
     fontSize: 12,
     color: '#B8860B',
     fontWeight: '500',
   },
-  authButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 10,
-  },
-  loginCard: {
-    backgroundColor: '#1a1a1a',
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#B8860B',
-    alignItems: 'center',
-  },
-  loginTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  loginSubtitle: {
-    fontSize: 14,
-    color: '#CCCCCC',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  authButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  authButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  registerButton: {
-    backgroundColor: '#B8860B',
-  },
-
-  authButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  loginButton: {
-    backgroundColor: '#B8860B',
-  },
-  profileButton: {
-    backgroundColor: '#2a2a2a',
-    borderWidth: 1,
-    borderColor: '#B8860B',
-  },
-  logoutButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#666666',
-  },
-  loginButtonText: {
-    color: '#000000',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  profileButtonText: {
-    color: '#B8860B',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  logoutButtonText: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  // Estilos existentes mantidos
   infoCard: {
     backgroundColor: '#1a1a1a',
     padding: 16,
@@ -451,7 +282,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Estilos do Accordion
   accordionContainer: {
     borderBottomWidth: 1,
     borderBottomColor: '#333333',
@@ -547,7 +377,19 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 4,
   },
-
+  section: {
+    backgroundColor: '#000000',
+    marginVertical: 8,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#B8860B',
+    marginVertical: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
 });
 
 export default settingsScreen;
