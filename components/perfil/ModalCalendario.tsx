@@ -23,7 +23,8 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
 }) => {
     const {
         presencaRecords,
-        todayString
+        todayString,
+        currentYear // ← Adicione esta linha
     } = usePresenca(userId);
 
     // Preparar dados para o calendário
@@ -58,7 +59,7 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
                 <View style={styles.modalContent}>
                     {/* Cabeçalho */}
                     <View style={styles.header}>
-                        <Text style={styles.title}>Histórico de Presenças</Text>
+                        <Text style={styles.title}>Histórico de Presenças - {currentYear}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                             <Text style={styles.closeButtonText}>✕</Text>
                         </TouchableOpacity>
@@ -72,34 +73,34 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
                             // Cores principais
                             backgroundColor: '#1a1a1a',
                             calendarBackground: '#1a1a1a',
-                            
+
                             // Texto
                             textSectionTitleColor: '#B8860B',
                             textSectionTitleDisabledColor: '#555',
                             dayTextColor: '#fff',
                             textDisabledColor: '#555',
                             todayTextColor: '#B8860B',
-                            
+
                             // Dias selecionados
                             selectedDayBackgroundColor: '#B8860B',
                             selectedDayTextColor: '#000',
-                            
+
                             // Setas
                             arrowColor: '#B8860B',
-                            
+
                             // Mês
                             monthTextColor: '#fff',
                             textMonthFontSize: 16,
                             textMonthFontWeight: 'bold',
-                            
+
                             // Cabeçalho dos dias
                             textDayHeaderFontSize: 12,
                             textDayHeaderFontWeight: '600',
-                            
+
                             // Dias
                             textDayFontSize: 14,
                             textDayFontWeight: '500',
-                            
+
                             // Pontos/dots
                             dotColor: '#22c55e',
                             selectedDotColor: '#000',
@@ -110,9 +111,9 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
                         markingType={'multi-dot'}
                         hideExtraDays={false}
                         showWeekNumbers={false}
-                        // Limitar a 6 meses para trás
-                        minDate={new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                        maxDate={todayString}
+                        // Limitar ao ano atual (2 de janeiro a 31 de dezembro)
+                        minDate={`${currentYear}-01-02`} // 2 de janeiro
+                        maxDate={`${currentYear}-12-31`} // 31 de dezembro
                         // Navegação
                         enableSwipeMonths={true}
                         // Header customizado usando renderArrow (opcional)
@@ -135,6 +136,13 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
                             <View style={[styles.legendDot, styles.todayIndicator]} />
                             <Text style={styles.legendText}>Hoje</Text>
                         </View>
+                    </View>
+
+                    {/* Informação sobre o período */}
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.infoText}>
+                            Período válido: 02/01/{currentYear} a 31/12/{currentYear}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -195,6 +203,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-around',
         marginTop: 10,
+        marginBottom: 15,
     },
     legendItem: {
         flexDirection: 'row',
@@ -217,5 +226,18 @@ const styles = StyleSheet.create({
     legendText: {
         color: '#CCC',
         fontSize: 12,
+    },
+    infoContainer: {
+        backgroundColor: '#2a2a2a',
+        padding: 10,
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#B8860B',
+    },
+    infoText: {
+        color: '#B8860B',
+        fontSize: 12,
+        fontWeight: '500',
+        textAlign: 'center',
     },
 });

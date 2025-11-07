@@ -270,16 +270,20 @@ export default function perfilScreen() {
             </Text>
           </View>
 
-          <View style={styles.infoField}>
-            <Text style={styles.infoLabel}>Status do Pagamento</Text>
-            {usuario && (
-              <GerenciarPagamento
-                item={usuario}
-                onPagamentoAtualizado={handlePagamentoAtualizado}
-                tipo="usuario"
-              />
-            )}
-          </View>
+          {usuario?.modalidades?.length ? (
+            <View style={styles.infoField}>
+              <Text style={styles.infoLabel}>Status do Pagamento</Text>
+              {usuario && (
+                <GerenciarPagamento
+                  item={usuario}
+                  onPagamentoAtualizado={handlePagamentoAtualizado}
+                  tipo="usuario"
+                />
+              )}
+            </View>
+          ) : null}
+
+
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Modalidades</Text>
@@ -303,9 +307,11 @@ export default function perfilScreen() {
           )}
         </View>
       </View>
-      <View style={styles.section}>
-        <PresencaSection />
-      </View>
+      {usuario?.modalidades?.length ? (
+        <View style={styles.section}>
+          <PresencaSection />
+        </View>
+      ) : null}
 
       {/* FILHOS */}
       <View style={styles.section}>

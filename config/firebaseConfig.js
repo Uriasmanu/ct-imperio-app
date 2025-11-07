@@ -42,7 +42,7 @@ export const registerUser = async (email, password, userData = {}) => {
     // 2. Preparar dados para o Firestore usando as interfaces
     const usuarioFirestoreData = {
       nome: userData.nome || email.split('@')[0],
-      modalidade: userData.modalidade || "Muay Thai",
+      modalidade: userData.modalidade || "",
       email: email,
       telefone: userData.telefone || "",
       observacao: userData.observacao || "",

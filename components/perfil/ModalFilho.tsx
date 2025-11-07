@@ -54,7 +54,18 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
 
   const handleSalvar = () => {
     if (!nome.trim()) {
-      Alert.alert("Erro", "Por favor, informe o nome do aluno.");
+      Alert.alert("Erro", "Por favor, informe o nome do filho.");
+      return;
+    }
+
+    if (!idade.trim()) {
+      Alert.alert("Erro", "Por favor, informe a idade do filho.");
+      return;
+    }
+
+    const idadeNumero = parseInt(idade);
+    if (isNaN(idadeNumero) || idadeNumero <= 0) {
+      Alert.alert("Erro", "Por favor, informe uma idade válida.");
       return;
     }
 
@@ -65,7 +76,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
 
     const filhoData = {
       nome: nome.trim(),
-      idade: idade ? parseInt(idade) : undefined,
+      idade: idadeNumero,
       observacao: observacao.trim(),
       modalidades: modalidades,
       dataDeRegistro: filhoEmEdicao?.dataDeRegistro || new Date().toISOString(),
@@ -76,10 +87,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
     };
 
     if (filhoEmEdicao) {
-      onSalvarEdicaoFilho({
-        ...filhoData,
-        id: filhoEmEdicao.id,
-      });
+      onSalvarEdicaoFilho({ ...filhoData, id: filhoEmEdicao.id });
     } else {
       onAdicionarFilho(filhoData);
     }
@@ -87,6 +95,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
     resetForm();
     onClose();
   };
+
 
   const handleFechar = () => {
     resetForm();
@@ -118,7 +127,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
                 style={styles.input}
                 value={nome}
                 onChangeText={setNome}
-                placeholder="Digite o nome do aluno"
+                placeholder="Digite o nome do filho"
                 placeholderTextColor="#666"
               />
             </View>
@@ -129,7 +138,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
                 style={styles.input}
                 value={idade}
                 onChangeText={setIdade}
-                placeholder="Idade (opcional)"
+                placeholder="Idade"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
               />
