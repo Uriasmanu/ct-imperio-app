@@ -29,8 +29,8 @@ import {
 export default function perfilScreen() {
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
-  const [atualizacao, setAtualizacao] = useState(0);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
+  const [usuarioNaoEncontrado, setUsuarioNaoEncontrado] = useState(false);
 
   const {
     usuario,
@@ -41,13 +41,11 @@ export default function perfilScreen() {
     onRefresh,
     handlePagamentoAtualizado,
     setLoading,
-    estaOnline,
     adicionarFilho,
     editarFilho,
-    logout,
   } = useAuth();
 
-
+  // Atualiza status de pagamentos dos filhos
   const verificarPagamentosFilhos = async () => {
     if (!usuario?.id || !usuario.filhos) return;
 
@@ -71,27 +69,31 @@ export default function perfilScreen() {
       try {
         const userRef = doc(db, "usuarios", usuario.id);
         await updateDoc(userRef, { filhos: filhosAtualizados });
-
-        // CORREÇÃO: Use o usuário atualizado diretamente
-        const usuarioAtualizado = { ...usuario, filhos: filhosAtualizados };
-        atualizarUsuario(usuarioAtualizado);
+        atualizarUsuario({ ...usuario, filhos: filhosAtualizados });
       } catch (error) {
         console.error("Erro ao atualizar pagamentos:", error);
       }
     }
   };
 
+  // Carrega usuário logado
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await carregarUsuario();
+        try {
+          await carregarUsuario();
+          setUsuarioNaoEncontrado(false);
+        } catch {
+          setUsuarioNaoEncontrado(true);
+        }
       } else {
-        setLoading(false);
+        setUsuarioNaoEncontrado(true);
       }
+      setLoading(false);
     });
 
     return unsubscribe;
-  }, [atualizacao]);
+  }, []);
 
   useEffect(() => {
     if (usuario) {
@@ -99,14 +101,12 @@ export default function perfilScreen() {
     }
   }, [usuario]);
 
-
   const handleSalvarPerfil = async () => {
     if (!usuario?.id) {
       Alert.alert("Erro", "Usuário não encontrado.");
       return;
     }
 
-    // Verifica se tem pelo menos uma modalidade
     if (!usuario.modalidades || usuario.modalidades.length === 0) {
       Alert.alert("Campo obrigatório", "Selecione pelo menos uma modalidade antes de salvar.");
       return;
@@ -156,7 +156,7 @@ export default function perfilScreen() {
   };
 
   const renderModalidadesUsuario = () => {
-    if (!usuario || !usuario.modalidades || usuario.modalidades.length === 0) {
+    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
       return <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>;
     }
 
@@ -224,9 +224,7 @@ export default function perfilScreen() {
           value={value}
           onChangeText={(text) => {
             if (usuario && key) {
-              // CORREÇÃO: Criar novo objeto diretamente
-              const usuarioAtualizado = { ...usuario, [key]: text };
-              atualizarUsuario(usuarioAtualizado);
+              atualizarUsuario({ ...usuario, [key]: text });
             }
           }}
           placeholderTextColor="#666"
@@ -240,17 +238,13 @@ export default function perfilScreen() {
   );
 
   const getPrimeiraModalidadeAtiva = () => {
-    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
-      return "Sem modalidade";
-    }
+    if (!usuario?.modalidades || usuario.modalidades.length === 0) return "Sem modalidade";
     const ativa = usuario.modalidades.find(m => m.ativo);
     return ativa ? ativa.modalidade : usuario.modalidades[0].modalidade;
   };
 
   const getPrimeiraGraduacaoAtiva = () => {
-    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
-      return undefined;
-    }
+    if (!usuario?.modalidades || usuario.modalidades.length === 0) return undefined;
     const ativa = usuario.modalidades.find(m => m.ativo);
     return ativa ? ativa.graduacao : usuario.modalidades[0].graduacao;
   };
@@ -264,7 +258,7 @@ export default function perfilScreen() {
     );
   }
 
-  if (!usuario && !loading) {
+  if (usuarioNaoEncontrado) {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="sad-outline" size={64} color="#666" />
@@ -273,7 +267,6 @@ export default function perfilScreen() {
       </View>
     );
   }
-
 
   return (
     <ScrollView
@@ -287,93 +280,80 @@ export default function perfilScreen() {
         />
       }
     >
+      {/* CABEÇALHO DO USUÁRIO */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {usuario.nome.split(" ").map((n) => n[0]).join("").toUpperCase()}
+            {usuario?.nome?.split(" ").map(n => n[0]).join("").toUpperCase() ?? ""}
           </Text>
         </View>
-        <Text style={styles.userName}>{usuario.nome}</Text>
+        <Text style={styles.userName}>{usuario?.nome ?? ""}</Text>
         <Text style={styles.userGraduacao}>
           {formatarGraduacao(getPrimeiraGraduacaoAtiva(), getPrimeiraModalidadeAtiva())}
         </Text>
         <Text style={styles.userModalidade}>
-          {usuario.modalidades?.length > 1
+          {usuario?.modalidades?.length && usuario.modalidades.length > 1
             ? `${usuario.modalidades.length} modalidades`
-            : getPrimeiraModalidadeAtiva()
-          }
+            : getPrimeiraModalidadeAtiva()}
         </Text>
 
         <View style={styles.pagamentoHeader}>
           <Ionicons
-            name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
+            name={usuario?.pagamento ? "checkmark-circle" : "alert-circle"}
             size={16}
-            color={usuario.pagamento ? "#22c55e" : "#ef4444"}
+            color={usuario?.pagamento ? "#22c55e" : "#ef4444"}
           />
-          <Text style={[
-            styles.pagamentoHeaderText,
-            { color: usuario.pagamento ? "#22c55e" : "#ef4444" }
-          ]}>
-            {usuario.pagamento ? "Pagamento em dia" : "Pagamento pendente"}
+          <Text style={[styles.pagamentoHeaderText, { color: usuario?.pagamento ? "#22c55e" : "#ef4444" }]}>
+            {usuario?.pagamento ? "Pagamento em dia" : "Pagamento pendente"}
           </Text>
         </View>
       </View>
 
+      {/* INFORMAÇÕES PESSOAIS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleContainer}>
             <Ionicons name="person" size={20} color="#B8860B" />
             <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
           </View>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setEditando(!editando)}
-          >
-            <Ionicons
-              name={editando ? "close" : "create-outline"}
-              size={20}
-              color="#B8860B"
-            />
-            <Text style={styles.editButtonText}>
-              {editando ? "Cancelar" : "Editar"}
-            </Text>
+          <TouchableOpacity style={styles.editButton} onPress={() => setEditando(!editando)}>
+            <Ionicons name={editando ? "close" : "create-outline"} size={20} color="#B8860B" />
+            <Text style={styles.editButtonText}>{editando ? "Cancelar" : "Editar"}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.infoCard}>
-          {renderInfoField("Nome", usuario.nome, true, "nome")}
-          {renderInfoField("Email", usuario.email, true, "email")}
-          {renderInfoField("Telefone", usuario.telefone || "", true, "telefone")}
-          {renderInfoField("Data de Registro", formatarData(usuario.dataDeRegistro), false)}
-          {renderInfoField("Observação", usuario.observacao || "", true, "observacao")}
+          {renderInfoField("Nome", usuario!.nome, true, "nome")}
+          {renderInfoField("Email", usuario!.email, true, "email")}
+          {renderInfoField("Telefone", usuario!.telefone || "", true, "telefone")}
+          {renderInfoField("Data de Registro", formatarData(usuario!.dataDeRegistro), false)}
+          {renderInfoField("Observação", usuario!.observacao || "", true, "observacao")}
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Dia de pagamento:</Text>
             <Text style={styles.infoValue}>
-              {new Date(usuario.dataPagamento).getDate()} de cada mês
+              {usuario?.dataPagamento ? new Date(usuario.dataPagamento).getDate() : "-"} de cada mês
             </Text>
           </View>
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Status do Pagamento</Text>
-            <GerenciarPagamento
-              item={usuario}
-              onPagamentoAtualizado={handlePagamentoAtualizado}
-              tipo="usuario"
-            />
+            {usuario && (
+              <GerenciarPagamento
+                item={usuario}
+                onPagamentoAtualizado={handlePagamentoAtualizado}
+                tipo="usuario"
+              />
+            )}
           </View>
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Modalidades</Text>
             {editando ? (
               <MultiModalidadeSelector
-                modalidades={usuario.modalidades || []}
+                modalidades={usuario?.modalidades || []}
                 onModalidadesChange={(modalidades) => {
-                  // CORREÇÃO: Criar novo objeto diretamente
-                  if (usuario) {
-                    const usuarioAtualizado = { ...usuario, modalidades };
-                    atualizarUsuario(usuarioAtualizado);
-                  }
+                  if (usuario) atualizarUsuario({ ...usuario, modalidades });
                 }}
               />
             ) : (
@@ -382,10 +362,7 @@ export default function perfilScreen() {
           </View>
 
           {editando && (
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSalvarPerfil}
-            >
+            <TouchableOpacity style={styles.saveButton} onPress={handleSalvarPerfil}>
               <Ionicons name="save" size={20} color="#000" />
               <Text style={styles.saveButtonText}>Salvar Alterações</Text>
             </TouchableOpacity>
@@ -393,6 +370,7 @@ export default function perfilScreen() {
         </View>
       </View>
 
+      {/* FILHOS */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleContainer}>
@@ -408,34 +386,23 @@ export default function perfilScreen() {
           </TouchableOpacity>
         </View>
 
-        {usuario.filhos && usuario.filhos.length > 0 ? (
-          usuario.filhos.map((filho) => (
+        {usuario?.filhos?.length ? (
+          usuario.filhos.map(filho => (
             <View key={filho.id} style={styles.filhoCard}>
               <View style={styles.filhoHeader}>
                 <View style={styles.filhoInfoHeader}>
                   <Text style={styles.filhoName}>{filho.nome}</Text>
-                  {filho.idade && (
-                    <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
-                  )}
+                  {filho.idade && <Text style={styles.filhoIdade}>{filho.idade} anos</Text>}
                 </View>
-                <TouchableOpacity
-                  style={styles.editIconButton}
-                  onPress={() => handleEditarFilho(filho)}
-                >
+                <TouchableOpacity style={styles.editIconButton} onPress={() => handleEditarFilho(filho)}>
                   <Ionicons name="create-outline" size={18} color="#B8860B" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.filhoContent}>
                 {renderFilhoModalidades(filho)}
-
-                <Text style={styles.filhoData}>
-                  Registrado em: {formatarData(filho.dataDeRegistro)}
-                </Text>
-
-                {filho.observacao ? (
-                  <Text style={styles.filhoObservacao}>{filho.observacao}</Text>
-                ) : null}
+                <Text style={styles.filhoData}>Registrado em: {formatarData(filho.dataDeRegistro)}</Text>
+                {filho.observacao && <Text style={styles.filhoObservacao}>{filho.observacao}</Text>}
 
                 <View style={styles.pagamentoSection}>
                   <Text style={styles.infoLabel}>Status do Pagamento:</Text>
@@ -453,41 +420,30 @@ export default function perfilScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="people-outline" size={48} color="#666" />
             <Text style={styles.emptyStateText}>Nenhum aluno cadastrado</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Clique em "Adicionar" para cadastrar um aluno
-            </Text>
+            <Text style={styles.emptyStateSubtext}>Clique em "Adicionar" para cadastrar um aluno</Text>
           </View>
         )}
       </View>
 
+      {/* MODAL FILHO */}
       <ModalFilho
         visible={modalFilho}
         filhoEmEdicao={filhoEmEdicao}
-        onClose={() => {
-          setModalFilho(false);
-          setFilhoEmEdicao(null);
-        }}
+        onClose={() => { setModalFilho(false); setFilhoEmEdicao(null); }}
         onAdicionarFilho={async (filhoData) => {
           const sucesso = await adicionarFilho(filhoData);
-          if (sucesso) {
-            Alert.alert("Sucesso", "Aluno adicionado com sucesso!");
-          } else {
-            Alert.alert("Erro", "Não foi possível adicionar o aluno.");
-          }
+          Alert.alert(sucesso ? "Sucesso" : "Erro", sucesso ? "Aluno adicionado com sucesso!" : "Não foi possível adicionar o aluno.");
         }}
         onSalvarEdicaoFilho={async (filhoEditado) => {
           const sucesso = await editarFilho(filhoEditado);
-          if (sucesso) {
-            Alert.alert("Sucesso", "Aluno atualizado com sucesso!");
-          } else {
-            Alert.alert("Erro", "Não foi possível atualizar o aluno.");
-          }
+          Alert.alert(sucesso ? "Sucesso" : "Erro", sucesso ? "Aluno atualizado com sucesso!" : "Não foi possível atualizar o aluno.");
         }}
       />
     </ScrollView>
   );
 }
 
+// --------- STYLES (mesmos que você já tinha) ---------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
