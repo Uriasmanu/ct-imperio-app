@@ -18,6 +18,7 @@ import { MultiModalidadeSelector } from "@/components/perfil/MultiModalidadeSele
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { db } from "@/config/firebaseConfig";
 
+import { PresencaSection } from "@/components/perfil/PresencaSection";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Filho,
@@ -38,8 +39,6 @@ export default function perfilScreen() {
     refreshing,
     onRefresh,
     handlePagamentoAtualizado,
-    verificarPagamentosFilhos,
-    setLoading,
     adicionarFilho,
     editarFilho,
   } = useAuth();
@@ -303,6 +302,9 @@ export default function perfilScreen() {
             </TouchableOpacity>
           )}
         </View>
+      </View>
+      <View style={styles.section}>
+        <PresencaSection />
       </View>
 
       {/* FILHOS */}

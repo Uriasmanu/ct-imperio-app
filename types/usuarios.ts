@@ -9,6 +9,19 @@ export interface ModalidadeAluno {
   ativo: boolean;
 }
 
+export interface PresencaRecord {
+  date: string; 
+  timestamp: Date;
+}
+
+export interface CalendarDay {
+  day: number | null;
+  isCurrentMonth: boolean;
+  isAttended: boolean;
+  isToday: boolean;
+  date: Date | null; 
+}
+
 export interface Filho {
   id: string;
   nome: string;
@@ -20,6 +33,7 @@ export interface Filho {
   idade?: number;
   dataPagamento: string;
   dataUltimoPagamento: string;
+  presenca?: string[];
 }
 
 export interface Usuario {
@@ -36,6 +50,8 @@ export interface Usuario {
   avisoPagamento: boolean;
   dataPagamento: string;
   dataUltimoPagamento: string;
+  presenca?: string[];
 }
 
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };
+

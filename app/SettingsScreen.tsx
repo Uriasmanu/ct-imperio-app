@@ -17,7 +17,6 @@ import { appConfig, gymData } from './../utils/constants';
 
 const settingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     isLoggedIn,
