@@ -1,3 +1,5 @@
+
+import { salvarCredenciaisSeguras } from "@/hooks/useAuth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebaseConfig";
@@ -57,9 +59,13 @@ export const loginUsuario = async (
     const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     const user = userCredential.user;
     console.log("✅ Login bem-sucedido:", user.uid);
+        await salvarCredenciaisSeguras(email, senha);
+    console.log("✅ Credenciais seguras salvas após login manual");
+    
     return { success: true, user };
   } catch (error: any) {
     console.error("❌ Erro no login:", error);
     return { success: false, error: error.message };
   }
 };
+

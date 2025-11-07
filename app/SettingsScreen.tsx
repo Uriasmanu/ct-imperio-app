@@ -11,7 +11,7 @@ import {
 
 import AccountSection from '@/components/Settings/AccountSection';
 import LoginModal from '@/components/Settings/LoginModal';
-import { useAuth } from '@/hooks/useAuth';
+import { useLogin } from '@/hooks/useLogin';
 import { appConfig, gymData } from './../utils/constants';
 
 
@@ -34,7 +34,7 @@ const settingsScreen = () => {
     handleLogout,
     handleRegister,
     handleProfile,
-  } = useAuth();
+  } = useLogin();
 
 
   const handlePrivacyPolicy = async () => {

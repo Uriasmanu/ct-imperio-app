@@ -18,7 +18,8 @@ import { ModalFilho } from "@/components/perfil/ModalFilho";
 import { MultiModalidadeSelector } from "@/components/perfil/MultiModalidadeSelector";
 import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagamento";
 import { auth, db } from "@/config/firebaseConfig";
-import { useUsuario } from "@/hooks/useUsuario";
+
+import { useAuth } from "@/hooks/useAuth";
 import {
   Filho,
   GraduacaoJiuJitsu,
@@ -33,16 +34,18 @@ export default function perfilScreen() {
 
   const {
     usuario,
-    setUsuario,
+    setUsuario: atualizarUsuario,
     loading,
     refreshing,
     carregarUsuario,
     onRefresh,
-    setLoading,
     handlePagamentoAtualizado,
+    setLoading,
+    estaOnline,
     adicionarFilho,
-    editarFilho
-  } = useUsuario();
+    editarFilho,
+    logout,
+  } = useAuth();
 
 
   const verificarPagamentosFilhos = async () => {
@@ -71,7 +74,7 @@ export default function perfilScreen() {
 
         // CORREÇÃO: Use o usuário atualizado diretamente
         const usuarioAtualizado = { ...usuario, filhos: filhosAtualizados };
-        setUsuario(usuarioAtualizado);
+        atualizarUsuario(usuarioAtualizado);
       } catch (error) {
         console.error("Erro ao atualizar pagamentos:", error);
       }
@@ -223,7 +226,7 @@ export default function perfilScreen() {
             if (usuario && key) {
               // CORREÇÃO: Criar novo objeto diretamente
               const usuarioAtualizado = { ...usuario, [key]: text };
-              setUsuario(usuarioAtualizado);
+              atualizarUsuario(usuarioAtualizado);
             }
           }}
           placeholderTextColor="#666"
@@ -261,7 +264,7 @@ export default function perfilScreen() {
     );
   }
 
-  if (!usuario) {
+  if (!usuario && !loading) {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="sad-outline" size={64} color="#666" />
@@ -270,6 +273,7 @@ export default function perfilScreen() {
       </View>
     );
   }
+
 
   return (
     <ScrollView
@@ -368,7 +372,7 @@ export default function perfilScreen() {
                   // CORREÇÃO: Criar novo objeto diretamente
                   if (usuario) {
                     const usuarioAtualizado = { ...usuario, modalidades };
-                    setUsuario(usuarioAtualizado);
+                    atualizarUsuario(usuarioAtualizado);
                   }
                 }}
               />

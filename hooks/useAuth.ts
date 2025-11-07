@@ -1,192 +1,381 @@
+// src/hooks/useUsuario.ts
+import { auth, db } from '@/config/firebaseConfig';
+import { Filho, ModalidadeAluno, Usuario } from '@/types/usuarios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { signOut } from 'firebase/auth';
-import { useEffect, useState } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import * as SecureStore from 'expo-secure-store';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { auth } from '@/config/firebaseConfig';
-import { loginUsuario } from '@/services/usuarioService';
+const USUARIO_CACHE_KEY = '@academia:usuario_cache';
+const LOGOUT_BY_USER_KEY = '@academia:logout_manual';
+const CREDENCIAIS_SECURAS_KEY = 'academia_credenciais';
 
-interface User {
-  name: string;
-  email: string;
-  since: string;
-  avatar: string;
+// ===============================
+// 🔐 FUNÇÕES AUXILIARES SEGURAS
+// (mantidas exportadas para compatibilidade)
+// ===============================
+export async function salvarCredenciaisSeguras(email: string, senha: string) {
+  try {
+    await SecureStore.setItemAsync(
+      CREDENCIAIS_SECURAS_KEY,
+      JSON.stringify({ email, senha })
+    );
+    console.log('✅ Credenciais seguras salvas');
+  } catch (error) {
+    console.error('❌ Erro ao salvar credenciais seguras:', error);
+  }
 }
 
+export async function pegarCredenciaisSeguras() {
+  try {
+    const data = await SecureStore.getItemAsync(CREDENCIAIS_SECURAS_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('❌ Erro ao pegar credenciais seguras:', error);
+    return null;
+  }
+}
+
+export async function removerCredenciaisSeguras() {
+  try {
+    await SecureStore.deleteItemAsync(CREDENCIAIS_SECURAS_KEY);
+    console.log('🧹 Credenciais seguras removidas');
+  } catch (error) {
+    console.error('❌ Erro ao remover credenciais seguras:', error);
+  }
+}
+
+// ===============================
+// 🚪 FLAG DE LOGOUT MANUAL (mantida exportada)
+// ===============================
+export async function setLogoutByUserFlag(value: boolean) {
+  try {
+    await AsyncStorage.setItem(LOGOUT_BY_USER_KEY, JSON.stringify(value));
+  } catch (err) {
+    console.error('❌ Erro ao setar flag de logout:', err);
+  }
+}
+
+export async function getLogoutByUserFlag() {
+  try {
+    const flag = await AsyncStorage.getItem(LOGOUT_BY_USER_KEY);
+    return flag ? JSON.parse(flag) : false;
+  } catch (err) {
+    console.error('❌ Erro ao ler flag de logout:', err);
+    return false;
+  }
+}
+
+// ===============================
+// 🎯 Hook centralizado useUsuario
+// ===============================
 export const useAuth = () => {
-  const router = useRouter();
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [atualizacao, setAtualizacao] = useState(0);
+  const [estaOnline, setEstaOnline] = useState(true);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-
-  // 🟢 Carregar dados de login salvos no AsyncStorage
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('@user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setIsLoggedIn(true);
+  // Carregar usuário do cache local
+  const carregarUsuarioDoCache = async (): Promise<Usuario | null> => {
+    try {
+      const cache = await AsyncStorage.getItem(USUARIO_CACHE_KEY);
+      if (cache) {
+        const cacheData = JSON.parse(cache);
+        const umDiaEmMs = 24 * 60 * 60 * 1000;
+        const agora = Date.now();
+        if (agora - cacheData.timestamp < umDiaEmMs) {
+          console.log('📂 Dados carregados do cache (incluindo filhos)');
+          return cacheData.usuario;
+        } else {
+          console.log('🗑️ Cache expirado, removendo...');
+          await AsyncStorage.removeItem(USUARIO_CACHE_KEY);
         }
-      } catch (error) {
-        console.error('Erro ao carregar usuário armazenado:', error);
       }
-    };
-    loadUserData();
-  }, []);
-
-  const handleLogin = () => {
-    setShowLoginModal(true);
+    } catch (error) {
+      console.error('❌ Erro ao carregar cache:', error);
+    }
+    return null;
   };
 
-  const handleConfirmLogin = async () => {
+  // Salvar usuário no cache local
+  const salvarUsuarioNoCache = async (usuarioData: Usuario) => {
     try {
-      if (!email || !password) {
-        Alert.alert('Campos obrigatórios', 'Informe e-mail e senha.');
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        Alert.alert('E-mail inválido', 'Por favor, insira um endereço de e-mail válido.');
-        return;
-      }
-
-      setLoading(true);
-      const { success, user: firebaseUser, error } = await loginUsuario(email, password);
-
-      if (!success || !firebaseUser) {
-        let errorMessage = 'Não foi possível fazer login.';
-        let showCreateAccountOption = false;
-
-        if (error?.includes('invalid-credential')) {
-          errorMessage = 'E-mail ou senha incorretos.';
-        } else if (error?.includes('user-not-found')) {
-          errorMessage = 'E-mail não cadastrado.';
-          showCreateAccountOption = true;
-        } else if (error?.includes('wrong-password')) {
-          errorMessage = 'Senha incorreta.';
-        } else if (error?.includes('too-many-requests')) {
-          errorMessage = 'Muitas tentativas. Tente novamente mais tarde.';
-        } else if (error?.includes('network')) {
-          errorMessage = 'Erro de conexão.';
-        }
-
-        if (showCreateAccountOption) {
-          Alert.alert(
-            'Conta não encontrada',
-            `${errorMessage}\n\nDeseja criar uma conta?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Criar conta',
-                onPress: () => {
-                  setShowLoginModal(false);
-                  setTimeout(() => handleRegister(), 300);
-                },
-              },
-            ]
-          );
-        } else {
-          Alert.alert('Erro no login', errorMessage);
-        }
-        return;
-      }
-
-      // ✅ Login bem-sucedido
-      const nomeUsuario = firebaseUser?.email
-        ? firebaseUser.email.split('@')[0]
-        : 'Usuário';
-
-      const newUser = {
-        name: nomeUsuario,
-        email: firebaseUser?.email ?? 'E-mail não disponível',
-        since: new Date().toISOString().split('T')[0],
-        avatar: nomeUsuario.charAt(0).toUpperCase(),
+      const cacheData = {
+        usuario: usuarioData,
+        timestamp: Date.now(),
+        atualizacao: atualizacao
       };
-
-      setUser(newUser);
-      setIsLoggedIn(true);
-      setShowLoginModal(false);
-      setEmail('');
-      setPassword('');
-
-      // 🔒 Salva o login localmente
-      await AsyncStorage.setItem('@user', JSON.stringify(newUser));
-
-      Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
+      await AsyncStorage.setItem(USUARIO_CACHE_KEY, JSON.stringify(cacheData));
+      console.log('✅ Dados do usuário e filhos salvos no cache');
     } catch (error) {
-      console.error('Erro no login:', error);
-      Alert.alert('Erro', 'Falha ao fazer login. Tente novamente.');
+      console.error('❌ Erro ao salvar cache:', error);
+    }
+  };
+
+  // Migração de campos (mantida)
+  const migrarModalidadeUnicaParaArray = async (userData: any, userRef: any) => {
+    if (userData.modalidade && !userData.modalidades) {
+      const modalidadeUnica: ModalidadeAluno = {
+        modalidade: userData.modalidade,
+        graduacao: userData.graduacao,
+        dataInicio: userData.dataDeRegistro,
+        ativo: true
+      };
+      userData.modalidades = [modalidadeUnica];
+      try {
+        await updateDoc(userRef, { modalidades: [modalidadeUnica] });
+      } catch (err) {
+        console.error('❌ Erro ao migrar modalidade:', err);
+      }
+    }
+    if (!userData.modalidades) userData.modalidades = [];
+  };
+
+  // Carrega dados do Firestore e do cache
+  const carregarUsuario = useCallback(async (forcarAtualizacao: boolean = false) => {
+    setLoading(true);
+    const user = auth.currentUser;
+    if (!user) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    try {
+      let usuarioCache: Usuario | null = null;
+      if (!forcarAtualizacao) usuarioCache = await carregarUsuarioDoCache();
+
+      if (usuarioCache && !forcarAtualizacao) {
+        setUsuario(usuarioCache);
+        setEstaOnline(false);
+      }
+
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected && netInfo.isInternetReachable) {
+        try {
+          const userRef = doc(db, "usuarios", user.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const userData = snap.data() as any;
+            await migrarModalidadeUnicaParaArray(userData, userRef);
+            const usuarioAtualizado = userData as Usuario;
+            setUsuario(usuarioAtualizado);
+            setEstaOnline(true);
+            await salvarUsuarioNoCache(usuarioAtualizado);
+            console.log('🌐 Dados atualizados do Firebase e salvos no cache');
+          }
+        } catch (firebaseError) {
+          console.error("❌ Erro ao carregar do Firebase:", firebaseError);
+          if (!usuarioCache) {
+            Alert.alert("Erro de conexão", "Não foi possível carregar os dados. Verifique sua conexão com a internet.");
+          } else {
+            console.log('📱 Usando dados do cache devido a erro no Firebase');
+          }
+        }
+      } else {
+        if (!usuarioCache) {
+          Alert.alert("Sem conexão", "Você está offline e não há dados salvos localmente.");
+        } else {
+          console.log('📱 Modo offline - usando dados do cache');
+        }
+      }
+    } catch (error) {
+      console.error("❌ Erro geral ao carregar usuário:", error);
+      if (!usuario) Alert.alert("Erro", "Não foi possível carregar os dados.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [atualizacao]);
 
-  const handleLogout = async () => {
-    Alert.alert('Sair', 'Tem certeza que deseja sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await signOut(auth);
-            setIsLoggedIn(false);
-            setUser(null);
-            await AsyncStorage.removeItem('@user'); // 🔑 remove o login salvo
-            Alert.alert('Logout realizado', 'Você saiu da sua conta.');
-          } catch (err) {
-            Alert.alert('Erro', 'Não foi possível sair.');
-          }
-        },
-      },
-    ]);
-  };
+  // Verifica pagamentos filhos (mantida)
+  const verificarPagamentosFilhos = useCallback(async (usuarioParam: Usuario | null) => {
+    if (!usuarioParam?.id || !usuarioParam.filhos) return;
+    const hoje = new Date();
+    let atualizou = false;
 
-  const handleRegister = () => {
-    setShowLoginModal(false);
-    router.push('/registroScreen');
-  };
+    const filhosAtualizados = usuarioParam.filhos.map(filho => {
+      if (!filho.dataUltimoPagamento) return filho;
+      const ultimaData = new Date(filho.dataUltimoPagamento);
+      const diffDias = Math.floor((hoje.getTime() - ultimaData.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDias >= 30 && filho.pagamento) {
+        atualizou = true;
+        return { ...filho, pagamento: false };
+      }
+      return filho;
+    });
 
-  const handleProfile = () => {
-    if (isLoggedIn) {
-      router.push('/perfilScreen');
-    } else {
-      Alert.alert(
-        'Acesso restrito',
-        'Você precisa estar logado para acessar o perfil.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Fazer login',
-            onPress: handleLogin,
-          },
-        ]
-      );
+    if (atualizou) {
+      try {
+        const netInfo = await NetInfo.fetch();
+        if (netInfo.isConnected && netInfo.isInternetReachable) {
+          const userRef = doc(db, "usuarios", usuarioParam.id);
+          await updateDoc(userRef, { filhos: filhosAtualizados });
+          console.log('✅ Pagamentos dos filhos atualizados no Firebase');
+        } else {
+          console.log('📱 Offline - pagamentos atualizados apenas localmente');
+        }
+        const usuarioAtualizado = { ...usuarioParam, filhos: filhosAtualizados };
+        setUsuario(usuarioAtualizado);
+        await salvarUsuarioNoCache(usuarioAtualizado);
+        console.log('💾 Dados dos filhos salvos no cache local');
+      } catch (error) {
+        console.error("❌ Erro ao atualizar pagamentos:", error);
+      }
     }
-  };
+  }, []);
+
+  // Adicionar/editar filho (mantidas)
+  const adicionarFilho = useCallback(async (filhoData: Omit<Filho, 'id'>) => {
+    if (!usuario?.id) return false;
+    try {
+      const filhoCompleto: Filho = { ...filhoData, id: Date.now().toString() };
+      const novosFilhos = [...(usuario.filhos || []), filhoCompleto];
+      const usuarioAtualizado = { ...usuario, filhos: novosFilhos };
+
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected && netInfo.isInternetReachable) {
+        const userRef = doc(db, "usuarios", usuario.id);
+        await updateDoc(userRef, { filhos: novosFilhos });
+        console.log('✅ Filho adicionado no Firebase');
+      } else {
+        console.log('📱 Offline - filho adicionado apenas localmente');
+      }
+
+      setUsuario(usuarioAtualizado);
+      await salvarUsuarioNoCache(usuarioAtualizado);
+      console.log('💾 Filho salvo no cache local');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao adicionar filho:', error);
+      return false;
+    }
+  }, [usuario]);
+
+  const editarFilho = useCallback(async (filhoEditado: Filho) => {
+    if (!usuario?.id) return false;
+    try {
+      const novosFilhos = (usuario.filhos || []).map((f) => f.id === filhoEditado.id ? filhoEditado : f);
+      const usuarioAtualizado = { ...usuario, filhos: novosFilhos };
+
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected && netInfo.isInternetReachable) {
+        const userRef = doc(db, "usuarios", usuario.id);
+        await updateDoc(userRef, { filhos: novosFilhos });
+        console.log('✅ Filho editado no Firebase');
+      } else {
+        console.log('📱 Offline - filho editado apenas localmente');
+      }
+
+      setUsuario(usuarioAtualizado);
+      await salvarUsuarioNoCache(usuarioAtualizado);
+      console.log('💾 Alterações do filho salvas no cache');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao editar filho:', error);
+      return false;
+    }
+  }, [usuario]);
+
+  // Ouve mudanças de autenticação (ÚNICO lugar do projeto)
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      // Se tiver flag de logout manual antiga, limpa e reseta
+      const logoutManual = await getLogoutByUserFlag();
+      if (logoutManual) {
+        console.log('🚪 Flag de logout manual encontrada — resetando flag');
+        await setLogoutByUserFlag(false);
+      }
+
+      // Tenta login automático se houver credenciais (apenas ao iniciar)
+      const cred = await pegarCredenciaisSeguras();
+      if (cred && mounted) {
+        try {
+          const { email, senha } = cred;
+          await signInWithEmailAndPassword(auth, email, senha);
+          console.log('🔁 Login automático realizado ao iniciar hook');
+        } catch (err) {
+          console.warn('❌ Falha no login automático ao iniciar:', err);
+        }
+      }
+    };
+
+    init();
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!mounted) return;
+      if (user) {
+        // Quando existe user, carregamos dados do Firestore/cache
+        await carregarUsuario();
+      } else {
+        // Sem user, limpa estado local e cache (mas não remove credenciais automaticamente)
+        setUsuario(null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, [carregarUsuario]);
+
+  // NetInfo listener
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const online = !!(state.isConnected && state.isInternetReachable);
+      setEstaOnline(online);
+      console.log(online ? '🌐 Online' : '📱 Offline');
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    carregarUsuario(true);
+  }, [carregarUsuario]);
+
+  const handlePagamentoAtualizado = useCallback(() => {
+    setAtualizacao(prev => prev + 1);
+  }, []);
+
+  const atualizarUsuario = useCallback(async (novoUsuario: Usuario | null) => {
+    setUsuario(novoUsuario);
+    if (novoUsuario) await salvarUsuarioNoCache(novoUsuario);
+  }, []);
+
+  // Logout manual (mantido — marca flag e remove credenciais)
+  const logout = useCallback(async () => {
+    try {
+      await setLogoutByUserFlag(true);
+      await removerCredenciaisSeguras();
+      await AsyncStorage.removeItem(USUARIO_CACHE_KEY);
+      await signOut(auth);
+      setUsuario(null);
+      console.log('👋 Usuário deslogado manualmente.');
+    } catch (err) {
+      console.error('❌ Erro no logout:', err);
+    }
+  }, []);
 
   return {
-    isLoggedIn,
-    showLoginModal,
-    email,
-    password,
+    usuario,
+    setUsuario: atualizarUsuario,
     loading,
-    user,
-    setShowLoginModal,
-    setEmail,
-    setPassword,
-    handleLogin,
-    handleConfirmLogin,
-    handleLogout,
-    handleRegister,
-    handleProfile,
+    refreshing,
+    carregarUsuario,
+    onRefresh,
+    handlePagamentoAtualizado,
+    setLoading,
+    estaOnline,
+    adicionarFilho,
+    editarFilho,
+    logout,
   };
 };
