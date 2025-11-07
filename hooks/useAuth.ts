@@ -110,7 +110,6 @@ export const useAuth = () => {
         atualizacao: atualizacao
       };
       await AsyncStorage.setItem(USUARIO_CACHE_KEY, JSON.stringify(cacheData));
-      console.log('✅ Dados do usuário e filhos salvos no cache');
     } catch (error) {
       console.error('❌ Erro ao salvar cache:', error);
     }
@@ -160,7 +159,6 @@ export const useAuth = () => {
           setEstaOnline(true);
           await salvarUsuarioNoCache(usuarioAtualizado);
 
-          console.log('🌐 Dados atualizados do Firebase e salvos no cache');
         } else {
           console.warn('Usuário não encontrado no Firebase');
         }
@@ -292,7 +290,6 @@ export const useAuth = () => {
         try {
           const { email, senha } = cred;
           await signInWithEmailAndPassword(auth, email, senha);
-          console.log('🔁 Login automático realizado ao iniciar hook');
         } catch (err) {
           console.warn('❌ Falha no login automático ao iniciar:', err);
         }
