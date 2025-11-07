@@ -141,7 +141,7 @@ export const classSchedule: ClassSchedule[] = [
     instructor: 'Instrutor Maradona (Gustavo)',
     startTime: '10:00',
     endTime: '11:00',
-    days: ['Sabado'],
+    days: ['Sábado'],
     current: true,
   },
 ];
