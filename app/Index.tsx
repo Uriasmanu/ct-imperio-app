@@ -74,6 +74,7 @@ export default function IndexScreen() {
     require('@/assets/images/no-gi.jpeg'),
     require('@/assets/images/jiu-mirim.jpeg'),
     require('@/assets/images/muay-kids.jpeg'),
+    require('@/assets/images/jiu-infantil.jpeg'),
   ];
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
