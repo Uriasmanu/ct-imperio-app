@@ -357,6 +357,14 @@ export default function perfilScreen() {
                   />
                 </View>
               </View>
+
+              <View style={styles.section}>
+                {filho ? (
+                  <PresencaSection userId={filho.id} isChild />
+                ) : (
+                  <Text style={styles.loadingText}>Carregando presença...</Text>
+                )}
+              </View>
             </View>
           ))
         ) : (

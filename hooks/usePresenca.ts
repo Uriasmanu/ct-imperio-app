@@ -1,6 +1,6 @@
 // src/hooks/usePresenca.ts
 import { db } from '@/config/firebaseConfig';
-import { CalendarDay, PresencaRecord } from '@/types/usuarios';
+import { CalendarDay, Filho, PresencaRecord } from '@/types/usuarios';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -35,13 +35,13 @@ export const usePresenca = (userId?: string) => {
     const isValidDate = (dateString: string): boolean => {
         const date = new Date(dateString + 'T00:00:00');
         const year = date.getFullYear();
-        
+
         // Só aceita datas do ano atual
         if (year !== currentYear) return false;
-        
+
         // Não aceita 1º de janeiro
         if (date.getMonth() === 0 && date.getDate() === 1) return false;
-        
+
         return true;
     };
 
@@ -64,7 +64,7 @@ export const usePresenca = (userId?: string) => {
     const removeOldPresencasFromFirebase = async (userData: any, userDocRef: any): Promise<boolean> => {
         try {
             let presencaArray: string[] = [];
-            
+
             if (isChild) {
                 const filhos = userData.filhos || [];
                 const filho = filhos.find((f: any) => f.id === userId);
@@ -83,7 +83,7 @@ export const usePresenca = (userId?: string) => {
                 if (isChild) {
                     const filhos = userData.filhos || [];
                     const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-                    
+
                     if (filhoIndex !== -1) {
                         const novosFilhos = [...filhos];
                         novosFilhos[filhoIndex] = {
@@ -117,7 +117,7 @@ export const usePresenca = (userId?: string) => {
             if (isChild) {
                 const filhos = userData.filhos || [];
                 const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-                
+
                 if (filhoIndex !== -1) {
                     const novosFilhos = [...filhos];
                     novosFilhos[filhoIndex] = {
@@ -143,7 +143,6 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
-    // Carregar dados de presença em tempo real
     useEffect(() => {
         const userDocRef = getUserDocRef();
         if (!userDocRef) {
@@ -151,71 +150,53 @@ export const usePresenca = (userId?: string) => {
             return;
         }
 
-        const unsubscribe = onSnapshot(userDocRef,
+        const unsubscribe = onSnapshot(
+            userDocRef,
             async (snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.data();
-                    
-                    let presencaArray: string[] = [];
-                    
-                    if (isChild) {
-                        const filhos = userData.filhos || [];
-                        const filho = filhos.find((f: any) => f.id === userId);
-                        presencaArray = filho?.Presenca || [];
-                    } else {
-                        presencaArray = userData.Presenca || [];
-                    }
-
-                    // 🔥 CRÍTICO: Verificar se é 1º de janeiro e limpar TODO o histórico
-                    if (isFirstJanuary() && presencaArray.length > 0) {
-                        console.log('🗓️ É 1º de janeiro - limpando TODO o histórico de presenças no Firebase...');
-                        await clearAllPresencasOnNewYear(userData, userDocRef);
-                        presencaArray = []; // Usar array vazio após limpeza
-                    }
-                    // 🔥 CRÍTICO: Sempre remover presenças de anos anteriores
-                    else if (presencaArray.length > 0) {
-                        console.log('🔄 Verificando e removendo presenças de anos anteriores...');
-                        const hadOldPresencas = await removeOldPresencasFromFirebase(userData, userDocRef);
-                        
-                        if (hadOldPresencas) {
-                            // Se removeu presenças antigas, recarregar os dados
-                            const updatedDoc = await getDoc(userDocRef);
-                            if (updatedDoc.exists()) {
-                                const updatedData = updatedDoc.data();
-                                if (isChild) {
-                                    const filhos = updatedData.filhos || [];
-                                    const filho = filhos.find((f: any) => f.id === userId);
-                                    presencaArray = filho?.Presenca || [];
-                                } else {
-                                    presencaArray = updatedData.Presenca || [];
-                                }
-                            }
-                        }
-                    }
-
-                    // Filtrar apenas presenças válidas (dupla verificação)
-                    const validPresencas = filterValidPresencas(presencaArray);
-
-                    // Converter array de strings para PresencaRecord[]
-                    const records: PresencaRecord[] = validPresencas
-                        .map((dateString: string) => ({
-                            date: dateString,
-                            timestamp: new Date(dateString + 'T00:00:00')
-                        }))
-                        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-                    setPresencaRecords(records);
+                if (!snapshot.exists()) {
+                    setPresencaRecords([]);
                     setLoading(false);
+                    return;
                 }
+
+                const userData = snapshot.data();
+                let presencaArray: string[] = [];
+
+                if (isChild) {
+                    const filhos = userData.filhos || [];
+                    const filho = filhos.find((f: Filho) => f.id === userId);
+                    presencaArray = filho?.Presenca || [];
+                } else {
+                    presencaArray = userData.Presenca || [];
+                }
+
+                // Limpar presenças antigas ou 1º de janeiro
+                if (isFirstJanuary()) {
+                    presencaArray = [];
+                } else {
+                    presencaArray = filterValidPresencas(presencaArray);
+                }
+
+                const records: PresencaRecord[] = presencaArray
+                    .map(dateString => ({
+                        date: dateString,
+                        timestamp: new Date(dateString + 'T00:00:00')
+                    }))
+                    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+                setPresencaRecords(records);
+                setLoading(false); // ← garante que sempre termina o loading
             },
             (error) => {
-                console.error("Erro ao carregar dados de frequência:", error);
+                console.error(error);
+                setPresencaRecords([]);
                 setLoading(false);
             }
         );
 
         return () => unsubscribe();
     }, [currentUserId, userId, isChild]);
+
 
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
@@ -251,7 +232,7 @@ export const usePresenca = (userId?: string) => {
             if (isChild) {
                 const filhos = userData.filhos || [];
                 const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-                
+
                 if (filhoIndex === -1) {
                     console.error('Filho não encontrado');
                     return false;
@@ -259,11 +240,11 @@ export const usePresenca = (userId?: string) => {
 
                 const filho = filhos[filhoIndex];
                 const presencasAtuais = filho.Presenca || [];
-                
+
                 // Filtrar presenças válidas antes de adicionar a nova
                 const presencasValidas = filterValidPresencas(presencasAtuais);
                 const novasPresencas = [...presencasValidas, dateString];
-                
+
                 const novosFilhos = [...filhos];
                 novosFilhos[filhoIndex] = {
                     ...filho,
@@ -275,11 +256,11 @@ export const usePresenca = (userId?: string) => {
                 });
             } else {
                 const presencasAtuais = userData.Presenca || [];
-                
+
                 // Filtrar presenças válidas antes de adicionar a nova
                 const presencasValidas = filterValidPresencas(presencasAtuais);
                 const novasPresencas = [...presencasValidas, dateString];
-                
+
                 await updateDoc(userDocRef, {
                     Presenca: novasPresencas
                 });
@@ -309,7 +290,7 @@ export const usePresenca = (userId?: string) => {
         const current = month;
         const year = current.getFullYear();
         const monthIndex = current.getMonth();
-        
+
         // Só mostrar meses do ano atual
         if (year !== currentYear) {
             return [];
@@ -324,10 +305,10 @@ export const usePresenca = (userId?: string) => {
 
         // Dias vazios do mês anterior
         for (let i = 0; i < startingDay; i++) {
-            days.push({ 
-                day: null, 
-                isCurrentMonth: false, 
-                isAttended: false, 
+            days.push({
+                day: null,
+                isCurrentMonth: false,
+                isAttended: false,
                 isToday: false,
                 date: null
             });
@@ -337,19 +318,19 @@ export const usePresenca = (userId?: string) => {
         for (let i = 1; i <= daysInMonth; i++) {
             const date = new Date(year, monthIndex, i);
             const formattedDate = formatDate(date);
-            
+
             // Não mostrar 1º de janeiro
             if (monthIndex === 0 && i === 1) {
-                days.push({ 
-                    day: null, 
-                    isCurrentMonth: false, 
-                    isAttended: false, 
+                days.push({
+                    day: null,
+                    isCurrentMonth: false,
+                    isAttended: false,
                     isToday: false,
                     date: null
                 });
                 continue;
             }
-            
+
             const isAttended = records.some(r => r.date === formattedDate);
             const isToday = formattedDate === todayFormatted;
 
@@ -366,10 +347,10 @@ export const usePresenca = (userId?: string) => {
         const totalCells = days.length;
         const remainingCells = 42 - totalCells;
         for (let i = 0; i < remainingCells; i++) {
-            days.push({ 
-                day: null, 
-                isCurrentMonth: false, 
-                isAttended: false, 
+            days.push({
+                day: null,
+                isCurrentMonth: false,
+                isAttended: false,
                 isToday: false,
                 date: null
             });
