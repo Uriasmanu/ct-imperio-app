@@ -26,7 +26,8 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         checkIn,
         isPresencaCheckedInToday,
         isPresencaConfirmadaToday,
-        lastCheckInDate
+        lastCheckInDate,
+        isNewDay
     } = usePresenca(userId);
 
     const [showCalendar, setShowCalendar] = useState(false);
@@ -82,14 +83,20 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkInButton,
-                            isPresencaCheckedInToday
-                                ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
-                                : styles.availableButton
+                            // 🔥 ATUALIZAÇÃO: Se for um novo dia, sempre mostra como disponível
+                            isNewDay() ? styles.availableButton :
+                                isPresencaCheckedInToday
+                                    ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
+                                    : styles.availableButton
                         ]}
                         onPress={handleCheckIn}
-                        disabled={isPresencaCheckedInToday}
+                        // 🔥 ATUALIZAÇÃO: Só desabilita se não for novo dia E já tiver marcado presença
+                        disabled={!isNewDay() && isPresencaCheckedInToday}
                     >
-                        {isPresencaCheckedInToday ? (
+                        {isNewDay() ? (
+                            // 🔥 SEMPRE mostra "MARCAR PRESENÇA" após 00h
+                            <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                        ) : isPresencaCheckedInToday ? (
                             isPresencaConfirmadaToday ? (
                                 <View style={styles.checkedInContent}>
                                     <Ionicons name="checkmark-circle" size={20} color="#22c55e" />

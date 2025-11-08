@@ -26,6 +26,15 @@ export const usePresenca = (userId?: string) => {
     const todayString = formatDate(today);
     const currentYear = today.getFullYear();
 
+    const isNewDay = (): boolean => {
+        // Busca a última presença registrada
+        if (presencaRecords.length === 0) return true;
+
+        const lastRecord = presencaRecords[presencaRecords.length - 1];
+        return lastRecord.date !== todayString;
+    };
+
+
     // Verificar se é 1º de janeiro
     const isFirstJanuary = () => {
         return today.getMonth() === 0 && today.getDate() === 1;
@@ -212,11 +221,11 @@ export const usePresenca = (userId?: string) => {
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
-    );
+    ) && !isNewDay(); 
 
     const isPresencaConfirmadaToday = presencaRecords.some(
         record => record.date === todayString && record.confirmada === true
-    );
+    ) && !isNewDay(); 
 
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
@@ -372,6 +381,7 @@ export const usePresenca = (userId?: string) => {
         checkIn,
         isPresencaCheckedInToday,
         isPresencaConfirmadaToday,
+        isNewDay,
         lastCheckInDate,
         todayString,
         currentYear,
