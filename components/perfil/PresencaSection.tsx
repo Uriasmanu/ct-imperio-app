@@ -28,12 +28,45 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         isPresencaConfirmadaToday,
         lastCheckInDate,
         isNewDay,
+        presencaRecords,
+        currentYear
     } = usePresenca(userId);
 
     const [showCalendar, setShowCalendar] = useState(false);
 
+    // Estatísticas de presença
+    const totalPresencas = presencaRecords.length;
+    const presencasConfirmadas = presencaRecords.filter(record => record.confirmada).length;
+    
+    // Calcular porcentagem (considerando dias úteis até hoje)
+    const getPorcentagemPresenca = () => {
+        const hoje = new Date();
+        const inicioAno = new Date(currentYear, 0, 2); // Começa em 2 de janeiro
+        const diasUteisAteHoje = calcularDiasUteis(inicioAno, hoje);
+        
+        if (diasUteisAteHoje === 0) return 0;
+        return Math.round((totalPresencas / diasUteisAteHoje) * 100);
+    };
+
+    const calcularDiasUteis = (inicio: Date, fim: Date): number => {
+        let count = 0;
+        const current = new Date(inicio);
+        
+        while (current <= fim) {
+            // Não conta domingos (0) e nem 1º de janeiro
+            const day = current.getDay();
+            const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
+            
+            if (day !== 0 && !isPrimeiroJaneiro) {
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
+    };
+
     const handleCheckIn = async () => {
-        if (isPresencaCheckedInToday) {
+        if (isPresencaCheckedInToday && !isNewDay()) {
             Alert.alert('Aviso', 'Presença já registrada para hoje');
             return;
         }
@@ -59,22 +92,58 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         );
     }
 
+    const porcentagem = getPorcentagemPresenca();
+
     return (
         <>
             <View style={styles.container}>
                 <View style={styles.sectionHeader}>
                     <View style={styles.sectionTitleContainer}>
                         <Ionicons name="calendar" size={20} color="#B8860B" />
-                        <Text style={styles.sectionTitle}>FREQUÊNCIA</Text>
+                        <Text style={styles.sectionTitle}>FREQUÊNCIA {currentYear}</Text>
                     </View>
                 </View>
 
                 <View style={styles.content}>
+                    {/* Estatísticas em Grid */}
+                    <View style={styles.statsGrid}>
+                        <View style={styles.statItem}>
+                            <Text style={styles.statNumber}>{totalPresencas}</Text>
+                            <Text style={styles.statLabel}>Total</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                            <Text style={styles.statNumber}>{presencasConfirmadas}</Text>
+                            <Text style={styles.statLabel}>Confirmadas</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                            <Text style={styles.statNumber}>{porcentagem}%</Text>
+                            <Text style={styles.statLabel}>Frequência</Text>
+                        </View>
+                    </View>
+
+                    {/* Barra de Progresso */}
+                    <View style={styles.progressContainer}>
+                        <View style={styles.progressBackground}>
+                            <View 
+                                style={[
+                                    styles.progressFill,
+                                    { width: `${Math.min(porcentagem, 100)}%` }
+                                ]} 
+                            />
+                        </View>
+                        <Text style={styles.progressText}>
+                            {porcentagem}% de frequência este ano
+                        </Text>
+                    </View>
+
                     {/* Informação da Última Presença */}
                     {lastCheckInDate ? (
-                        <Text style={styles.lastCheckInText}>
-                            Última presença: <Text style={styles.lastCheckInDate}>{lastCheckInDate}</Text>
-                        </Text>
+                        <View style={styles.lastCheckInContainer}>
+                            <Ionicons name="time" size={16} color="#B8860B" />
+                            <Text style={styles.lastCheckInText}>
+                                Última presença: <Text style={styles.lastCheckInDate}>{lastCheckInDate}</Text>
+                            </Text>
+                        </View>
                     ) : (
                         <Text style={styles.noPresencaText}>Nenhuma presença registrada.</Text>
                     )}
@@ -83,32 +152,36 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkInButton,
-                            // 🔥 ATUALIZAÇÃO: Se for um novo dia, sempre mostra como disponível
                             isNewDay() ? styles.availableButton :
                                 isPresencaCheckedInToday
                                     ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
                                     : styles.availableButton
                         ]}
                         onPress={handleCheckIn}
-                        // 🔥 ATUALIZAÇÃO: Só desabilita se não for novo dia E já tiver marcado presença
                         disabled={!isNewDay() && isPresencaCheckedInToday}
                     >
                         {isNewDay() ? (
-                            // 🔥 SEMPRE mostra "MARCAR PRESENÇA" após 00h
-                            <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                            <View style={styles.buttonContent}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
+                                <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                            </View>
                         ) : isPresencaCheckedInToday ? (
                             isPresencaConfirmadaToday ? (
-                                <View style={styles.checkedInContent}>
+                                <View style={styles.buttonContent}>
                                     <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-                                    <Text style={styles.checkedInText}>Presença Confirmada Hoje</Text>
+                                    <Text style={styles.checkedInText}>Presença Confirmada</Text>
                                 </View>
                             ) : (
-                                <View style={styles.checkedInContent}>
+                                <View style={styles.buttonContent}>
+                                    <Ionicons name="time" size={20} color="#F59E0B" />
                                     <Text style={styles.checkInText}>AGUARDANDO CONFIRMAÇÃO</Text>
                                 </View>
                             )
                         ) : (
-                            <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                            <View style={styles.buttonContent}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
+                                <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                            </View>
                         )}
                     </TouchableOpacity>
 
@@ -116,7 +189,10 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                         style={styles.calendarButton}
                         onPress={() => setShowCalendar(true)}
                     >
-                        <Text style={styles.calendarButtonText}>VER CALENDÁRIO</Text>
+                        <View style={styles.buttonContent}>
+                            <Ionicons name="calendar-outline" size={20} color="#FFF" />
+                            <Text style={styles.calendarButtonText}>VER CALENDÁRIO COMPLETO</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -133,9 +209,11 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
 const styles = StyleSheet.create({
     container: {
         marginTop: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#333',
+        padding: 16,
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#333',
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -156,12 +234,57 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     content: {
-        gap: 12,
+        gap: 16,
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    statItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statNumber: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#B8860B',
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 4,
+    },
+    progressContainer: {
+        marginBottom: 8,
+    },
+    progressBackground: {
+        height: 8,
+        backgroundColor: '#333',
+        borderRadius: 4,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#B8860B',
+        borderRadius: 4,
+    },
+    progressText: {
+        fontSize: 12,
+        color: '#CCC',
+        textAlign: 'center',
+    },
+    lastCheckInContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 8,
     },
     lastCheckInText: {
         fontSize: 14,
         color: '#CCC',
-        textAlign: 'center',
     },
     lastCheckInDate: {
         color: '#B8860B',
@@ -171,6 +294,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         textAlign: 'center',
+        paddingVertical: 8,
     },
     checkInButton: {
         paddingVertical: 16,
@@ -190,7 +314,7 @@ const styles = StyleSheet.create({
         borderColor: '#22c55e',
         borderWidth: 1,
     },
-    checkedInContent: {
+    buttonContent: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
