@@ -27,7 +27,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         isPresencaCheckedInToday,
         isPresencaConfirmadaToday,
         lastCheckInDate,
-        isNewDay
+        isNewDay,
     } = usePresenca(userId);
 
     const [showCalendar, setShowCalendar] = useState(false);
