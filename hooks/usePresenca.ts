@@ -1,6 +1,6 @@
 // src/hooks/usePresenca.ts
 import { db } from '@/config/firebaseConfig';
-import { PresencaParaConfirmar } from '@/types/admin';
+import { PresencaParaConfirmar, PresencaStats } from '@/types/admin';
 import { CalendarDay, Filho, PresencaRecord } from '@/types/usuarios';
 import { collection, doc, getDoc, getDocs, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ export const usePresenca = (userId?: string) => {
     const [presencaRecords, setPresencaRecords] = useState<PresencaRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const { usuario } = useAuth();
-
+    const [presencasParaConfirmar, setPresencasParaConfirmar] = useState<PresencaParaConfirmar[]>([]);
     const currentUserId = userId || usuario?.id;
     const isChild = !!userId;
 
@@ -690,10 +690,10 @@ export const usePresenca = (userId?: string) => {
                     presencasFilho.forEach((presenca: any) => {
                         if (presenca.date === data) {
                             todasPresencas.push({
-                                id: `filho-${doc.id}-${filho.id}-${presenca.date}`, 
+                                id: `filho-${doc.id}-${filho.id}-${presenca.date}`,
                                 usuarioId: doc.id,
                                 usuarioNome: usuarioData.nome,
-                                filhoId: filho.id, 
+                                filhoId: filho.id,
                                 filhoNome: filho.nome,
                                 data: presenca.date,
                                 modalidades: filho.modalidades?.map((m: any) => m.modalidade) || [],
@@ -711,6 +711,12 @@ export const usePresenca = (userId?: string) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const stats: PresencaStats = {
+        totalParaConfirmar: presencasParaConfirmar.length,
+        confirmadasHoje: presencasParaConfirmar.filter(p => p.confirmada).length,
+        pendentesHoje: presencasParaConfirmar.filter(p => !p.confirmada).length
     };
 
 
@@ -732,6 +738,8 @@ export const usePresenca = (userId?: string) => {
         getSemestreInfo,
         confirmarPresenca,
         confirmarTodasPresencas,
-        buscarPresencasDoDia
+        buscarPresencasDoDia,
+        presencasParaConfirmar,
+        stats,
     };
 };

@@ -16,6 +16,7 @@ import { AcessoNegado } from "@/components/Admin/AcessoNegado";
 import { Estatisticas } from "@/components/Admin/Estatisticas";
 import { Filtros } from "@/components/Admin/Filtros";
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
+import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirmar";
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -42,6 +43,8 @@ export default function AdminScreen() {
 
   // Use o hook para presenças administrativas
   const { 
+    presencasParaConfirmar, 
+    stats, 
     loading: presencasLoading, 
     confirmarPresenca,
     buscarPresencasDoDia 
@@ -158,6 +161,12 @@ export default function AdminScreen() {
                 </TouchableOpacity>
               </View>
               
+              <PresencasParaConfirmar
+                presencas={presencasParaConfirmar}
+                stats={stats}
+                onConfirmarPresenca={confirmarPresenca}
+                loading={presencasLoading}
+              />
             </View>
           </View>
         );
@@ -283,6 +292,11 @@ export default function AdminScreen() {
             ]}>
               Presenças
             </Text>
+            {stats.pendentesHoje > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{stats.pendentesHoje}</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 
