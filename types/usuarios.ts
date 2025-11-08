@@ -12,6 +12,7 @@ export interface ModalidadeAluno {
 export interface PresencaRecord {
   date: string; 
   timestamp: Date;
+  confirmada: boolean;
 }
 
 export interface CalendarDay {
@@ -33,7 +34,7 @@ export interface Filho {
   idade?: number;
   dataPagamento: string;
   dataUltimoPagamento: string;
-  presenca?: string[];
+  avisaPresenca?: string[];
 }
 
 export interface Usuario {
@@ -50,7 +51,7 @@ export interface Usuario {
   avisoPagamento: boolean;
   dataPagamento: string;
   dataUltimoPagamento: string;
-  presenca?: string[];
+  avisaPresenca?: string[];
 }
 
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };

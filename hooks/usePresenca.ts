@@ -180,7 +180,8 @@ export const usePresenca = (userId?: string) => {
                 const records: PresencaRecord[] = presencaArray
                     .map(dateString => ({
                         date: dateString,
-                        timestamp: new Date(dateString + 'T00:00:00')
+                        timestamp: new Date(dateString + 'T00:00:00'),
+                        confirmada: false
                     }))
                     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
