@@ -92,7 +92,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                                 <Text style={styles.checkedInText}>Presença Registrada Hoje</Text>
                             </View>
                         ) : (
-                            <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
+                            <Text style={styles.checkInText}>FAZER CHECKING</Text>
                         )}
                     </TouchableOpacity>
 
