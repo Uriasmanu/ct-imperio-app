@@ -23,7 +23,7 @@ export async function salvarCredenciaisSeguras(email: string, senha: string) {
       CREDENCIAIS_SECURAS_KEY,
       JSON.stringify({ email, senha })
     );
-    console.log('✅ Credenciais seguras salvas');
+    
   } catch (error) {
     console.error('❌ Erro ao salvar credenciais seguras:', error);
   }
@@ -42,7 +42,7 @@ export async function pegarCredenciaisSeguras() {
 export async function removerCredenciaisSeguras() {
   try {
     await SecureStore.deleteItemAsync(CREDENCIAIS_SECURAS_KEY);
-    console.log('🧹 Credenciais seguras removidas');
+    
   } catch (error) {
     console.error('❌ Erro ao remover credenciais seguras:', error);
   }
@@ -88,10 +88,10 @@ export const useAuth = () => {
         const umDiaEmMs = 24 * 60 * 60 * 1000;
         const agora = Date.now();
         if (agora - cacheData.timestamp < umDiaEmMs) {
-          console.log('📂 Dados carregados do cache (incluindo filhos)');
+          
           return cacheData.usuario;
         } else {
-          console.log('🗑️ Cache expirado, removendo...');
+          
           await AsyncStorage.removeItem(USUARIO_CACHE_KEY);
         }
       }
@@ -168,7 +168,7 @@ export const useAuth = () => {
         if (usuarioCache) {
           setUsuario(usuarioCache);
           setEstaOnline(false);
-          console.log('📱 Offline - usando cache');
+          
         } else {
           Alert.alert("Sem conexão", "Você está offline e não há dados salvos localmente.");
         }
@@ -206,14 +206,14 @@ export const useAuth = () => {
         if (netInfo.isConnected && netInfo.isInternetReachable) {
           const userRef = doc(db, "usuarios", usuarioParam.id);
           await updateDoc(userRef, { filhos: filhosAtualizados });
-          console.log('✅ Pagamentos dos filhos atualizados no Firebase');
+          
         } else {
-          console.log('📱 Offline - pagamentos atualizados apenas localmente');
+          
         }
         const usuarioAtualizado = { ...usuarioParam, filhos: filhosAtualizados };
         setUsuario(usuarioAtualizado);
         await salvarUsuarioNoCache(usuarioAtualizado);
-        console.log('💾 Dados dos filhos salvos no cache local');
+        
       } catch (error) {
         console.error("❌ Erro ao atualizar pagamentos:", error);
       }
@@ -232,14 +232,14 @@ export const useAuth = () => {
       if (netInfo.isConnected && netInfo.isInternetReachable) {
         const userRef = doc(db, "usuarios", usuario.id);
         await updateDoc(userRef, { filhos: novosFilhos });
-        console.log('✅ Filho adicionado no Firebase');
+        
       } else {
-        console.log('📱 Offline - filho adicionado apenas localmente');
+        
       }
 
       setUsuario(usuarioAtualizado);
       await salvarUsuarioNoCache(usuarioAtualizado);
-      console.log('💾 Filho salvo no cache local');
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao adicionar filho:', error);
@@ -257,14 +257,14 @@ export const useAuth = () => {
       if (netInfo.isConnected && netInfo.isInternetReachable) {
         const userRef = doc(db, "usuarios", usuario.id);
         await updateDoc(userRef, { filhos: novosFilhos });
-        console.log('✅ Filho editado no Firebase');
+        
       } else {
-        console.log('📱 Offline - filho editado apenas localmente');
+        
       }
 
       setUsuario(usuarioAtualizado);
       await salvarUsuarioNoCache(usuarioAtualizado);
-      console.log('💾 Alterações do filho salvas no cache');
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao editar filho:', error);
@@ -280,7 +280,7 @@ export const useAuth = () => {
       // Se tiver flag de logout manual antiga, limpa e reseta
       const logoutManual = await getLogoutByUserFlag();
       if (logoutManual) {
-        console.log('🚪 Flag de logout manual encontrada — resetando flag');
+        
         await setLogoutByUserFlag(false);
       }
 
@@ -347,7 +347,7 @@ export const useAuth = () => {
       await AsyncStorage.removeItem(USUARIO_CACHE_KEY);
       await signOut(auth);
       setUsuario(null);
-      console.log('👋 Usuário deslogado manualmente.');
+      
     } catch (err) {
       console.error('❌ Erro no logout:', err);
     }

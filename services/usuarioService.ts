@@ -40,7 +40,6 @@ export const criarUsuario = async (
     // Grava no Firestore
     await setDoc(usuarioDocRef, usuarioCompleto);
 
-    console.log("✅ Documento criado com ID:", usuarioId);
     return { success: true, id: usuarioId };
   } catch (error: any) {
     console.error("❌ Erro ao criar documento:", error);
@@ -58,10 +57,8 @@ export const loginUsuario = async (
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     const user = userCredential.user;
-    console.log("✅ Login bem-sucedido:", user.uid);
-        await salvarCredenciaisSeguras(email, senha);
-    console.log("✅ Credenciais seguras salvas após login manual");
-    
+    await salvarCredenciaisSeguras(email, senha);
+
     return { success: true, user };
   } catch (error: any) {
     console.error("❌ Erro no login:", error);

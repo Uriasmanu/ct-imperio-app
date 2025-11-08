@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 import { AD_IDS } from "../../utils/constants";

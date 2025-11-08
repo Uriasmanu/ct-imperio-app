@@ -101,8 +101,6 @@ export const usePresenca = (userId?: string) => {
 
             // Se houver presenças para remover, atualizar no Firebase
             if (validPresencas.length !== presencaArray.length) {
-                console.log(`🗑️ Removendo ${presencaArray.length - validPresencas.length} presenças de anos anteriores do Firebase...`);
-
                 if (isChild) {
                     const filhos = userData.filhos || [];
                     const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
@@ -117,13 +115,11 @@ export const usePresenca = (userId?: string) => {
                         await updateDoc(userDocRef, {
                             filhos: novosFilhos
                         });
-                        console.log('✅ Presenças antigas removidas do filho no Firebase');
                     }
                 } else {
                     await updateDoc(userDocRef, {
                         Presenca: validPresencas
                     });
-                    console.log('✅ Presenças antigas removidas do usuário no Firebase');
                 }
                 return true;
             }
@@ -151,13 +147,11 @@ export const usePresenca = (userId?: string) => {
                     await updateDoc(userDocRef, {
                         filhos: novosFilhos
                     });
-                    console.log('🎉 Histórico de presenças do filho LIMPO no dia 1º de janeiro');
                 }
             } else {
                 await updateDoc(userDocRef, {
                     Presenca: [] // Limpa TODAS as presenças
                 });
-                console.log('🎉 Histórico de presenças do usuário LIMPO no dia 1º de janeiro');
             }
             return true;
         } catch (error) {
@@ -193,24 +187,13 @@ export const usePresenca = (userId?: string) => {
 
                     // 🔥 CORREÇÃO CRÍTICA: Verificar se encontrou o filho
                     if (!filho) {
-                        console.log('❌ Filho não encontrado:', userId);
                         setPresencaRecords([]);
                         setLoading(false);
                         return;
                     }
-
                     presencaArray = filho.Presenca || [];
-                    console.log('👶 Dados do filho encontrados:', {
-                        filhoId: userId,
-                        presencas: presencaArray.length,
-                        presencaArray
-                    });
                 } else {
                     presencaArray = userData.Presenca || [];
-                    console.log('👤 Dados do usuário principal:', {
-                        presencas: presencaArray.length,
-                        presencaArray
-                    });
                 }
 
                 // 🔥 CORREÇÃO: Converter corretamente para PresencaRecord[]
@@ -241,9 +224,6 @@ export const usePresenca = (userId?: string) => {
                         const dateB = new Date(b.date + 'T00:00:00');
                         return dateB.getTime() - dateA.getTime();
                     });
-
-                console.log('📊 Registros convertidos:', records);
-
                 // Limpar presenças antigas ou 1º de janeiro
                 if (isFirstJanuary()) {
                     setPresencaRecords([]);
@@ -280,13 +260,11 @@ export const usePresenca = (userId?: string) => {
         }
 
         if (isFirstJanuary()) {
-            console.log('❌ Não é permitido marcar presença no dia 1º de janeiro');
             Alert.alert('Aviso', 'Não é permitido marcar presença no dia 1º de janeiro');
             return false;
         }
 
         if (isPresencaCheckedInToday) {
-            console.log('Presença já marcada hoje');
             return false;
         }
 
@@ -321,7 +299,6 @@ export const usePresenca = (userId?: string) => {
                 );
 
                 if (jaTemPresencaHoje) {
-                    console.log('❌ O filho já marcou presença hoje.');
                     Alert.alert('Aviso', 'A presença do filho já foi registrada hoje.');
                     return false;
                 }
@@ -344,7 +321,6 @@ export const usePresenca = (userId?: string) => {
                 );
 
                 if (jaTemPresencaHoje) {
-                    console.log('❌ Presença já marcada hoje');
                     Alert.alert('Aviso', 'Você já marcou presença hoje.');
                     return false;
                 }
@@ -359,7 +335,6 @@ export const usePresenca = (userId?: string) => {
             }
 
 
-            console.log('✅ Presença marcada com sucesso para:', dateString);
             return true;
         } catch (error) {
             console.error('❌ Erro ao marcar presença:', error);
@@ -518,11 +493,9 @@ export const usePresenca = (userId?: string) => {
 
     const confirmarPresenca = async (presencaId: string): Promise<boolean> => {
         try {
-            console.log(`🎯 Confirmando presença com ID: ${presencaId}`);
 
             // Extrair informações do ID - CORREÇÃO CRÍTICA
             const partes = presencaId.split('-');
-            console.log('🔍 Partes do ID:', partes);
 
             // Verificar se é usuário ou filho baseado no padrão do ID
             const tipo = partes[0]; // 'usuario' ou 'filho'
@@ -553,7 +526,6 @@ export const usePresenca = (userId?: string) => {
                 return false;
             }
 
-            console.log(`📋 Informações extraídas:`, { tipo, usuarioId, filhoId, data });
 
             const userDocRef = doc(db, "usuarios", usuarioId);
             const userDoc = await getDoc(userDocRef);
@@ -579,13 +551,11 @@ export const usePresenca = (userId?: string) => {
                 const filhoAtual = filhos[filhoIndex];
                 const presencasAtuais: any[] = filhoAtual.Presenca || [];
 
-                console.log(`📊 Presenças atuais do filho:`, presencasAtuais);
 
                 // Atualizar a presença específica para confirmada - CORREÇÃO CRÍTICA
                 const novasPresencas = presencasAtuais.map((presenca: any) => {
                     const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
                     if (presencaDate === data) {
-                        console.log(`✅ Confirmando presença do filho na data: ${data}`);
                         atualizou = true;
                         // Retornar como objeto com date e confirmada
                         return {
@@ -597,7 +567,6 @@ export const usePresenca = (userId?: string) => {
                     return presenca;
                 });
 
-                console.log(`🔄 Novas presenças do filho:`, novasPresencas);
 
                 const novosFilhos = [...filhos];
                 novosFilhos[filhoIndex] = {
@@ -606,19 +575,16 @@ export const usePresenca = (userId?: string) => {
                 };
 
                 await updateDoc(userDocRef, { filhos: novosFilhos });
-                console.log(`✅ Presença confirmada para o filho ${filhoAtual.nome} na data: ${data}`);
 
             } else if (tipo === 'usuario') {
                 // Confirmar presença do usuário principal
                 const presencasAtuais: any[] = userData.Presenca || [];
 
-                console.log(`📊 Presenças atuais do usuário:`, presencasAtuais);
 
                 // Atualizar a presença específica para confirmada - CORREÇÃO CRÍTICA
                 const novasPresencas = presencasAtuais.map((presenca: any) => {
                     const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
                     if (presencaDate === data) {
-                        console.log(`✅ Confirmando presença do usuário na data: ${data}`);
                         atualizou = true;
                         // Retornar como objeto com date e confirmada
                         return {
@@ -630,10 +596,8 @@ export const usePresenca = (userId?: string) => {
                     return presenca;
                 });
 
-                console.log(`🔄 Novas presenças do usuário:`, novasPresencas);
 
                 await updateDoc(userDocRef, { Presenca: novasPresencas });
-                console.log(`✅ Presença confirmada para o usuário ${userData.nome} na data: ${data}`);
             }
 
             if (!atualizou) {
@@ -642,7 +606,6 @@ export const usePresenca = (userId?: string) => {
             }
 
             // 🔥 ATUALIZAR A LISTA LOCAL APÓS CONFIRMAR
-            console.log('🔄 Recarregando lista de presenças...');
             setTimeout(() => {
                 buscarPresencasDoDia(); // Usar a mesma data da presença confirmada
             }, 1000);
@@ -659,7 +622,6 @@ export const usePresenca = (userId?: string) => {
     // Função para confirmar TODAS as presenças de hoje
     const confirmarTodasPresencasHoje = async (): Promise<{ success: boolean; confirmed: number }> => {
         try {
-            console.log('🎯 Confirmando TODAS as presenças de hoje...');
 
             const querySnapshot = await getDocs(collection(db, "usuarios"));
             let totalConfirmadas = 0;
@@ -682,7 +644,6 @@ export const usePresenca = (userId?: string) => {
                         if (!isAlreadyConfirmed) {
                             totalConfirmadas++;
                             needsUpdate = true;
-                            console.log(`✅ Confirmando presença do usuário: ${usuarioData.nome}`);
                             return {
                                 date: todayString,
                                 confirmada: true
@@ -705,7 +666,6 @@ export const usePresenca = (userId?: string) => {
                             if (!isAlreadyConfirmed) {
                                 totalConfirmadas++;
                                 needsUpdate = true;
-                                console.log(`✅ Confirmando presença do filho: ${filho.nome}`);
                                 return {
                                     date: todayString,
                                     confirmada: true
@@ -744,14 +704,12 @@ export const usePresenca = (userId?: string) => {
             // Executar todas as atualizações em paralelo
             if (batchUpdates.length > 0) {
                 await Promise.all(batchUpdates);
-                console.log(`✅ Todas as ${totalConfirmadas} presenças de hoje foram confirmadas`);
 
                 // Recarregar a lista após confirmar
                 setTimeout(() => {
                     buscarPresencasDoDia();
                 }, 1000);
             } else {
-                console.log('ℹ️ Nenhuma presença pendente para confirmar hoje');
             }
 
             return {
@@ -825,7 +783,6 @@ export const usePresenca = (userId?: string) => {
 
             // 🔥 Atualiza o estado
             setPresencasParaConfirmar(todasPresencas);
-            console.log(`✅ Carregadas ${todasPresencas.length} presenças (todas as não confirmadas + confirmadas de hoje)`);
 
         } catch (error) {
             console.error('Erro ao buscar presenças:', error);

@@ -37,7 +37,6 @@ export const registerUser = async (email, password, userData = {}) => {
     // 1. Criar usuário no Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     user = userCredential.user;
-    console.log('✅ Usuário registrado com sucesso no Auth:', user.uid);
 
     // 2. Preparar dados para o Firestore usando as interfaces
     const usuarioFirestoreData = {
@@ -59,7 +58,7 @@ export const registerUser = async (email, password, userData = {}) => {
       
       try {
         await deleteUser(user);
-        console.log("✅ Rollback bem-sucedido: Usuário do Auth deletado.");
+  
       } catch (deleteError) {
         console.error("❌ Erro no rollback:", deleteError);
       }
@@ -71,7 +70,6 @@ export const registerUser = async (email, password, userData = {}) => {
     }
     
     // 5. Sucesso completo
-    console.log("🎉 Registro concluído com sucesso!");
     return { success: true, user };
 
   } catch (error) {
@@ -109,7 +107,6 @@ export const loginUser = async (email, password) => {
   try {
     // Implementação do login (se necessário)
     // Pode usar signInWithEmailAndPassword do Auth
-    console.log("Login implementado aqui...");
   } catch (error) {
     console.error("Erro no login:", error);
     throw error;
@@ -129,7 +126,6 @@ export const getCurrentUser = () => {
 export const logoutUser = async () => {
   try {
     await auth.signOut();
-    console.log("✅ Usuário deslogado com sucesso");
   } catch (error) {
     console.error("❌ Erro ao fazer logout:", error);
     throw error;
