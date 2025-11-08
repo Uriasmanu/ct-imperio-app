@@ -29,7 +29,8 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         lastCheckInDate,
         isNewDay,
         presencaRecords,
-        currentYear
+        currentYear,
+        getSemestreInfo
     } = usePresenca(userId);
 
     const [showCalendar, setShowCalendar] = useState(false);
@@ -37,33 +38,51 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
     // Estatísticas de presença
     const totalPresencas = presencaRecords.length;
     const presencasConfirmadas = presencaRecords.filter(record => record.confirmada).length;
-    
-    // Calcular porcentagem (considerando dias úteis até hoje)
+
+    // Calcular porcentagem por semestre
     const getPorcentagemPresenca = () => {
         const hoje = new Date();
-        const inicioAno = new Date(currentYear, 0, 2); // Começa em 2 de janeiro
-        const diasUteisAteHoje = calcularDiasUteis(inicioAno, hoje);
-        
-        if (diasUteisAteHoje === 0) return 0;
-        return Math.round((totalPresencas / diasUteisAteHoje) * 100);
+        const currentMonth = hoje.getMonth();
+
+        let inicioSemestre: Date;
+        let fimSemestre: Date;
+
+        if (currentMonth >= 0 && currentMonth <= 5) {
+            // Primeiro semestre: janeiro a junho
+            inicioSemestre = new Date(currentYear, 0, 2); // 2 de janeiro
+            fimSemestre = new Date(currentYear, 5, 30); // 30 de junho
+        } else {
+            // Segundo semestre: julho a dezembro
+            inicioSemestre = new Date(currentYear, 6, 1); // 1 de julho
+            fimSemestre = new Date(currentYear, 11, 31); // 31 de dezembro
+        }
+
+        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
+        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
+
+        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+
+        if (diasUteisNoSemestre === 0) return 0;
+        return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
     };
 
     const calcularDiasUteis = (inicio: Date, fim: Date): number => {
         let count = 0;
         const current = new Date(inicio);
-        
+
         while (current <= fim) {
-            // Não conta domingos (0) e nem 1º de janeiro
+            // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
             const day = current.getDay();
             const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
-            
-            if (day !== 0 && !isPrimeiroJaneiro) {
+
+            if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
                 count++;
             }
             current.setDate(current.getDate() + 1);
         }
         return count;
     };
+
 
     const handleCheckIn = async () => {
         if (isPresencaCheckedInToday && !isNewDay()) {
@@ -93,6 +112,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
     }
 
     const porcentagem = getPorcentagemPresenca();
+    const semestreInfo = getSemestreInfo();
 
     return (
         <>
@@ -100,11 +120,20 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                 <View style={styles.sectionHeader}>
                     <View style={styles.sectionTitleContainer}>
                         <Ionicons name="calendar" size={20} color="#B8860B" />
-                        <Text style={styles.sectionTitle}>FREQUÊNCIA {currentYear}</Text>
+                        <Text style={styles.sectionTitle}>
+                            FREQUÊNCIA {currentYear} - {semestreInfo.periodo}
+                        </Text>
                     </View>
                 </View>
 
                 <View style={styles.content}>
+                    {/* Indicador do Semestre */}
+                    <View style={styles.semestreBadge}>
+                        <Text style={styles.semestreText}>
+                            {semestreInfo.nome} ({semestreInfo.periodo})
+                        </Text>
+                    </View>
+
                     {/* Estatísticas em Grid */}
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
@@ -124,15 +153,15 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     {/* Barra de Progresso */}
                     <View style={styles.progressContainer}>
                         <View style={styles.progressBackground}>
-                            <View 
+                            <View
                                 style={[
                                     styles.progressFill,
                                     { width: `${Math.min(porcentagem, 100)}%` }
-                                ]} 
+                                ]}
                             />
                         </View>
                         <Text style={styles.progressText}>
-                            {porcentagem}% de frequência este ano
+                            {porcentagem}% de frequência no {semestreInfo.nome.toLowerCase()}
                         </Text>
                     </View>
 
@@ -352,5 +381,19 @@ const styles = StyleSheet.create({
     loadingText: {
         color: '#B8860B',
         fontSize: 14,
+    },
+    semestreBadge: {
+        backgroundColor: '#2a2a2a',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        alignSelf: 'center',
+        borderWidth: 1,
+        borderColor: '#B8860B',
+    },
+    semestreText: {
+        color: '#B8860B',
+        fontSize: 12,
+        fontWeight: '600',
     },
 });
