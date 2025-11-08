@@ -165,6 +165,8 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
+    // src/hooks/usePresenca.ts
+
     useEffect(() => {
         const userDocRef = getUserDocRef();
         if (!userDocRef) {
@@ -182,37 +184,64 @@ export const usePresenca = (userId?: string) => {
                 }
 
                 const userData = snapshot.data();
-                let presencaArray: any[] = []; // Mudei para any[] para aceitar ambos os formatos
+                let presencaArray: any[] = [];
 
                 if (isChild) {
                     const filhos = userData.filhos || [];
                     const filho = filhos.find((f: Filho) => f.id === userId);
-                    presencaArray = filho?.Presenca || [];
+
+                    // 🔥 CORREÇÃO CRÍTICA: Verificar se encontrou o filho
+                    if (!filho) {
+                        console.log('❌ Filho não encontrado:', userId);
+                        setPresencaRecords([]);
+                        setLoading(false);
+                        return;
+                    }
+
+                    presencaArray = filho.Presenca || [];
+                    console.log('👶 Dados do filho encontrados:', {
+                        filhoId: userId,
+                        presencas: presencaArray.length,
+                        presencaArray
+                    });
                 } else {
                     presencaArray = userData.Presenca || [];
+                    console.log('👤 Dados do usuário principal:', {
+                        presencas: presencaArray.length,
+                        presencaArray
+                    });
                 }
 
-                // 🔥 CONVERSÃO CRÍTICA: Converter para PresencaRecord[]
+                // 🔥 CORREÇÃO: Converter corretamente para PresencaRecord[]
                 const records: PresencaRecord[] = presencaArray
                     .map((item: any) => {
                         // Se for string (formato antigo)
                         if (typeof item === 'string') {
                             return {
                                 date: item,
-                                confirmada: false
+                                confirmada: false,
+                               
                             };
                         }
                         // Se for objeto (formato novo)
                         if (typeof item === 'object' && item !== null) {
                             return {
-                                date: item.date,
-                                timestamp: new Date(item.date + 'T00:00:00'),
+                                date: item.date || item, // 🔥 CORREÇÃO: Suporte a ambos os formatos
+                                timestamp: new Date((item.date || item) + 'T00:00:00'),
                                 confirmada: item.confirmada || false
                             };
                         }
                         return null;
                     })
                     .filter((item): item is PresencaRecord => item !== null)
+                    // Ordenar por data (mais recente primeiro)
+                    .sort((a, b) => {
+                        const dateA = new Date(a.date + 'T00:00:00');
+                        const dateB = new Date(b.date + 'T00:00:00');
+                        return dateB.getTime() - dateA.getTime();
+                    });
+
+                console.log('📊 Registros convertidos:', records);
 
                 // Limpar presenças antigas ou 1º de janeiro
                 if (isFirstJanuary()) {
@@ -223,14 +252,14 @@ export const usePresenca = (userId?: string) => {
                 setLoading(false);
             },
             (error) => {
-                console.error(error);
+                console.error('❌ Erro no onSnapshot:', error);
                 setPresencaRecords([]);
                 setLoading(false);
             }
         );
 
         return () => unsubscribe();
-    }, [currentUserId, userId, isChild]);
+    }, [currentUserId, userId, isChild, usuario?.id]); // 🔥 ADD usuario?.id como dependência
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
