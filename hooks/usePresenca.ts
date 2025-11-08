@@ -221,11 +221,11 @@ export const usePresenca = (userId?: string) => {
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
-    ) && !isNewDay(); 
+    ) && !isNewDay();
 
     const isPresencaConfirmadaToday = presencaRecords.some(
         record => record.date === todayString && record.confirmada === true
-    ) && !isNewDay(); 
+    ) && !isNewDay();
 
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
@@ -264,22 +264,56 @@ export const usePresenca = (userId?: string) => {
             if (isChild) {
                 const filhos = userData.filhos || [];
                 const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-                if (filhoIndex === -1) return false;
+                if (filhoIndex === -1) {
+                    console.error('Filho não encontrado');
+                    return false;
+                }
 
-                const filho = filhos[filhoIndex];
-                const presencasAtuais: PresencaRecord[] = filho.Presenca || [];
+                const filhoAtual = filhos[filhoIndex];
+                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
+
+                const jaTemPresencaHoje = presencasAtuais.some(
+                    (r: any) => r.date === todayString
+                );
+
+                if (jaTemPresencaHoje) {
+                    console.log('❌ O filho já marcou presença hoje.');
+                    Alert.alert('Aviso', 'A presença do filho já foi registrada hoje.');
+                    return false;
+                }
+
+                const newRecord: PresencaRecord = {
+                    date: todayString,
+                    confirmada: false
+                };
+
                 const novasPresencas = [...presencasAtuais, newRecord];
-
                 const novosFilhos = [...filhos];
-                novosFilhos[filhoIndex] = { ...filho, Presenca: novasPresencas };
+                novosFilhos[filhoIndex] = { ...filhoAtual, Presenca: novasPresencas };
 
                 await updateDoc(userDocRef, { filhos: novosFilhos });
             } else {
                 const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
-                const novasPresencas = [...presencasAtuais, newRecord];
 
+                const jaTemPresencaHoje = presencasAtuais.some(
+                    (r: any) => r.date === todayString
+                );
+
+                if (jaTemPresencaHoje) {
+                    console.log('❌ Presença já marcada hoje');
+                    Alert.alert('Aviso', 'Você já marcou presença hoje.');
+                    return false;
+                }
+
+                const newRecord: PresencaRecord = {
+                    date: todayString,
+                    confirmada: false
+                };
+
+                const novasPresencas = [...presencasAtuais, newRecord];
                 await updateDoc(userDocRef, { Presenca: novasPresencas });
             }
+
 
             console.log('✅ Presença marcada com sucesso para:', dateString);
             return true;
