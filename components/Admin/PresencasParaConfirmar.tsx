@@ -16,6 +16,7 @@ interface PresencasParaConfirmarProps {
   presencas: PresencaParaConfirmar[];
   stats: PresencaStats;
   onConfirmarPresenca: (presencaId: string) => void;
+  onConfirmarTodas?: () => Promise<{ success: boolean; confirmed: number }>;
   loading?: boolean;
 }
 
@@ -23,10 +24,54 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   presencas,
   stats,
   onConfirmarPresenca,
+  onConfirmarTodas,
   loading = false
 }) => {
 
   const [confirmando, setConfirmando] = useState<string | null>(null);
+  const [confirmandoTodas, setConfirmandoTodas] = useState(false);
+
+  // Função para confirmar todas as presenças
+  const handleConfirmarTodas = async () => {
+    if (!onConfirmarTodas) return;
+
+    const presencasPendentes = presencas.filter(p => !p.confirmada);
+
+    if (presencasPendentes.length === 0) {
+      Alert.alert('Aviso', 'Não há presenças pendentes para confirmar');
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar Todas as Presenças',
+      `Deseja confirmar todas as ${presencasPendentes.length} presenças pendentes de hoje?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar Todas',
+          style: 'default',
+          onPress: async () => {
+            setConfirmandoTodas(true);
+            try {
+              const result = await onConfirmarTodas();
+              if (result.success) {
+                Alert.alert(
+                  'Sucesso!',
+                  `${result.confirmed} presenças foram confirmadas com sucesso!`
+                );
+              } else {
+                Alert.alert('Erro', 'Não foi possível confirmar todas as presenças');
+              }
+            } catch (error) {
+              Alert.alert('Erro', 'Ocorreu um erro ao confirmar as presenças');
+            } finally {
+              setConfirmandoTodas(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleConfirmar = async (presenca: PresencaParaConfirmar) => {
     Alert.alert(
@@ -68,6 +113,32 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Cabeçalho com botão de confirmar todas */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Presenças para Confirmar</Text>
+
+        {stats.pendentesHoje > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.confirmarTodasButton,
+              confirmandoTodas && styles.confirmarTodasButtonDisabled
+            ]}
+            onPress={handleConfirmarTodas}
+            disabled={confirmandoTodas}
+          >
+            {confirmandoTodas ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-done" size={18} color="#000" />
+                <Text style={styles.confirmarTodasText}>
+                  Confirmar Todas ({stats.pendentesHoje})
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
       {/* Estatísticas */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
@@ -321,4 +392,39 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     backgroundColor: '#666',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  
+  title: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  
+  confirmarTodasButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  
+  confirmarTodasButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#666',
+  },
+  
+  confirmarTodasText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
 });

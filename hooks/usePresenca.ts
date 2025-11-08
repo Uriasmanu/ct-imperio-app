@@ -654,76 +654,121 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
-    // Função para confirmar a presença de hoje
-    const confirmarPresencaHoje = async (): Promise<boolean> => {
-        return await confirmarPresenca(todayString);
-    };
+    // src/hooks/usePresenca.ts
 
-    // Função para confirmar TODAS as presenças não confirmadas
-    const confirmarTodasPresencas = async (): Promise<boolean> => {
-        const userDocRef = getUserDocRef();
-        if (!userDocRef || !currentUserId) {
-            console.error('Usuário não autenticado ou documento não encontrado');
-            return false;
-        }
-
+    // Função para confirmar TODAS as presenças de hoje
+    const confirmarTodasPresencasHoje = async (): Promise<{ success: boolean; confirmed: number }> => {
         try {
-            const userDoc = await getDoc(userDocRef);
-            if (!userDoc.exists()) {
-                console.error('Documento do usuário não encontrado');
-                return false;
-            }
+            console.log('🎯 Confirmando TODAS as presenças de hoje...');
 
-            const userData = userDoc.data();
+            const querySnapshot = await getDocs(collection(db, "usuarios"));
+            let totalConfirmadas = 0;
+            const batchUpdates: Promise<void>[] = [];
 
-            if (isChild) {
-                // Confirmar todas as presenças do filho
-                const filhos = userData.filhos || [];
-                const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
+            // Percorrer todos os usuários
+            for (const userDoc of querySnapshot.docs) {
+                const usuarioData = userDoc.data();
+                const usuarioId = userDoc.id;
+                let needsUpdate = false;
 
-                if (filhoIndex === -1) {
-                    console.error('Filho não encontrado');
-                    return false;
+                // 🔄 Atualizar presenças do usuário principal
+                const presencasUsuario = usuarioData.Presenca || [];
+                const novasPresencasUsuario = presencasUsuario.map((presenca: any) => {
+                    const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
+
+                    if (presencaDate === todayString) {
+                        const isAlreadyConfirmed = typeof presenca === 'object' ? presenca.confirmada : false;
+
+                        if (!isAlreadyConfirmed) {
+                            totalConfirmadas++;
+                            needsUpdate = true;
+                            console.log(`✅ Confirmando presença do usuário: ${usuarioData.nome}`);
+                            return {
+                                date: todayString,
+                                confirmada: true
+                            };
+                        }
+                    }
+                    return presenca;
+                });
+
+                // 🔄 Atualizar presenças dos filhos
+                const filhos = usuarioData.filhos || [];
+                const novosFilhos = filhos.map((filho: any) => {
+                    const presencasFilho = filho.Presenca || [];
+                    const novasPresencasFilho = presencasFilho.map((presenca: any) => {
+                        const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
+
+                        if (presencaDate === todayString) {
+                            const isAlreadyConfirmed = typeof presenca === 'object' ? presenca.confirmada : false;
+
+                            if (!isAlreadyConfirmed) {
+                                totalConfirmadas++;
+                                needsUpdate = true;
+                                console.log(`✅ Confirmando presença do filho: ${filho.nome}`);
+                                return {
+                                    date: todayString,
+                                    confirmada: true
+                                };
+                            }
+                        }
+                        return presenca;
+                    });
+
+                    return {
+                        ...filho,
+                        Presenca: novasPresencasFilho
+                    };
+                });
+
+                // Se houve alterações, adicionar à lista de atualizações
+                if (needsUpdate) {
+                    const userDocRef = doc(db, "usuarios", usuarioId);
+
+                    if (novasPresencasUsuario !== presencasUsuario || JSON.stringify(novosFilhos) !== JSON.stringify(filhos)) {
+                        const updateData: any = {};
+
+                        if (novasPresencasUsuario !== presencasUsuario) {
+                            updateData.Presenca = novasPresencasUsuario;
+                        }
+
+                        if (JSON.stringify(novosFilhos) !== JSON.stringify(filhos)) {
+                            updateData.filhos = novosFilhos;
+                        }
+
+                        batchUpdates.push(updateDoc(userDocRef, updateData));
+                    }
                 }
-
-                const filhoAtual = filhos[filhoIndex];
-                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
-
-                // Marcar todas as presenças como confirmadas
-                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => ({
-                    ...presenca,
-                    confirmada: true
-                }));
-
-                const novosFilhos = [...filhos];
-                novosFilhos[filhoIndex] = {
-                    ...filhoAtual,
-                    Presenca: novasPresencas
-                };
-
-                await updateDoc(userDocRef, { filhos: novosFilhos });
-                console.log(`✅ Todas as ${novasPresencas.length} presenças do filho foram confirmadas`);
-
-            } else {
-                // Confirmar todas as presenças do usuário principal
-                const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
-
-                // Marcar todas as presenças como confirmadas
-                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => ({
-                    ...presenca,
-                    confirmada: true
-                }));
-
-                await updateDoc(userDocRef, { Presenca: novasPresencas });
-                console.log(`✅ Todas as ${novasPresencas.length} presenças do usuário principal foram confirmadas`);
             }
 
-            return true;
+            // Executar todas as atualizações em paralelo
+            if (batchUpdates.length > 0) {
+                await Promise.all(batchUpdates);
+                console.log(`✅ Todas as ${totalConfirmadas} presenças de hoje foram confirmadas`);
+
+                // Recarregar a lista após confirmar
+                setTimeout(() => {
+                    buscarPresencasDoDia();
+                }, 1000);
+            } else {
+                console.log('ℹ️ Nenhuma presença pendente para confirmar hoje');
+            }
+
+            return {
+                success: true,
+                confirmed: totalConfirmadas
+            };
+
         } catch (error) {
-            console.error('❌ Erro ao confirmar todas as presenças:', error);
-            return false;
+            console.error('❌ Erro ao confirmar todas as presenças de hoje:', error);
+            return {
+                success: false,
+                confirmed: 0
+            };
         }
     };
+
+
 
     const buscarPresencasDoDia = async () => {
         try {
@@ -826,7 +871,7 @@ export const usePresenca = (userId?: string) => {
         calcularPorcentagemPresenca,
         getSemestreInfo,
         confirmarPresenca,
-        confirmarTodasPresencas,
+        confirmarTodasPresencasHoje,
         buscarPresencasDoDia,
         recarregarPresencas,
         presencasParaConfirmar,

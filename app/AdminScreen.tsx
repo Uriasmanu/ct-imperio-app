@@ -47,7 +47,8 @@ export default function AdminScreen() {
     stats,
     loading: presencasLoading,
     confirmarPresenca,
-    buscarPresencasDoDia
+    buscarPresencasDoDia,
+    confirmarTodasPresencasHoje,
   } = usePresenca();
 
   // 🔄 VERIFICAR ACESSO
@@ -164,8 +165,9 @@ export default function AdminScreen() {
               <PresencasParaConfirmar
                 presencas={presencasParaConfirmar}
                 stats={stats}
-                onConfirmarPresenca={confirmarPresenca} 
-                loading={presencasLoading}
+                onConfirmarPresenca={confirmarPresenca}
+                onConfirmarTodas={confirmarTodasPresencasHoje}
+                loading={loading}
               />
             </View>
           </View>
