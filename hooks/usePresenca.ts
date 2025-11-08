@@ -59,9 +59,10 @@ export const usePresenca = (userId?: string) => {
         return presencaArray.filter(dateString => isValidDate(dateString));
     };
 
-    // Referência do documento (usuário ou filho)
+    // CORRIJA esta função no usePresenca.ts
     const getUserDocRef = () => {
         if (isChild && usuario?.id) {
+            // Para filhos, usamos o ID do usuário pai (não do filho)
             return doc(db, "usuarios", usuario.id);
         } else if (currentUserId) {
             return doc(db, "usuarios", currentUserId);
@@ -483,6 +484,6 @@ export const usePresenca = (userId?: string) => {
         isMonthWithinLimit,
         isFirstJanuary: isFirstJanuary(),
         calcularPorcentagemPresenca,
-        getSemestreInfo 
+        getSemestreInfo
     };
 };
