@@ -139,25 +139,28 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
     return new Date(data).toLocaleDateString("pt-BR");
   };
 
-  // CORREÇÃO: Usar as informações de pagamento corretas
+  // CORREÇÃO: Textos mais curtos para filhos
   const getStatusInfo = () => {
     if (pagamentoInfo.pagamento) {
       return {
-        texto: "Pago",
+        texto: isFilho ? "Pago" : "Pago",
+        textoLongo: "Pago",
         cor: "#22c55e",
         icone: "checkmark-circle",
         descricao: "Pagamento confirmado pelo administrador"
       };
     } else if (pagamentoInfo.avisoPagamento) {
       return {
-        texto: "Aguardando Confirmação",
+        texto: isFilho ? "Aguardando" : "Aguardando Confirmação", // Texto mais curto para filhos
+        textoLongo: "Aguardando Confirmação",
         cor: "#f59e0b",
         icone: "time",
         descricao: "Aluno avisou que pagou - aguardando confirmação"
       };
     } else {
       return {
-        texto: "Pendente",
+        texto: isFilho ? "Pendente" : "Pendente",
+        textoLongo: "Pendente",
         cor: "#ef4444",
         icone: "alert-circle",
         descricao: "Aguardando pagamento"
@@ -175,13 +178,21 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
           styles.statusButton,
           { 
             backgroundColor: statusInfo.cor + "20",
-            borderColor: statusInfo.cor
+            borderColor: statusInfo.cor,
+            minWidth: isFilho ? 100 : 120, // Largura menor para filhos
+            paddingHorizontal: isFilho ? 8 : 12, // Padding menor para filhos
           }
         ]}
         onPress={() => setModalPagamento(true)}
       >
-        <Ionicons name={statusInfo.icone as any} size={16} color={statusInfo.cor} />
-        <Text style={[styles.statusButtonText, { color: statusInfo.cor }]}>
+        <Ionicons name={statusInfo.icone as any} size={isFilho ? 14 : 16} color={statusInfo.cor} />
+        <Text style={[
+          styles.statusButtonText, 
+          { 
+            color: statusInfo.cor,
+            fontSize: isFilho ? 10 : 12, // Fonte menor para filhos
+          }
+        ]}>
           {statusInfo.texto}
         </Text>
       </TouchableOpacity>
@@ -226,7 +237,7 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
               ]}>
                 <Ionicons name={statusInfo.icone as any} size={16} color={statusInfo.cor} />
                 <Text style={[styles.statusBadgeText, { color: statusInfo.cor }]}>
-                  {statusInfo.texto.toUpperCase()}
+                  {statusInfo.textoLongo.toUpperCase()}
                 </Text>
               </View>
 
@@ -296,21 +307,17 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
   );
 };
 
-
 const styles = {
   statusButton: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 6,
-    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    minWidth: 120,
     justifyContent: "center",
   },
   statusButtonText: {
-    fontSize: 12,
     fontWeight: "600" as const,
   },
   modalOverlay: {
