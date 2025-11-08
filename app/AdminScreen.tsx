@@ -23,6 +23,9 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useAdminPresenca } from '@/hooks/useAdminPresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
+// Tipos para as abas
+type AdminTab = 'presencas' | 'gestao';
+
 // 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
   const router = useRouter();
@@ -35,6 +38,7 @@ export default function AdminScreen() {
     statusPagamento: "todos",
     modalidade: "todas"
   });
+  const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
 
   // Use o hook para presenças administrativas
   const { 
@@ -127,6 +131,124 @@ export default function AdminScreen() {
     ) + usuarios.length
   };
 
+  // 🎯 RENDER CONTEÚDO POR ABA
+  const renderConteudoAba = () => {
+    switch (abaAtiva) {
+      case 'presencas':
+        return (
+          <View style={styles.abaContent}>
+            {/* SEÇÃO: PRESENÇAS PARA CONFIRMAR */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleContainer}>
+                  <Ionicons name="calendar" size={22} color="#B8860B" />
+                  <Text style={styles.sectionTitle}>Presenças para Confirmar</Text>
+                </View>
+                <TouchableOpacity 
+                  style={[
+                    styles.refreshButton,
+                    presencasLoading && styles.refreshButtonDisabled
+                  ]}
+                  onPress={() => buscarPresencasDoDia()}
+                  disabled={presencasLoading}
+                >
+                  <Ionicons 
+                    name="refresh" 
+                    size={20} 
+                    color="#B8860B"
+                  />
+                </TouchableOpacity>
+              </View>
+              
+              <PresencasParaConfirmar
+                presencas={presencasParaConfirmar}
+                stats={stats}
+                onConfirmarPresenca={confirmarPresenca}
+                loading={presencasLoading}
+              />
+            </View>
+          </View>
+        );
+
+      case 'gestao':
+        return (
+          <View style={styles.abaContent}>
+            {/* SEÇÃO: ESTATÍSTICAS */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleContainer}>
+                  <Ionicons name="stats-chart" size={22} color="#B8860B" />
+                  <Text style={styles.sectionTitle}>Estatísticas Gerais</Text>
+                </View>
+              </View>
+              <Estatisticas estatisticas={estatisticas} />
+            </View>
+
+            {/* SEÇÃO: FILTROS E USUÁRIOS */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionTitleContainer}>
+                  <Ionicons name="people" size={22} color="#B8860B" />
+                  <Text style={styles.sectionTitle}>Gestão de Usuários</Text>
+                </View>
+              </View>
+
+              {/* FILTROS */}
+              <View style={styles.filtrosContainer}>
+                <Filtros filtros={filtros} onFiltrosChange={setFiltros} />
+              </View>
+
+              {/* INFO RESULTADOS */}
+              <View style={styles.resultadosInfo}>
+                <View style={styles.resultadosLeft}>
+                  <Text style={styles.resultadosTexto}>
+                    {usuariosFiltrados.length} de {usuarios.length} usuários
+                  </Text>
+                  {filtros.busca && (
+                    <Text style={styles.buscaTexto}>
+                      Buscando por: "{filtros.busca}"
+                    </Text>
+                  )}
+                </View>
+                {refreshing && (
+                  <View style={styles.recarregandoContainer}>
+                    <Ionicons name="sync" size={14} color="#B8860B" />
+                    <Text style={styles.recarregandoTexto}>Atualizando...</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* LISTA DE USUÁRIOS */}
+              <View style={styles.usuariosContainer}>
+                {usuariosFiltrados.length > 0 ? (
+                  usuariosFiltrados.map((usuario) => (
+                    <UsuarioCard
+                      key={usuario.id}
+                      usuario={usuario}
+                      onPagamentoAtualizado={carregarUsuarios}
+                    />
+                  ))
+                ) : (
+                  <View style={styles.nenhumResultado}>
+                    <Ionicons name="search-outline" size={56} color="#666" />
+                    <Text style={styles.nenhumResultadoTitle}>
+                      Nenhum usuário encontrado
+                    </Text>
+                    <Text style={styles.nenhumResultadoText}>
+                      Tente ajustar os filtros ou termos de busca
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   // 🎯 RENDER STATES
   if (authLoading || loading) {
     return <LoadingScreen />;
@@ -148,6 +270,54 @@ export default function AdminScreen() {
             Logado como: {user?.email}
           </Text>
         </View>
+
+        {/* ABAS DE NAVEGAÇÃO */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.tabButton,
+              abaAtiva === 'presencas' && styles.tabButtonActive
+            ]}
+            onPress={() => setAbaAtiva('presencas')}
+          >
+            <Ionicons 
+              name="calendar" 
+              size={20} 
+              color={abaAtiva === 'presencas' ? "#000" : "#B8860B"} 
+            />
+            <Text style={[
+              styles.tabButtonText,
+              abaAtiva === 'presencas' && styles.tabButtonTextActive
+            ]}>
+              Presenças
+            </Text>
+            {stats.pendentesHoje > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{stats.pendentesHoje}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[
+              styles.tabButton,
+              abaAtiva === 'gestao' && styles.tabButtonActive
+            ]}
+            onPress={() => setAbaAtiva('gestao')}
+          >
+            <Ionicons 
+              name="people" 
+              size={20} 
+              color={abaAtiva === 'gestao' ? "#000" : "#B8860B"} 
+            />
+            <Text style={[
+              styles.tabButtonText,
+              abaAtiva === 'gestao' && styles.tabButtonTextActive
+            ]}>
+              Gestão
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* CONTEÚDO PRINCIPAL */}
@@ -163,110 +333,10 @@ export default function AdminScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        {renderConteudoAba()}
         
-        {/* SEÇÃO: PRESENÇAS PARA CONFIRMAR */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Ionicons name="calendar" size={22} color="#B8860B" />
-              <Text style={styles.sectionTitle}>Presenças para Confirmar</Text>
-            </View>
-            <TouchableOpacity 
-              style={[
-                styles.refreshButton,
-                presencasLoading && styles.refreshButtonDisabled
-              ]}
-              onPress={() => buscarPresencasDoDia()}
-              disabled={presencasLoading}
-            >
-              <Ionicons 
-                name="refresh" 
-                size={20} 
-                color="#B8860B"
-              />
-            </TouchableOpacity>
-          </View>
-          
-          <PresencasParaConfirmar
-            presencas={presencasParaConfirmar}
-            stats={stats}
-            onConfirmarPresenca={confirmarPresenca}
-            loading={presencasLoading}
-          />
-        </View>
-
-        {/* SEÇÃO: ESTATÍSTICAS */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Ionicons name="stats-chart" size={22} color="#B8860B" />
-              <Text style={styles.sectionTitle}>Estatísticas Gerais</Text>
-            </View>
-          </View>
-          <Estatisticas estatisticas={estatisticas} />
-        </View>
-
-        {/* SEÇÃO: FILTROS E USUÁRIOS */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Ionicons name="people" size={22} color="#B8860B" />
-              <Text style={styles.sectionTitle}>Gestão de Usuários</Text>
-            </View>
-          </View>
-
-          {/* FILTROS */}
-          <View style={styles.filtrosContainer}>
-            <Filtros filtros={filtros} onFiltrosChange={setFiltros} />
-          </View>
-
-          {/* INFO RESULTADOS */}
-          <View style={styles.resultadosInfo}>
-            <View style={styles.resultadosLeft}>
-              <Text style={styles.resultadosTexto}>
-                {usuariosFiltrados.length} de {usuarios.length} usuários
-              </Text>
-              {filtros.busca && (
-                <Text style={styles.buscaTexto}>
-                  Buscando por: "{filtros.busca}"
-                </Text>
-              )}
-            </View>
-            {refreshing && (
-              <View style={styles.recarregandoContainer}>
-                <Ionicons name="sync" size={14} color="#B8860B" />
-                <Text style={styles.recarregandoTexto}>Atualizando...</Text>
-              </View>
-            )}
-          </View>
-
-          {/* LISTA DE USUÁRIOS */}
-          <View style={styles.usuariosContainer}>
-            {usuariosFiltrados.length > 0 ? (
-              usuariosFiltrados.map((usuario) => (
-                <UsuarioCard
-                  key={usuario.id}
-                  usuario={usuario}
-                  onPagamentoAtualizado={carregarUsuarios}
-                />
-              ))
-            ) : (
-              <View style={styles.nenhumResultado}>
-                <Ionicons name="search-outline" size={56} color="#666" />
-                <Text style={styles.nenhumResultadoTitle}>
-                  Nenhum usuário encontrado
-                </Text>
-                <Text style={styles.nenhumResultadoText}>
-                  Tente ajustar os filtros ou termos de busca
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
         {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
-
       </ScrollView>
     </View>
   );
@@ -280,12 +350,11 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
   },
   header: { 
     backgroundColor: '#000',
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
@@ -293,6 +362,7 @@ const styles = StyleSheet.create({
   headerContent: { 
     alignItems: "center",
     gap: 12,
+    marginBottom: 20,
   },
   headerTitle: { 
     fontSize: 28, 
@@ -304,6 +374,55 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     color: "#AAA",
     textAlign: 'center',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    position: 'relative',
+  },
+  tabButtonActive: {
+    backgroundColor: '#B8860B',
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#B8860B',
+  },
+  tabButtonTextActive: {
+    color: '#000',
+    fontWeight: '700',
+  },
+  badge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  abaContent: {
+    paddingTop: 20,
   },
   section: {
     marginBottom: 32,
