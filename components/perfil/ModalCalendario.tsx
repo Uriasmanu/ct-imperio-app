@@ -32,11 +32,14 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
 
     // Marcar datas com presença
     presencaRecords.forEach(record => {
-        markedDates[record.date] = {
-            selected: true,
-            selectedColor: '#B8860B',
-            selectedTextColor: '#000'
-        };
+        if (record.confirmada) {
+            markedDates[record.date] = {
+                selected: true,
+                selectedColor: '#B8860B',
+                selectedTextColor: '#000'
+            };
+        }
+
     });
 
     // Marcar hoje

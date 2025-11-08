@@ -97,7 +97,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                                 </View>
                             ) : (
                                 <View style={styles.checkedInContent}>
-                                    <Text style={styles.checkedInText}>AGUARDANDO CONFIRMAÇÃO</Text>
+                                    <Text style={styles.checkInText}>AGUARDANDO CONFIRMAÇÃO</Text>
                                 </View>
                             )
                         ) : (
@@ -179,7 +179,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#F59E0B',
     },
     confirmedButton: {
-        backgroundColor: '#10B981',
+        backgroundColor: '#1e3a28',
+        borderColor: '#22c55e',
+        borderWidth: 1,
     },
     checkedInContent: {
         flexDirection: 'row',
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     checkedInText: {
-        color: '#000',
+        color: '#22c55e',
         fontSize: 16,
         fontWeight: '600',
     },
