@@ -209,8 +209,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   listaContainer: {
-    maxHeight: 400,
+    flexGrow: 1,
+    marginBottom: 16,
   },
+
   presencaItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 20,
   },
-    confirmarButtonDisabled: {
+  confirmarButtonDisabled: {
     opacity: 0.6,
     backgroundColor: '#666',
   },
