@@ -42,12 +42,12 @@ export default function AdminScreen() {
 
 
   // Use o hook para presenças administrativas
-  const { 
-    presencasParaConfirmar, 
-    stats, 
-    loading: presencasLoading, 
+  const {
+    presencasParaConfirmar,
+    stats,
+    loading: presencasLoading,
     confirmarPresenca,
-    buscarPresencasDoDia 
+    buscarPresencasDoDia
   } = usePresenca();
 
   // 🔄 VERIFICAR ACESSO
@@ -145,7 +145,7 @@ export default function AdminScreen() {
                   <Ionicons name="calendar" size={22} color="#B8860B" />
                   <Text style={styles.sectionTitle}>Presenças para Confirmar</Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.refreshButton,
                     presencasLoading && styles.refreshButtonDisabled
@@ -153,18 +153,18 @@ export default function AdminScreen() {
                   onPress={() => buscarPresencasDoDia()}
                   disabled={presencasLoading}
                 >
-                  <Ionicons 
-                    name="refresh" 
-                    size={20} 
+                  <Ionicons
+                    name="refresh"
+                    size={20}
                     color="#B8860B"
                   />
                 </TouchableOpacity>
               </View>
-              
+
               <PresencasParaConfirmar
                 presencas={presencasParaConfirmar}
                 stats={stats}
-                onConfirmarPresenca={confirmarPresenca}
+                onConfirmarPresenca={confirmarPresenca} 
                 loading={presencasLoading}
               />
             </View>
@@ -261,7 +261,7 @@ export default function AdminScreen() {
 
   return (
     <View style={styles.container}>
-      
+
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -274,17 +274,17 @@ export default function AdminScreen() {
 
         {/* ABAS DE NAVEGAÇÃO */}
         <View style={styles.tabsContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.tabButton,
               abaAtiva === 'presencas' && styles.tabButtonActive
             ]}
             onPress={() => setAbaAtiva('presencas')}
           >
-            <Ionicons 
-              name="calendar" 
-              size={20} 
-              color={abaAtiva === 'presencas' ? "#000" : "#B8860B"} 
+            <Ionicons
+              name="calendar"
+              size={20}
+              color={abaAtiva === 'presencas' ? "#000" : "#B8860B"}
             />
             <Text style={[
               styles.tabButtonText,
@@ -299,17 +299,17 @@ export default function AdminScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.tabButton,
               abaAtiva === 'gestao' && styles.tabButtonActive
             ]}
             onPress={() => setAbaAtiva('gestao')}
           >
-            <Ionicons 
-              name="people" 
-              size={20} 
-              color={abaAtiva === 'gestao' ? "#000" : "#B8860B"} 
+            <Ionicons
+              name="people"
+              size={20}
+              color={abaAtiva === 'gestao' ? "#000" : "#B8860B"}
             />
             <Text style={[
               styles.tabButtonText,
@@ -335,7 +335,7 @@ export default function AdminScreen() {
         showsVerticalScrollIndicator={false}
       >
         {renderConteudoAba()}
-        
+
         {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
       </ScrollView>
@@ -344,15 +344,15 @@ export default function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: "#000",
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: { 
+  header: {
     backgroundColor: '#000',
     paddingTop: 60,
     paddingBottom: 16,
@@ -360,19 +360,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#333",
   },
-  headerContent: { 
+  headerContent: {
     alignItems: "center",
     gap: 12,
     marginBottom: 20,
   },
-  headerTitle: { 
-    fontSize: 28, 
-    fontWeight: "bold", 
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
     color: "#FFF",
     textAlign: 'center',
   },
-  headerSubtitle: { 
-    fontSize: 14, 
+  headerSubtitle: {
+    fontSize: 14,
     color: "#AAA",
     textAlign: 'center',
   },
@@ -469,15 +469,15 @@ const styles = StyleSheet.create({
   resultadosLeft: {
     flex: 1,
   },
-  resultadosTexto: { 
-    color: '#AAA', 
+  resultadosTexto: {
+    color: '#AAA',
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 4,
   },
-  buscaTexto: { 
-    color: '#B8860B', 
-    fontSize: 12, 
+  buscaTexto: {
+    color: '#B8860B',
+    fontSize: 12,
     fontWeight: '500',
   },
   recarregandoContainer: {
@@ -497,26 +497,26 @@ const styles = StyleSheet.create({
   usuariosContainer: {
     gap: 16,
   },
-  nenhumResultado: { 
-    alignItems: 'center', 
+  nenhumResultado: {
+    alignItems: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
-    backgroundColor: '#1a1a1a', 
+    backgroundColor: '#1a1a1a',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#333',
     borderStyle: 'dashed',
   },
   nenhumResultadoTitle: {
-    color: '#FFF', 
+    color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
     textAlign: 'center',
   },
-  nenhumResultadoText: { 
-    color: '#888', 
+  nenhumResultadoText: {
+    color: '#888',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,

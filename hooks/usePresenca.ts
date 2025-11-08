@@ -512,45 +512,92 @@ export const usePresenca = (userId?: string) => {
         return month.getFullYear() === currentYear;
     };
 
-    const confirmarPresenca = async (dateString: string): Promise<boolean> => {
-        const userDocRef = getUserDocRef();
-        if (!userDocRef || !currentUserId) {
-            console.error('Usuário não autenticado ou documento não encontrado');
-            return false;
-        }
+    // src/hooks/usePresenca.ts
 
+    // src/hooks/usePresenca.ts
+
+    const confirmarPresenca = async (presencaId: string): Promise<boolean> => {
         try {
+            console.log(`🎯 Confirmando presença com ID: ${presencaId}`);
+
+            // Extrair informações do ID - CORREÇÃO CRÍTICA
+            const partes = presencaId.split('-');
+            console.log('🔍 Partes do ID:', partes);
+
+            // Verificar se é usuário ou filho baseado no padrão do ID
+            const tipo = partes[0]; // 'usuario' ou 'filho'
+
+            let usuarioId: string;
+            let filhoId: string | null = null;
+            let data: string;
+
+            if (tipo === 'filho') {
+                // Formato: filho-usuarioId-filhoId-data
+                if (partes.length < 4) {
+                    console.error('❌ ID de filho mal formatado:', presencaId);
+                    return false;
+                }
+                usuarioId = partes[1];
+                filhoId = partes[2];
+                data = partes.slice(3).join('-'); // A data pode conter hífens
+            } else if (tipo === 'usuario') {
+                // Formato: usuario-usuarioId-data
+                if (partes.length < 3) {
+                    console.error('❌ ID de usuário mal formatado:', presencaId);
+                    return false;
+                }
+                usuarioId = partes[1];
+                data = partes.slice(2).join('-'); // A data pode conter hífens
+            } else {
+                console.error('❌ Tipo de presença desconhecido:', tipo);
+                return false;
+            }
+
+            console.log(`📋 Informações extraídas:`, { tipo, usuarioId, filhoId, data });
+
+            const userDocRef = doc(db, "usuarios", usuarioId);
             const userDoc = await getDoc(userDocRef);
+
             if (!userDoc.exists()) {
-                console.error('Documento do usuário não encontrado');
+                console.error('❌ Documento do usuário não encontrado:', usuarioId);
                 return false;
             }
 
             const userData = userDoc.data();
+            let atualizou = false;
 
-            if (isChild) {
+            if (tipo === 'filho' && filhoId) {
                 // Confirmar presença do filho
                 const filhos = userData.filhos || [];
-                const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
+                const filhoIndex = filhos.findIndex((f: any) => f.id === filhoId);
 
                 if (filhoIndex === -1) {
-                    console.error('Filho não encontrado');
+                    console.error('❌ Filho não encontrado:', filhoId);
                     return false;
                 }
 
                 const filhoAtual = filhos[filhoIndex];
-                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
+                const presencasAtuais: any[] = filhoAtual.Presenca || [];
 
-                // Atualizar a presença específica para confirmada
-                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => {
-                    if (presenca.date === dateString) {
+                console.log(`📊 Presenças atuais do filho:`, presencasAtuais);
+
+                // Atualizar a presença específica para confirmada - CORREÇÃO CRÍTICA
+                const novasPresencas = presencasAtuais.map((presenca: any) => {
+                    const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
+                    if (presencaDate === data) {
+                        console.log(`✅ Confirmando presença do filho na data: ${data}`);
+                        atualizou = true;
+                        // Retornar como objeto com date e confirmada
                         return {
-                            ...presenca,
+                            date: data,
                             confirmada: true
                         };
                     }
+                    // Manter o formato original
                     return presenca;
                 });
+
+                console.log(`🔄 Novas presenças do filho:`, novasPresencas);
 
                 const novosFilhos = [...filhos];
                 novosFilhos[filhoIndex] = {
@@ -559,26 +606,46 @@ export const usePresenca = (userId?: string) => {
                 };
 
                 await updateDoc(userDocRef, { filhos: novosFilhos });
-                console.log(`✅ Presença confirmada para o filho na data: ${dateString}`);
+                console.log(`✅ Presença confirmada para o filho ${filhoAtual.nome} na data: ${data}`);
 
-            } else {
+            } else if (tipo === 'usuario') {
                 // Confirmar presença do usuário principal
-                const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
+                const presencasAtuais: any[] = userData.Presenca || [];
 
-                // Atualizar a presença específica para confirmada
-                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => {
-                    if (presenca.date === dateString) {
+                console.log(`📊 Presenças atuais do usuário:`, presencasAtuais);
+
+                // Atualizar a presença específica para confirmada - CORREÇÃO CRÍTICA
+                const novasPresencas = presencasAtuais.map((presenca: any) => {
+                    const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
+                    if (presencaDate === data) {
+                        console.log(`✅ Confirmando presença do usuário na data: ${data}`);
+                        atualizou = true;
+                        // Retornar como objeto com date e confirmada
                         return {
-                            ...presenca,
+                            date: data,
                             confirmada: true
                         };
                     }
+                    // Manter o formato original
                     return presenca;
                 });
 
+                console.log(`🔄 Novas presenças do usuário:`, novasPresencas);
+
                 await updateDoc(userDocRef, { Presenca: novasPresencas });
-                console.log(`✅ Presença confirmada para o usuário principal na data: ${dateString}`);
+                console.log(`✅ Presença confirmada para o usuário ${userData.nome} na data: ${data}`);
             }
+
+            if (!atualizou) {
+                console.error('❌ Presença não encontrada para confirmação');
+                return false;
+            }
+
+            // 🔥 ATUALIZAR A LISTA LOCAL APÓS CONFIRMAR
+            console.log('🔄 Recarregando lista de presenças...');
+            setTimeout(() => {
+                buscarPresencasDoDia(data); // Usar a mesma data da presença confirmada
+            }, 1000);
 
             return true;
         } catch (error) {
@@ -754,7 +821,7 @@ export const usePresenca = (userId?: string) => {
         confirmarPresenca,
         confirmarTodasPresencas,
         buscarPresencasDoDia,
-        recarregarPresencas, 
+        recarregarPresencas,
         presencasParaConfirmar,
         stats,
     };

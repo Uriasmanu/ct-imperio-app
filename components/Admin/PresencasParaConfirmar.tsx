@@ -1,14 +1,15 @@
 // components/Admin/PresencasParaConfirmar.tsx
 import { PresencaParaConfirmar, PresencaStats } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface PresencasParaConfirmarProps {
@@ -24,16 +25,29 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   onConfirmarPresenca,
   loading = false
 }) => {
-  const handleConfirmar = (presenca: PresencaParaConfirmar) => {
+
+  const [confirmando, setConfirmando] = useState<string | null>(null);
+
+  const handleConfirmar = async (presenca: PresencaParaConfirmar) => {
     Alert.alert(
       'Confirmar Presença',
       `Deseja confirmar a presença de ${presenca.tipo === 'filho' ? presenca.filhoNome : presenca.usuarioNome}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Confirmar', 
+        {
+          text: 'Confirmar',
           style: 'default',
-          onPress: () => onConfirmarPresenca(presenca.id)
+          onPress: async () => {
+            setConfirmando(presenca.id);
+            try {
+              await onConfirmarPresenca(presenca.id);
+              // O feedback visual será dado pela atualização da lista
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível confirmar a presença');
+            } finally {
+              setConfirmando(null);
+            }
+          }
         }
       ]
     );
@@ -61,13 +75,13 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
           <Text style={styles.statNumber}>{stats.pendentesHoje}</Text>
           <Text style={styles.statLabel}>Pendentes</Text>
         </View>
-        
+
         <View style={styles.statItem}>
           <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
           <Text style={styles.statNumber}>{stats.confirmadasHoje}</Text>
           <Text style={styles.statLabel}>Confirmadas</Text>
         </View>
-        
+
         <View style={styles.statItem}>
           <Ionicons name="list" size={20} color="#B8860B" />
           <Text style={styles.statNumber}>{stats.totalParaConfirmar}</Text>
@@ -87,8 +101,8 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
           </View>
         ) : (
           presencas.map((presenca) => (
-            <View 
-              key={presenca.id} 
+            <View
+              key={presenca.id}
               style={[
                 styles.presencaItem,
                 presenca.confirmada && styles.presencaConfirmada
@@ -103,22 +117,22 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                     <Text style={styles.filhoLabel}>(Filho de {presenca.usuarioNome})</Text>
                   )}
                 </View>
-                
+
                 <Text style={styles.presencaData}>
                   {formatarData(presenca.data)}
                 </Text>
-                
+
                 <View style={styles.modalidadesContainer}>
                   {presenca.modalidades.map((modalidade, index) => (
-                    <View 
+                    <View
                       key={index}
                       style={[
                         styles.modalidadeBadge,
                         {
                           backgroundColor:
                             modalidade === "Muay Thai" ? "#dc2626" :
-                            modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                            modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                              modalidade === "Jiu-Jitsu" ? "#1e40af" :
+                                modalidade === "Boxe" ? "#059669" : "#7c3aed",
                         },
                       ]}
                     >
@@ -137,12 +151,24 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                     <Text style={styles.confirmadaText}>Confirmada</Text>
                   </View>
                 ) : (
-                  <TouchableOpacity 
-                    style={styles.confirmarButton}
+                  <TouchableOpacity
+                    style={[
+                      styles.confirmarButton,
+                      confirmando === presenca.id && styles.confirmarButtonDisabled
+                    ]}
                     onPress={() => handleConfirmar(presenca)}
+                    disabled={confirmando === presenca.id || presenca.confirmada}
                   >
-                    <Ionicons name="checkmark" size={18} color="#000" />
-                    <Text style={styles.confirmarButtonText}>Confirmar</Text>
+                    {confirmando === presenca.id ? (
+                      <ActivityIndicator size="small" color="#000" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark" size={18} color="#000" />
+                        <Text style={styles.confirmarButtonText}>
+                          {presenca.confirmada ? 'Confirmada' : 'Confirmar'}
+                        </Text>
+                      </>
+                    )}
                   </TouchableOpacity>
                 )}
               </View>
@@ -288,5 +314,9 @@ const styles = StyleSheet.create({
     color: '#B8860B',
     textAlign: 'center',
     padding: 20,
+  },
+    confirmarButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#666',
   },
 });
