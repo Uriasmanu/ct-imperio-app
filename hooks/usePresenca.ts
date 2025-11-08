@@ -270,20 +270,11 @@ export const usePresenca = (userId?: string) => {
                 }
 
                 const filhoAtual = filhos[filhoIndex];
-                const presencasAtuais: any[] = filhoAtual.Presenca || []; // ✅ Use any[] em vez de PresencaRecord[]
+                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
 
-                // ✅ Verificação correta para presença hoje
-                const jaTemPresencaHoje = presencasAtuais.some((presenca: any) => {
-                    // Se for string (formato antigo)
-                    if (typeof presenca === 'string') {
-                        return presenca === todayString;
-                    }
-                    // Se for objeto (formato novo)
-                    if (typeof presenca === 'object' && presenca !== null) {
-                        return presenca.date === todayString;
-                    }
-                    return false;
-                });
+                const jaTemPresencaHoje = presencasAtuais.some(
+                    (r: any) => r.date === todayString
+                );
 
                 if (jaTemPresencaHoje) {
                     console.log('❌ O filho já marcou presença hoje.');
@@ -291,17 +282,16 @@ export const usePresenca = (userId?: string) => {
                     return false;
                 }
 
-                // ✅ Adicionar nova presença mantendo o formato consistente
-                const novasPresencas = [...presencasAtuais, { date: todayString, confirmada: false }];
-
-                const novosFilhos = [...filhos];
-                novosFilhos[filhoIndex] = {
-                    ...filhoAtual,
-                    Presenca: novasPresencas
+                const newRecord: PresencaRecord = {
+                    date: todayString,
+                    confirmada: false
                 };
 
-                await updateDoc(userDocRef, { filhos: novosFilhos });
+                const novasPresencas = [...presencasAtuais, newRecord];
+                const novosFilhos = [...filhos];
+                novosFilhos[filhoIndex] = { ...filhoAtual, Presenca: novasPresencas };
 
+                await updateDoc(userDocRef, { filhos: novosFilhos });
             } else {
                 const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
 
@@ -493,6 +483,6 @@ export const usePresenca = (userId?: string) => {
         isMonthWithinLimit,
         isFirstJanuary: isFirstJanuary(),
         calcularPorcentagemPresenca,
-        getSemestreInfo
+        getSemestreInfo 
     };
 };
