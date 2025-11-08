@@ -88,18 +88,16 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     >
                         {isPresencaCheckedInToday ? (
                             <View style={styles.checkedInContent}>
-                                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-                                <Text style={styles.checkedInText}>Presença Registrada Hoje</Text>
+                                <Text style={styles.checkedInText}>AGUARDANDO CONFIRMAÇÃO</Text>
                             </View>
                         ) : (
-                            <Text style={styles.checkInText}>FAZER CHECKING</Text>
+                            <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
                         )}
                     </TouchableOpacity>
 
-                    {/* Botão Ver Calendário - CORRIGIDO: adicionado onPress */}
                     <TouchableOpacity 
                         style={styles.calendarButton}
-                        onPress={() => setShowCalendar(true)} // ← ESTA LINHA ESTAVA FALTANDO
+                        onPress={() => setShowCalendar(true)} 
                     >
                         <Text style={styles.calendarButtonText}>VER CALENDÁRIO</Text>
                     </TouchableOpacity>
@@ -165,12 +163,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     availableButton: {
-        backgroundColor: '#B8860B',
+        backgroundColor: '#078944ff',
     },
     checkedInButton: {
-        backgroundColor: '#1e3a28',
+        backgroundColor: '#B8860B',
         borderWidth: 1,
-        borderColor: '#22c55e',
+        borderColor: '#B8860B',
     },
     checkedInContent: {
         flexDirection: 'row',
@@ -183,7 +181,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     checkedInText: {
-        color: '#22c55e',
+        color: '#000',
         fontSize: 16,
         fontWeight: '600',
     },
