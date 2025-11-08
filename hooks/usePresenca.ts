@@ -214,6 +214,10 @@ export const usePresenca = (userId?: string) => {
         record => record.date === todayString
     );
 
+    const isPresencaConfirmadaToday = presencaRecords.some(
+        record => record.date === todayString && record.confirmada === true
+    );
+
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
         const userDocRef = getUserDocRef();
@@ -367,6 +371,7 @@ export const usePresenca = (userId?: string) => {
         loading,
         checkIn,
         isPresencaCheckedInToday,
+        isPresencaConfirmadaToday,
         lastCheckInDate,
         todayString,
         currentYear,

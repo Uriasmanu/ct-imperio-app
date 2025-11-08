@@ -25,6 +25,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         loading,
         checkIn,
         isPresencaCheckedInToday,
+        isPresencaConfirmadaToday,
         lastCheckInDate
     } = usePresenca(userId);
 
@@ -81,23 +82,32 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkInButton,
-                            isPresencaCheckedInToday ? styles.checkedInButton : styles.availableButton
+                            isPresencaCheckedInToday
+                                ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
+                                : styles.availableButton
                         ]}
                         onPress={handleCheckIn}
                         disabled={isPresencaCheckedInToday}
                     >
                         {isPresencaCheckedInToday ? (
-                            <View style={styles.checkedInContent}>
-                                <Text style={styles.checkedInText}>AGUARDANDO CONFIRMAÇÃO</Text>
-                            </View>
+                            isPresencaConfirmadaToday ? (
+                                <View style={styles.checkedInContent}>
+                                    <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                                    <Text style={styles.checkedInText}>Presença Confirmada Hoje</Text>
+                                </View>
+                            ) : (
+                                <View style={styles.checkedInContent}>
+                                    <Text style={styles.checkedInText}>AGUARDANDO CONFIRMAÇÃO</Text>
+                                </View>
+                            )
                         ) : (
                             <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.calendarButton}
-                        onPress={() => setShowCalendar(true)} 
+                        onPress={() => setShowCalendar(true)}
                     >
                         <Text style={styles.calendarButtonText}>VER CALENDÁRIO</Text>
                     </TouchableOpacity>
@@ -163,12 +173,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     availableButton: {
-        backgroundColor: '#078944ff',
+        backgroundColor: '#3B82F6',
     },
     checkedInButton: {
-        backgroundColor: '#B8860B',
-        borderWidth: 1,
-        borderColor: '#B8860B',
+        backgroundColor: '#F59E0B',
+    },
+    confirmedButton: {
+        backgroundColor: '#10B981',
     },
     checkedInContent: {
         flexDirection: 'row',
