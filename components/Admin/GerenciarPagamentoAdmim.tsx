@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { db } from "@/config/firebaseConfig";
@@ -29,6 +29,25 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
 
   const item = filho || usuario;
   const isFilho = !!filho;
+
+  // CORREÇÃO: Obter as propriedades de pagamento corretamente
+  const getPagamentoInfo = () => {
+    if (isFilho && filho) {
+      return {
+        pagamento: filho.pagamento,
+        avisoPagamento: filho.avisoPagamento,
+        dataUltimoPagamento: filho.dataUltimoPagamento
+      };
+    } else {
+      return {
+        pagamento: usuario.pagamento,
+        avisoPagamento: usuario.avisoPagamento,
+        dataUltimoPagamento: usuario.dataUltimoPagamento
+      };
+    }
+  };
+
+  const pagamentoInfo = getPagamentoInfo();
 
   const handleConfirmarPagamento = async () => {
     setProcessando(true);
@@ -120,18 +139,16 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
     return new Date(data).toLocaleDateString("pt-BR");
   };
 
-  const dataUltimoPagamento = 'dataUltimoPagamento' in item ? item.dataUltimoPagamento : undefined;
-
-  // Determinar o status atual
+  // CORREÇÃO: Usar as informações de pagamento corretas
   const getStatusInfo = () => {
-    if (item.pagamento) {
+    if (pagamentoInfo.pagamento) {
       return {
         texto: "Pago",
         cor: "#22c55e",
         icone: "checkmark-circle",
         descricao: "Pagamento confirmado pelo administrador"
       };
-    } else if (item.avisoPagamento) {
+    } else if (pagamentoInfo.avisoPagamento) {
       return {
         texto: "Aguardando Confirmação",
         cor: "#f59e0b",
@@ -217,11 +234,11 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
                 {statusInfo.descricao}
               </Text>
 
-              {dataUltimoPagamento && (
+              {pagamentoInfo.dataUltimoPagamento && (
                 <View style={styles.dataInfo}>
                   <Ionicons name="calendar" size={16} color="#666" />
                   <Text style={styles.pagamentoData}>
-                    Último pagamento: {formatarData(dataUltimoPagamento)}
+                    Último pagamento: {formatarData(pagamentoInfo.dataUltimoPagamento)}
                   </Text>
                 </View>
               )}
@@ -236,7 +253,8 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
                 <Text style={styles.cancelButtonText}>Fechar</Text>
               </TouchableOpacity>
 
-              {item.avisoPagamento && !item.pagamento && (
+              {/* CORREÇÃO: Usar pagamentoInfo em vez de item */}
+              {pagamentoInfo.avisoPagamento && !pagamentoInfo.pagamento && (
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={handleConfirmarPagamento}
@@ -253,7 +271,8 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
                 </TouchableOpacity>
               )}
 
-              {item.pagamento && (
+              {/* CORREÇÃO: Usar pagamentoInfo em vez de item */}
+              {pagamentoInfo.pagamento && (
                 <TouchableOpacity
                   style={[styles.modalButton, styles.warningButton]}
                   onPress={handleReverterPagamento}
@@ -276,6 +295,7 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
     </>
   );
 };
+
 
 const styles = {
   statusButton: {
