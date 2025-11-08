@@ -145,7 +145,6 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Modalidades *</Text>
               <MultiModalidadeSelector
                 modalidades={modalidades}
                 onModalidadesChange={setModalidades}

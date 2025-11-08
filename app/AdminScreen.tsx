@@ -20,7 +20,6 @@ import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirma
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { useAdminPresenca } from '@/hooks/useAdminPresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as abas
