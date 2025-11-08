@@ -24,7 +24,7 @@ export const useAdminPresenca = () => {
                 presencasUsuario.forEach((presenca: any) => {
                     if (presenca.date === data) {
                         todasPresencas.push({
-                            id: `usuario|${doc.id}|${presenca.date}`,
+                            id: `usuario-${doc.id}-${presenca.date}`, 
                             usuarioId: doc.id,
                             usuarioNome: usuarioData.nome,
                             data: presenca.date,
@@ -43,7 +43,7 @@ export const useAdminPresenca = () => {
                     presencasFilho.forEach((presenca: any) => {
                         if (presenca.date === data) {
                             todasPresencas.push({
-                                id: `filho|${filho.id}|${presenca.date}`,
+                                id: `filho-${filho.id}-${presenca.date}`,
                                 usuarioId: doc.id,
                                 usuarioNome: usuarioData.nome,
                                 filhoId: filho.id,
@@ -73,7 +73,7 @@ export const useAdminPresenca = () => {
     // Confirmar presença
     const confirmarPresenca = async (presencaId: string) => {
         try {
-            const [tipo, userId, data] = presencaId.split('|');
+            const [tipo, userId, data] = presencaId.split('-'); 
 
             const userDocRef = doc(db, "usuarios", userId);
 
