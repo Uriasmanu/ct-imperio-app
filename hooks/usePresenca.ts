@@ -644,7 +644,7 @@ export const usePresenca = (userId?: string) => {
             // 🔥 ATUALIZAR A LISTA LOCAL APÓS CONFIRMAR
             console.log('🔄 Recarregando lista de presenças...');
             setTimeout(() => {
-                buscarPresencasDoDia(data); // Usar a mesma data da presença confirmada
+                buscarPresencasDoDia(); // Usar a mesma data da presença confirmada
             }, 1000);
 
             return true;
@@ -725,7 +725,7 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
-    const buscarPresencasDoDia = async (data: string = new Date().toISOString().split('T')[0]) => {
+    const buscarPresencasDoDia = async () => {
         try {
             setLoading(true);
             const querySnapshot = await getDocs(collection(db, "usuarios"));
@@ -734,28 +734,34 @@ export const usePresenca = (userId?: string) => {
             querySnapshot.forEach((doc) => {
                 const usuarioData = doc.data();
 
-                // Presenças do usuário
+                // 🔥 Presenças do usuário
                 const presencasUsuario = usuarioData.Presenca || [];
                 presencasUsuario.forEach((presenca: any) => {
-                    if (presenca.date === data) {
+                    const confirmada = presenca.confirmada || false;
+
+                    // Mostrar todas as NÃO confirmadas (qualquer data)
+                    // e apenas as confirmadas de HOJE
+                    if (!confirmada || presenca.date === todayString) {
                         todasPresencas.push({
                             id: `usuario-${doc.id}-${presenca.date}`,
                             usuarioId: doc.id,
                             usuarioNome: usuarioData.nome,
                             data: presenca.date,
                             modalidades: usuarioData.modalidades?.map((m: any) => m.modalidade) || [],
-                            confirmada: presenca.confirmada || false,
+                            confirmada,
                             tipo: 'usuario'
                         });
                     }
                 });
 
-                // Presenças dos filhos
+                // 🔥 Presenças dos filhos
                 const filhos = usuarioData.filhos || [];
                 filhos.forEach((filho: any) => {
                     const presencasFilho = filho.Presenca || [];
                     presencasFilho.forEach((presenca: any) => {
-                        if (presenca.date === data) {
+                        const confirmada = presenca.confirmada || false;
+
+                        if (!confirmada || presenca.date === todayString) {
                             todasPresencas.push({
                                 id: `filho-${doc.id}-${filho.id}-${presenca.date}`,
                                 usuarioId: doc.id,
@@ -764,7 +770,7 @@ export const usePresenca = (userId?: string) => {
                                 filhoNome: filho.nome,
                                 data: presenca.date,
                                 modalidades: filho.modalidades?.map((m: any) => m.modalidade) || [],
-                                confirmada: presenca.confirmada || false,
+                                confirmada,
                                 tipo: 'filho'
                             });
                         }
@@ -772,9 +778,9 @@ export const usePresenca = (userId?: string) => {
                 });
             });
 
-            // 🔥 CORREÇÃO CRÍTICA: Atualizar o estado com os dados buscados
+            // 🔥 Atualiza o estado
             setPresencasParaConfirmar(todasPresencas);
-            console.log(`✅ Carregadas ${todasPresencas.length} presenças para confirmar`);
+            console.log(`✅ Carregadas ${todasPresencas.length} presenças (todas as não confirmadas + confirmadas de hoje)`);
 
         } catch (error) {
             console.error('Erro ao buscar presenças:', error);
@@ -784,10 +790,11 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
+
     // Adicionar este useEffect no hook usePresenca
     useEffect(() => {
         // Carregar presenças do dia atual quando o hook for montado
-        buscarPresencasDoDia(todayString);
+        buscarPresencasDoDia();
     }, [todayString]); // Recarregar quando a data mudar
 
     const stats: PresencaStats = {
@@ -798,7 +805,7 @@ export const usePresenca = (userId?: string) => {
 
     // Adicionar esta função no retorno do hook
     const recarregarPresencas = () => {
-        buscarPresencasDoDia(todayString);
+        buscarPresencasDoDia();
     };
 
 
