@@ -26,13 +26,26 @@ export const usePresenca = (userId?: string) => {
     const todayString = formatDate(today);
     const currentYear = today.getFullYear();
 
+    // 🔥 FUNÇÃO CRÍTICA: Verificar se é um novo dia
     const isNewDay = (): boolean => {
-        // Busca a última presença registrada
         if (presencaRecords.length === 0) return true;
 
-        const lastRecord = presencaRecords[presencaRecords.length - 1];
-        return lastRecord.date !== todayString;
+        // Encontrar o último registro de presença (mais recente)
+        const lastRecord = presencaRecords.reduce((latest, current) => {
+            const latestDate = new Date(latest.date + 'T00:00:00');
+            const currentDate = new Date(current.date + 'T00:00:00');
+            return currentDate > latestDate ? current : latest;
+        }, presencaRecords[0]);
+
+        // Comparar se a última presença é de HOJE
+        const lastPresencaDate = new Date(lastRecord.date + 'T00:00:00');
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+
+        // Se a última presença não é de hoje, é um novo dia
+        return lastPresencaDate < todayMidnight;
     };
+
 
 
     // Verificar se é 1º de janeiro
@@ -221,11 +234,12 @@ export const usePresenca = (userId?: string) => {
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
-    ) && !isNewDay();
+    );
 
+    // Verificar se a presença de hoje está confirmada
     const isPresencaConfirmadaToday = presencaRecords.some(
         record => record.date === todayString && record.confirmada === true
-    ) && !isNewDay();
+    );
 
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
@@ -483,6 +497,6 @@ export const usePresenca = (userId?: string) => {
         isMonthWithinLimit,
         isFirstJanuary: isFirstJanuary(),
         calcularPorcentagemPresenca,
-        getSemestreInfo 
+        getSemestreInfo
     };
 };

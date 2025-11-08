@@ -85,8 +85,9 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
 
 
     const handleCheckIn = async () => {
-        if (isPresencaCheckedInToday && !isNewDay()) {
-            Alert.alert('Aviso', 'Presença já registrada para hoje');
+        // 🔥 VERIFICAÇÃO PRINCIPAL: Só permite marcar se for um novo dia OU se nunca marcou
+        if (!isNewDay() && isPresencaCheckedInToday) {
+            Alert.alert('Aviso', 'Você já marcou presença para hoje. Tente novamente amanhã.');
             return;
         }
 
@@ -101,6 +102,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
             Alert.alert('Erro', 'Ocorreu um erro ao registrar a presença');
         }
     };
+
 
     if (loading) {
         return (
@@ -181,8 +183,10 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkInButton,
-                            isNewDay() ? styles.availableButton :
-                                isPresencaCheckedInToday
+                            // 🔥 LÓGICA DO BOTÃO:
+                            isNewDay()
+                                ? styles.availableButton // Novo dia: pode marcar
+                                : isPresencaCheckedInToday
                                     ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
                                     : styles.availableButton
                         ]}
@@ -190,11 +194,13 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                         disabled={!isNewDay() && isPresencaCheckedInToday}
                     >
                         {isNewDay() ? (
+                            // 🔥 NOVO DIA: Mostra "MARCAR PRESENÇA"
                             <View style={styles.buttonContent}>
                                 <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
                                 <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
                             </View>
                         ) : isPresencaCheckedInToday ? (
+                            // JÁ MARCOU HOJE: Mostra estado atual
                             isPresencaConfirmadaToday ? (
                                 <View style={styles.buttonContent}>
                                     <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
@@ -207,12 +213,14 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                                 </View>
                             )
                         ) : (
+                            // CASO DE FALHA (não deveria acontecer)
                             <View style={styles.buttonContent}>
                                 <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
                                 <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>
                             </View>
                         )}
                     </TouchableOpacity>
+
 
                     <TouchableOpacity
                         style={styles.calendarButton}
