@@ -11,7 +11,6 @@ export interface ModalidadeAluno {
 
 export interface PresencaRecord {
   date: string; 
-  timestamp: Date;
   confirmada: boolean;
 }
 

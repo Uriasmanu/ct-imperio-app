@@ -321,7 +321,6 @@ export const useAuth = () => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const online = !!(state.isConnected && state.isInternetReachable);
       setEstaOnline(online);
-      console.log(online ? '🌐 Online' : '📱 Offline');
     });
     return () => unsubscribe();
   }, []);
