@@ -20,6 +20,7 @@ import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirma
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as abas
@@ -39,6 +40,7 @@ export default function AdminScreen() {
   });
   const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
 
+
   // Use o hook para presenças administrativas
   const { 
     presencasParaConfirmar, 
@@ -46,7 +48,7 @@ export default function AdminScreen() {
     loading: presencasLoading, 
     confirmarPresenca,
     buscarPresencasDoDia 
-  } = useAdminPresenca();
+  } = usePresenca();
 
   // 🔄 VERIFICAR ACESSO
   useEffect(() => {
