@@ -255,5 +255,5 @@ const styles = StyleSheet.create({
   filhoItemContent: { flex: 1 },
   filhoNome: { color: "#FFF", fontWeight: "600", fontSize: 13 },
   filhoModalidade: { color: "#AAA", fontSize: 11, marginTop: 2 },
-  filhoPagamentoData: { color: "#AAA", fontSize: 11, fontStyle: "italic" },
+  filhoPagamentoData: { color: "#AAA", fontSize: 11, fontStyle: "italic", marginBottom: 15 },
 });
