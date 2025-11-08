@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { AcessoNegado } from "@/components/Admin/AcessoNegado";
+import { AvisosManager } from "@/components/Admin/AvisosManager"; // ✅ ADD IMPORT
 import { Estatisticas } from "@/components/Admin/Estatisticas";
 import { Filtros } from "@/components/Admin/Filtros";
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
@@ -24,7 +25,7 @@ import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as abas
-type AdminTab = 'presencas' | 'gestao';
+type AdminTab = 'presencas' | 'gestao' | 'avisos';
 
 // 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
@@ -39,7 +40,6 @@ export default function AdminScreen() {
     modalidade: "todas"
   });
   const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
-
 
   // Use o hook para presenças administrativas
   const {
@@ -247,6 +247,13 @@ export default function AdminScreen() {
           </View>
         );
 
+      case 'avisos': // ✅ ADD CASE PARA AVISOS
+        return (
+          <View style={styles.abaContent}>
+            <AvisosManager isVisible={abaAtiva === 'avisos'} />
+          </View>
+        );
+
       default:
         return null;
     }
@@ -320,7 +327,27 @@ export default function AdminScreen() {
               Gestão
             </Text>
           </TouchableOpacity>
-        </View>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              abaAtiva === 'avisos' && styles.tabButtonActive
+            ]}
+            onPress={() => setAbaAtiva('avisos')}
+          >
+            <Ionicons
+              name="megaphone"
+              size={20}
+              color={abaAtiva === 'avisos' ? "#000" : "#B8860B"}
+            />
+            <Text style={[
+              styles.tabButtonText,
+              abaAtiva === 'avisos' && styles.tabButtonTextActive
+            ]}>
+              Avisos
+            </Text>
+          </TouchableOpacity>
+        </View> 
       </View>
 
       {/* CONTEÚDO PRINCIPAL */}

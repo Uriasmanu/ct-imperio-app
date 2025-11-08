@@ -1,3 +1,4 @@
+// Tela de avisos do usuário - arquivo separado
 import { Notice } from '@/types/Notice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -13,26 +14,27 @@ import {
 } from 'react-native';
 import { listenToNotices } from '../services/noticesService';
 
-// Cores
-const COLORS = {
-  arenaBlack: '#1a1a1a',
+// Sistema de cores otimizado
+const COLOR_SYSTEM = {
+  backgrounds: {
+    yellow: '#FFD700',
+    gray: '#4B5563',
+    red: '#DC2626',
+    green: '#059669',
+  },
+  texts: {
+    onYellow: '#000000',
+    onDark: '#FFFFFF',
+  },
+  accents: {
+    yellowBadge: '#000000',
+    darkBadge: '#FFD700',
+  },
+  // Adicionei as cores originais para compatibilidade
   fightYellow: '#FFD700',
-  punchRed: '#E30000',
-  gray700: '#374151',
-  gray800: '#1f2937',
+  arenaBlack: '#1a1a1a',
   gray400: '#9ca3af',
   gray300: '#d1d5db',
-};
-
-// Função de cor
-const getColorStyle = (color: Notice['color']) => {
-  switch (color) {
-    case 'bg-fight-yellow': return { backgroundColor: COLORS.fightYellow, textColor: COLORS.arenaBlack };
-    case 'bg-gray-700': return { backgroundColor: COLORS.gray700, textColor: 'white' };
-    case 'bg-punch-red': return { backgroundColor: COLORS.punchRed, textColor: 'white' };
-    case 'bg-green-500': return { backgroundColor: '#10B981', textColor: 'white' };
-    default: return { backgroundColor: COLORS.gray800, textColor: 'white' };
-  }
 };
 
 // Componente para quando não há avisos
@@ -42,7 +44,7 @@ const EmptyNotices = () => {
       <MaterialCommunityIcons 
         name="clipboard-text-outline" 
         size={64} 
-        color={COLORS.gray400} 
+        color={COLOR_SYSTEM.gray400} 
       />
       <Text style={styles.emptyTitle}>Nenhum aviso no momento</Text>
       <Text style={styles.emptySubtitle}>
@@ -52,38 +54,92 @@ const EmptyNotices = () => {
   );
 };
 
+// Função de cor otimizada
+const getColorStyle = (color: Notice['color']) => {
+  switch (color) {
+    case 'bg-fight-yellow':
+      return {
+        backgroundColor: COLOR_SYSTEM.backgrounds.yellow,
+        textColor: COLOR_SYSTEM.texts.onYellow,
+        badgeColor: COLOR_SYSTEM.accents.yellowBadge,
+        badgeTextColor: COLOR_SYSTEM.backgrounds.yellow,
+        detailColor: '#6B7280',
+      };
+    case 'bg-gray-700':
+      return {
+        backgroundColor: COLOR_SYSTEM.backgrounds.gray,
+        textColor: COLOR_SYSTEM.texts.onDark,
+        badgeColor: COLOR_SYSTEM.accents.darkBadge,
+        badgeTextColor: COLOR_SYSTEM.backgrounds.gray,
+        detailColor: '#D1D5DB',
+      };
+    case 'bg-punch-red':
+      return {
+        backgroundColor: COLOR_SYSTEM.backgrounds.red,
+        textColor: COLOR_SYSTEM.texts.onDark,
+        badgeColor: COLOR_SYSTEM.accents.darkBadge,
+        badgeTextColor: COLOR_SYSTEM.backgrounds.red,
+        detailColor: '#FECACA',
+      };
+    case 'bg-green-500':
+      return {
+        backgroundColor: COLOR_SYSTEM.backgrounds.green,
+        textColor: COLOR_SYSTEM.texts.onDark,
+        badgeColor: COLOR_SYSTEM.accents.darkBadge,
+        badgeTextColor: COLOR_SYSTEM.backgrounds.green,
+        detailColor: '#A7F3D0',
+      };
+    default:
+      return {
+        backgroundColor: COLOR_SYSTEM.backgrounds.gray,
+        textColor: COLOR_SYSTEM.texts.onDark,
+        badgeColor: COLOR_SYSTEM.accents.darkBadge,
+        badgeTextColor: COLOR_SYSTEM.backgrounds.gray,
+        detailColor: '#D1D5DB',
+      };
+  }
+};
+
 // Card de aviso
 const NoticeCard: React.FC<{ notice: Notice; onPress: (id: string) => void }> = ({ notice, onPress }) => {
-  const { backgroundColor } = getColorStyle(notice.color);
-  const detailColor = notice.color === 'bg-fight-yellow' ? '#6B7280' : COLORS.gray400;
-  const titleColor = notice.color === 'bg-fight-yellow' ? COLORS.arenaBlack : COLORS.fightYellow;
-  const categoryBgColor = notice.color === 'bg-fight-yellow' ? COLORS.arenaBlack : COLORS.fightYellow;
-  const categoryTextColor = notice.color === 'bg-fight-yellow' ? COLORS.fightYellow : COLORS.arenaBlack;
-  const descColor = notice.color === 'bg-fight-yellow' ? '#6B7280' : COLORS.gray300;
-
+  const colors = getColorStyle(notice.color);
+  
   return (
     <TouchableOpacity
-      style={[styles.noticeCard, { backgroundColor }]}
+      style={[styles.noticeCard, { backgroundColor: colors.backgroundColor }]}
       onPress={() => onPress(notice.id)}
       activeOpacity={0.7}
     >
       <View style={styles.cardHeader}>
-        <Text style={[styles.categoryBadge, { backgroundColor: categoryBgColor, color: categoryTextColor }]}>{notice.category}</Text>
-        <Text style={{ fontSize: 13, color: detailColor, fontWeight: '600' }}>{notice.date}</Text>
+        <View style={[styles.categoryBadge, { backgroundColor: colors.badgeColor }]}>
+          <Text style={[styles.categoryText, { color: colors.badgeTextColor }]}>
+            {notice.category}
+          </Text>
+        </View>
+        <Text style={[styles.cardDate, { color: colors.detailColor }]}>{notice.date}</Text>
       </View>
 
-      <Text style={[styles.cardTitle, { color: titleColor }]}>{notice.title}</Text>
+      <Text style={[styles.cardTitle, { color: colors.textColor }]}>{notice.title}</Text>
 
-      <View style={styles.cardTime}>
-        <Text style={{ fontSize: 13, color: detailColor, fontWeight: '500', marginLeft: 6 }}>{notice.time}</Text>
-      </View>
+      {notice.time && (
+        <View style={styles.cardTime}>
+          <MaterialCommunityIcons 
+            name="clock-outline" 
+            size={14} 
+            color={colors.detailColor} 
+          />
+          <Text style={[styles.cardTimeText, { color: colors.detailColor }]}>
+            {notice.time}
+          </Text>
+        </View>
+      )}
 
-      <Text style={[styles.cardDescription, { color: descColor }]} numberOfLines={3}>
+      <Text style={[styles.cardDescription, { color: colors.textColor }]} numberOfLines={3}>
         {notice.description}
       </Text>
 
       <View style={{ marginTop: 10 }}>
-        <Text style={{ fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', color: titleColor }}>
+        <Text style={[styles.readMore, { color: colors.textColor }]}>
           Ver Detalhes →
         </Text>
       </View>
@@ -92,7 +148,7 @@ const NoticeCard: React.FC<{ notice: Notice; onPress: (id: string) => void }> = 
 };
 
 // Tela principal
-export default function avisosScreen() {
+export default function AvisosScreen() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -125,7 +181,7 @@ export default function avisosScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.fightYellow} />
+        <ActivityIndicator size="large" color={COLOR_SYSTEM.fightYellow} />
       </View>
     );
   }
@@ -143,37 +199,47 @@ export default function avisosScreen() {
         contentContainerStyle={[
           styles.noticesContainer, 
           notices.length === 0 && styles.emptyNoticesContainer,
-          { flexDirection: notices.length > 0 ? 'row' : 'column', flexWrap: notices.length > 0 ? 'wrap' : 'nowrap' }
         ]}
       >
         {notices.length === 0 ? (
           <EmptyNotices />
         ) : (
-          notices.map((notice) => (
-            <View
-              key={notice.id}
-              style={{
-                width: `${100 / numColumns}%`,
-                paddingHorizontal: 8,
-                paddingVertical: 8,
-                maxWidth: numColumns === 1 ? '100%' : 500,
-                alignSelf: 'center',
-              }}
-            >
-              <NoticeCard notice={notice} onPress={openModal} />
-            </View>
-          ))
+          <View style={[
+            styles.noticesGrid,
+            { 
+              flexDirection: numColumns === 1 ? 'column' : 'row', 
+              flexWrap: numColumns === 1 ? 'nowrap' : 'wrap' 
+            }
+          ]}>
+            {notices.map((notice) => (
+              <View
+                key={notice.id}
+                style={{
+                  width: `${100 / numColumns}%`,
+                  paddingHorizontal: 8,
+                  paddingVertical: 8,
+                  maxWidth: numColumns === 1 ? '100%' : 500,
+                }}
+              >
+                <NoticeCard notice={notice} onPress={openModal} />
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
 
       {/* Modal */}
       <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={closeModal}>
-        <TouchableOpacity style={styles.centeredView} activeOpacity={1} onPressOut={closeModal}>
+        <TouchableOpacity 
+          style={styles.centeredView} 
+          activeOpacity={1} 
+          onPressOut={closeModal}
+        >
           <View style={styles.modalView}>
             {selectedNotice && (
               <>
                 <Text style={styles.modalTitle}>{selectedNotice.title}</Text>
-                <Text style={{ color: COLORS.gray400 }}>{selectedNotice.description}</Text>
+                <Text style={styles.modalDescription}>{selectedNotice.description}</Text>
                 <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
                   <MaterialCommunityIcons name="close" size={24} color="white" />
                 </TouchableOpacity>
@@ -186,31 +252,128 @@ export default function avisosScreen() {
   );
 }
 
-// ⚙️ Styles (mantém os teus)
+// ⚙️ Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.arenaBlack },
-  header: { padding: 16, borderBottomWidth: 4, borderBottomColor: COLORS.fightYellow },
-  mainTitle: { fontSize: 36, fontWeight: '900', color: 'white', textAlign: 'center' },
-  yellowText: { color: COLORS.fightYellow },
-  subtitle: { color: COLORS.gray400, textAlign: 'center', marginTop: 4 },
-  noticesContainer: { paddingHorizontal: 8, paddingBottom: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: COLOR_SYSTEM.arenaBlack 
+  },
+  header: { 
+    padding: 16, 
+    borderBottomWidth: 4, 
+    borderBottomColor: COLOR_SYSTEM.fightYellow 
+  },
+  mainTitle: { 
+    fontSize: 36, 
+    fontWeight: '900', 
+    color: 'white', 
+    textAlign: 'center' 
+  },
+  yellowText: { 
+    color: COLOR_SYSTEM.fightYellow 
+  },
+  subtitle: { 
+    color: COLOR_SYSTEM.gray400, 
+    textAlign: 'center', 
+    marginTop: 4 
+  },
+  noticesContainer: { 
+    paddingHorizontal: 8, 
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  noticesGrid: {
+    width: '100%',
+  },
   emptyNoticesContainer: { 
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center',
     paddingVertical: 40,
   },
-  noticeCard: { padding: 24, borderRadius: 8 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  categoryBadge: { fontSize: 10, fontWeight: 'bold', padding: 4, borderRadius: 12 },
-  cardTitle: { fontSize: 20, fontWeight: '800', marginBottom: 8 },
-  cardTime: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  cardDescription: { fontSize: 14 },
-  centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalView: { backgroundColor: COLORS.arenaBlack, borderWidth: 2, borderColor: COLORS.fightYellow, borderRadius: 8, padding: 24, maxWidth: 500 },
-  modalTitle: { fontSize: 24, color: 'white', fontWeight: 'bold', marginBottom: 10 },
-  closeButton: { position: 'absolute', top: 10, right: 10 },
-  // Novos estilos para o estado vazio
+  noticeCard: { 
+    padding: 24, 
+    borderRadius: 8,
+    minHeight: 200,
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  categoryBadge: { 
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryText: { 
+    fontSize: 10, 
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  cardDate: { 
+    fontSize: 13, 
+    fontWeight: '600' 
+  },
+  cardTitle: { 
+    fontSize: 20, 
+    fontWeight: '800', 
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  cardTime: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 12,
+    gap: 4,
+  },
+  cardTimeText: { 
+    fontSize: 13, 
+    fontWeight: '500' 
+  },
+  cardDescription: { 
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  readMore: {
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    textTransform: 'uppercase',
+  },
+  centeredView: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(0,0,0,0.8)' 
+  },
+  modalView: { 
+    backgroundColor: COLOR_SYSTEM.arenaBlack, 
+    borderWidth: 2, 
+    borderColor: COLOR_SYSTEM.fightYellow, 
+    borderRadius: 8, 
+    padding: 24, 
+    margin: 20,
+    maxWidth: 500,
+    width: '90%',
+  },
+  modalTitle: { 
+    fontSize: 24, 
+    color: 'white', 
+    fontWeight: 'bold', 
+    marginBottom: 16 
+  },
+  modalDescription: { 
+    color: COLOR_SYSTEM.gray300,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  closeButton: { 
+    position: 'absolute', 
+    top: 16, 
+    right: 16 
+  },
+  // Estilos para o estado vazio
   emptyContainer: { 
     alignItems: 'center', 
     justifyContent: 'center', 
@@ -219,13 +382,13 @@ const styles = StyleSheet.create({
   emptyTitle: { 
     fontSize: 20, 
     fontWeight: 'bold', 
-    color: COLORS.gray300, 
+    color: COLOR_SYSTEM.gray300, 
     marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: { 
     fontSize: 16, 
-    color: COLORS.gray400, 
+    color: COLOR_SYSTEM.gray400, 
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 22,

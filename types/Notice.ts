@@ -7,4 +7,8 @@ export interface Notice {
   time: string;
   description: string;
   color: 'bg-fight-yellow' | 'bg-gray-700' | 'bg-punch-red' | 'bg-green-500';
+  createdAt: string;
+  createdBy: string;
 }
+
+export type NoticeFormData = Omit<Notice, 'id' | 'createdAt' | 'createdBy'>;
