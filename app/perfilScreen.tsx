@@ -30,7 +30,7 @@ export default function perfilScreen() {
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
-  const [usuarioNaoEncontrado, setUsuarioNaoEncontrado] = useState(false);
+
 
   const {
     usuario,
