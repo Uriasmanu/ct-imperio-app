@@ -160,7 +160,7 @@ export const usePresenca = (userId?: string) => {
                 }
 
                 const userData = snapshot.data();
-                let presencaArray: string[] = [];
+                let presencaArray: any[] = []; // Mudei para any[] para aceitar ambos os formatos
 
                 if (isChild) {
                     const filhos = userData.filhos || [];
@@ -170,23 +170,35 @@ export const usePresenca = (userId?: string) => {
                     presencaArray = userData.Presenca || [];
                 }
 
+                // 🔥 CONVERSÃO CRÍTICA: Converter para PresencaRecord[]
+                const records: PresencaRecord[] = presencaArray
+                    .map((item: any) => {
+                        // Se for string (formato antigo)
+                        if (typeof item === 'string') {
+                            return {
+                                date: item,
+                                confirmada: false
+                            };
+                        }
+                        // Se for objeto (formato novo)
+                        if (typeof item === 'object' && item !== null) {
+                            return {
+                                date: item.date,
+                                timestamp: new Date(item.date + 'T00:00:00'),
+                                confirmada: item.confirmada || false
+                            };
+                        }
+                        return null;
+                    })
+                    .filter((item): item is PresencaRecord => item !== null)
+
                 // Limpar presenças antigas ou 1º de janeiro
                 if (isFirstJanuary()) {
-                    presencaArray = [];
+                    setPresencaRecords([]);
                 } else {
-                    presencaArray = filterValidPresencas(presencaArray);
+                    setPresencaRecords(records);
                 }
-
-                const records: PresencaRecord[] = presencaArray
-                    .map(dateString => ({
-                        date: dateString,
-                        timestamp: new Date(dateString + 'T00:00:00'),
-                        confirmada: false
-                    }))
-                    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-                setPresencaRecords(records);
-                setLoading(false); // ← garante que sempre termina o loading
+                setLoading(false);
             },
             (error) => {
                 console.error(error);
@@ -198,6 +210,9 @@ export const usePresenca = (userId?: string) => {
         return () => unsubscribe();
     }, [currentUserId, userId, isChild]);
 
+    const isPresencaCheckedInToday = presencaRecords.some(
+        record => record.date === todayString
+    );
 
     // Marcar presença
     const checkIn = async (): Promise<boolean> => {
@@ -207,7 +222,6 @@ export const usePresenca = (userId?: string) => {
             return false;
         }
 
-        // Não permitir marcar presença no dia 1º de janeiro
         if (isFirstJanuary()) {
             console.log('❌ Não é permitido marcar presença no dia 1º de janeiro');
             Alert.alert('Aviso', 'Não é permitido marcar presença no dia 1º de janeiro');
@@ -220,6 +234,10 @@ export const usePresenca = (userId?: string) => {
         }
 
         const dateString = formatDate(today);
+        const newRecord: PresencaRecord = {
+            date: dateString,
+            confirmada: false
+        };
 
         try {
             const userDoc = await getDoc(userDocRef);
@@ -233,38 +251,21 @@ export const usePresenca = (userId?: string) => {
             if (isChild) {
                 const filhos = userData.filhos || [];
                 const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-
-                if (filhoIndex === -1) {
-                    console.error('Filho não encontrado');
-                    return false;
-                }
+                if (filhoIndex === -1) return false;
 
                 const filho = filhos[filhoIndex];
-                const presencasAtuais = filho.Presenca || [];
-
-                // Filtrar presenças válidas antes de adicionar a nova
-                const presencasValidas = filterValidPresencas(presencasAtuais);
-                const novasPresencas = [...presencasValidas, dateString];
+                const presencasAtuais: PresencaRecord[] = filho.Presenca || [];
+                const novasPresencas = [...presencasAtuais, newRecord];
 
                 const novosFilhos = [...filhos];
-                novosFilhos[filhoIndex] = {
-                    ...filho,
-                    Presenca: novasPresencas
-                };
+                novosFilhos[filhoIndex] = { ...filho, Presenca: novasPresencas };
 
-                await updateDoc(userDocRef, {
-                    filhos: novosFilhos
-                });
+                await updateDoc(userDocRef, { filhos: novosFilhos });
             } else {
-                const presencasAtuais = userData.Presenca || [];
+                const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
+                const novasPresencas = [...presencasAtuais, newRecord];
 
-                // Filtrar presenças válidas antes de adicionar a nova
-                const presencasValidas = filterValidPresencas(presencasAtuais);
-                const novasPresencas = [...presencasValidas, dateString];
-
-                await updateDoc(userDocRef, {
-                    Presenca: novasPresencas
-                });
+                await updateDoc(userDocRef, { Presenca: novasPresencas });
             }
 
             console.log('✅ Presença marcada com sucesso para:', dateString);
@@ -275,10 +276,6 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
-    // Verificar se a presença de hoje já foi marcada
-    const isPresencaCheckedInToday = presencaRecords.some(
-        record => record.date === todayString
-    );
 
     // Obter última data de check-in
     const lastCheckInDate = presencaRecords.length > 0
