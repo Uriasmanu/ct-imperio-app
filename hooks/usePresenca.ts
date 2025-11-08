@@ -324,6 +324,65 @@ export const usePresenca = (userId?: string) => {
     };
 
 
+    // Calcular porcentagem baseada em dias úteis POR SEMESTRE
+    const calcularPorcentagemPresenca = (totalPresencas: number): number => {
+        const hoje = new Date();
+        const currentMonth = hoje.getMonth(); // 0-11 (janeiro=0, dezembro=11)
+
+        // Definir semestres
+        let inicioSemestre: Date;
+        let fimSemestre: Date;
+
+        if (currentMonth >= 0 && currentMonth <= 5) {
+            // Primeiro semestre: janeiro a junho
+            inicioSemestre = new Date(currentYear, 0, 2); // 2 de janeiro
+            fimSemestre = new Date(currentYear, 5, 30); // 30 de junho
+        } else {
+            // Segundo semestre: julho a dezembro
+            inicioSemestre = new Date(currentYear, 6, 1); // 1 de julho
+            fimSemestre = new Date(currentYear, 11, 31); // 31 de dezembro
+        }
+
+        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
+        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
+
+        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+
+        if (diasUteisNoSemestre === 0) return 0;
+        return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+    };
+
+    // Calcular dias úteis (segunda a sábado)
+    const calcularDiasUteis = (inicio: Date, fim: Date): number => {
+        let count = 0;
+        const current = new Date(inicio);
+
+        while (current <= fim) {
+            const day = current.getDay();
+            const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
+
+            // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
+            if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
+    };
+
+    // Obter informações do semestre atual
+    const getSemestreInfo = () => {
+        const currentMonth = today.getMonth();
+        const isPrimeiroSemestre = currentMonth >= 0 && currentMonth <= 5;
+
+        return {
+            isPrimeiroSemestre,
+            nome: isPrimeiroSemestre ? '1º Semestre' : '2º Semestre',
+            periodo: isPrimeiroSemestre ? 'Jan-Jun' : 'Jul-Dez'
+        };
+    };
+
+
     // Obter última data de check-in
     const lastCheckInDate = presencaRecords.length > 0
         ? presencaRecords[0].date.split('-').reverse().join('/')
@@ -422,6 +481,8 @@ export const usePresenca = (userId?: string) => {
         formatDate,
         generateCalendarDays,
         isMonthWithinLimit,
-        isFirstJanuary: isFirstJanuary()
+        isFirstJanuary: isFirstJanuary(),
+        calcularPorcentagemPresenca,
+        getSemestreInfo 
     };
 };
