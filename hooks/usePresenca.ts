@@ -705,6 +705,10 @@ export const usePresenca = (userId?: string) => {
                 });
             });
 
+            // 🔥 CORREÇÃO CRÍTICA: Atualizar o estado com os dados buscados
+            setPresencasParaConfirmar(todasPresencas);
+            console.log(`✅ Carregadas ${todasPresencas.length} presenças para confirmar`);
+
         } catch (error) {
             console.error('Erro ao buscar presenças:', error);
             Alert.alert('Erro', 'Não foi possível carregar as presenças');
@@ -713,10 +717,21 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
+    // Adicionar este useEffect no hook usePresenca
+    useEffect(() => {
+        // Carregar presenças do dia atual quando o hook for montado
+        buscarPresencasDoDia(todayString);
+    }, [todayString]); // Recarregar quando a data mudar
+
     const stats: PresencaStats = {
         totalParaConfirmar: presencasParaConfirmar.length,
         confirmadasHoje: presencasParaConfirmar.filter(p => p.confirmada).length,
         pendentesHoje: presencasParaConfirmar.filter(p => !p.confirmada).length
+    };
+
+    // Adicionar esta função no retorno do hook
+    const recarregarPresencas = () => {
+        buscarPresencasDoDia(todayString);
     };
 
 
@@ -739,6 +754,7 @@ export const usePresenca = (userId?: string) => {
         confirmarPresenca,
         confirmarTodasPresencas,
         buscarPresencasDoDia,
+        recarregarPresencas, 
         presencasParaConfirmar,
         stats,
     };
