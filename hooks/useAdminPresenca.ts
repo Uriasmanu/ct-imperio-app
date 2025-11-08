@@ -43,10 +43,10 @@ export const useAdminPresenca = () => {
                     presencasFilho.forEach((presenca: any) => {
                         if (presenca.date === data) {
                             todasPresencas.push({
-                                id: `filho-${filho.id}-${presenca.date}`,
-                                usuarioId: doc.id,
+                                id: `filho-${doc.id}-${filho.id}-${presenca.date}`, // ✅ AGORA: usuarioId-filhoId-data
+                                usuarioId: doc.id, // ID do usuário PAI
                                 usuarioNome: usuarioData.nome,
-                                filhoId: filho.id,
+                                filhoId: filho.id, // ID do filho
                                 filhoNome: filho.nome,
                                 data: presenca.date,
                                 timestamp: new Date(presenca.date + 'T00:00:00'),
@@ -73,22 +73,23 @@ export const useAdminPresenca = () => {
     // Confirmar presença
     const confirmarPresenca = async (presencaId: string) => {
         try {
-            const [tipo, userId, data] = presencaId.split('-'); 
-
-            const userDocRef = doc(db, "usuarios", userId);
-
-            if (tipo === 'usuario') {
+            console.log('🔍 Confirmando presença com ID:', presencaId);
+            
+            const parts = presencaId.split('-');
+            
+            if (parts[0] === 'usuario') {
+                // Formato: usuario-userId-data
+                const [tipo, userId, data] = parts;
+                
+                const userDocRef = doc(db, "usuarios", userId);
                 const userDoc = await getDoc(userDocRef);
                 
-                // ✅ VERIFICAÇÃO ADICIONADA
                 if (!userDoc.exists()) {
                     Alert.alert('Erro', 'Usuário não encontrado');
                     return false;
                 }
 
                 const userData = userDoc.data();
-                
-                // ✅ VERIFICAÇÃO ADICIONADA
                 if (!userData) {
                     Alert.alert('Erro', 'Dados do usuário não encontrados');
                     return false;
@@ -100,36 +101,53 @@ export const useAdminPresenca = () => {
                 );
 
                 await updateDoc(userDocRef, { Presenca: presencasAtualizadas });
-            } else {
-                // Para filhos
+                
+            } else if (parts[0] === 'filho') {
+                // ✅ CORREÇÃO: Formato: filho-usuarioId-filhoId-data
+                const [tipo, usuarioId, filhoId, data] = parts;
+                
+                console.log('👶 Confirmando presença do filho:', { usuarioId, filhoId, data });
+                
+                const userDocRef = doc(db, "usuarios", usuarioId); // ✅ Agora usa usuarioId (pai)
                 const userDoc = await getDoc(userDocRef);
                 
-                // ✅ VERIFICAÇÃO ADICIONADA
                 if (!userDoc.exists()) {
-                    Alert.alert('Erro', 'Usuário não encontrado');
+                    Alert.alert('Erro', 'Usuário pai não encontrado');
                     return false;
                 }
 
                 const userData = userDoc.data();
-                
-                // ✅ VERIFICAÇÃO ADICIONADA
                 if (!userData) {
-                    Alert.alert('Erro', 'Dados do usuário não encontrados');
+                    Alert.alert('Erro', 'Dados do usuário pai não encontrados');
                     return false;
                 }
 
                 const filhosAtuais = userData.filhos || [];
-                const filhosAtualizados = filhosAtuais.map((filho: any) => {
-                    const presencasFilho = filho.Presenca || [];
-                    return {
-                        ...filho,
-                        Presenca: presencasFilho.map((presenca: any) =>
-                            presenca.date === data ? { ...presenca, confirmada: true } : presenca
-                        )
-                    };
-                });
+                const filhoIndex = filhosAtuais.findIndex((f: any) => f.id === filhoId);
+                
+                if (filhoIndex === -1) {
+                    Alert.alert('Erro', 'Filho não encontrado');
+                    return false;
+                }
 
-                await updateDoc(userDocRef, { filhos: filhosAtualizados });
+                const filhoAtual = filhosAtuais[filhoIndex];
+                const presencasFilho = filhoAtual.Presenca || [];
+                
+                const presencasAtualizadas = presencasFilho.map((presenca: any) =>
+                    presenca.date === data ? { ...presenca, confirmada: true } : presenca
+                );
+
+                const novosFilhos = [...filhosAtuais];
+                novosFilhos[filhoIndex] = {
+                    ...filhoAtual,
+                    Presenca: presencasAtualizadas
+                };
+
+                await updateDoc(userDocRef, { filhos: novosFilhos });
+                
+            } else {
+                Alert.alert('Erro', 'Tipo de presença inválido');
+                return false;
             }
 
             // Atualizar lista local
@@ -140,7 +158,7 @@ export const useAdminPresenca = () => {
             Alert.alert('Sucesso', 'Presença confirmada com sucesso!');
             return true;
         } catch (error) {
-            console.error('Erro ao confirmar presença:', error);
+            console.error('❌ Erro ao confirmar presença:', error);
             Alert.alert('Erro', 'Não foi possível confirmar a presença');
             return false;
         }
