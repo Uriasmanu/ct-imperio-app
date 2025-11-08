@@ -1,7 +1,8 @@
 // src/hooks/usePresenca.ts
 import { db } from '@/config/firebaseConfig';
+import { PresencaParaConfirmar } from '@/types/admin';
 import { CalendarDay, Filho, PresencaRecord } from '@/types/usuarios';
-import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useAuth } from './useAuth';
@@ -220,7 +221,7 @@ export const usePresenca = (userId?: string) => {
                             return {
                                 date: item,
                                 confirmada: false,
-                               
+
                             };
                         }
                         // Se for objeto (formato novo)
@@ -511,6 +512,208 @@ export const usePresenca = (userId?: string) => {
         return month.getFullYear() === currentYear;
     };
 
+    const confirmarPresenca = async (dateString: string): Promise<boolean> => {
+        const userDocRef = getUserDocRef();
+        if (!userDocRef || !currentUserId) {
+            console.error('Usuário não autenticado ou documento não encontrado');
+            return false;
+        }
+
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (!userDoc.exists()) {
+                console.error('Documento do usuário não encontrado');
+                return false;
+            }
+
+            const userData = userDoc.data();
+
+            if (isChild) {
+                // Confirmar presença do filho
+                const filhos = userData.filhos || [];
+                const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
+
+                if (filhoIndex === -1) {
+                    console.error('Filho não encontrado');
+                    return false;
+                }
+
+                const filhoAtual = filhos[filhoIndex];
+                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
+
+                // Atualizar a presença específica para confirmada
+                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => {
+                    if (presenca.date === dateString) {
+                        return {
+                            ...presenca,
+                            confirmada: true
+                        };
+                    }
+                    return presenca;
+                });
+
+                const novosFilhos = [...filhos];
+                novosFilhos[filhoIndex] = {
+                    ...filhoAtual,
+                    Presenca: novasPresencas
+                };
+
+                await updateDoc(userDocRef, { filhos: novosFilhos });
+                console.log(`✅ Presença confirmada para o filho na data: ${dateString}`);
+
+            } else {
+                // Confirmar presença do usuário principal
+                const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
+
+                // Atualizar a presença específica para confirmada
+                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => {
+                    if (presenca.date === dateString) {
+                        return {
+                            ...presenca,
+                            confirmada: true
+                        };
+                    }
+                    return presenca;
+                });
+
+                await updateDoc(userDocRef, { Presenca: novasPresencas });
+                console.log(`✅ Presença confirmada para o usuário principal na data: ${dateString}`);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('❌ Erro ao confirmar presença:', error);
+            return false;
+        }
+    };
+
+    // Função para confirmar a presença de hoje
+    const confirmarPresencaHoje = async (): Promise<boolean> => {
+        return await confirmarPresenca(todayString);
+    };
+
+    // Função para confirmar TODAS as presenças não confirmadas
+    const confirmarTodasPresencas = async (): Promise<boolean> => {
+        const userDocRef = getUserDocRef();
+        if (!userDocRef || !currentUserId) {
+            console.error('Usuário não autenticado ou documento não encontrado');
+            return false;
+        }
+
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (!userDoc.exists()) {
+                console.error('Documento do usuário não encontrado');
+                return false;
+            }
+
+            const userData = userDoc.data();
+
+            if (isChild) {
+                // Confirmar todas as presenças do filho
+                const filhos = userData.filhos || [];
+                const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
+
+                if (filhoIndex === -1) {
+                    console.error('Filho não encontrado');
+                    return false;
+                }
+
+                const filhoAtual = filhos[filhoIndex];
+                const presencasAtuais: PresencaRecord[] = filhoAtual.Presenca || [];
+
+                // Marcar todas as presenças como confirmadas
+                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => ({
+                    ...presenca,
+                    confirmada: true
+                }));
+
+                const novosFilhos = [...filhos];
+                novosFilhos[filhoIndex] = {
+                    ...filhoAtual,
+                    Presenca: novasPresencas
+                };
+
+                await updateDoc(userDocRef, { filhos: novosFilhos });
+                console.log(`✅ Todas as ${novasPresencas.length} presenças do filho foram confirmadas`);
+
+            } else {
+                // Confirmar todas as presenças do usuário principal
+                const presencasAtuais: PresencaRecord[] = userData.Presenca || [];
+
+                // Marcar todas as presenças como confirmadas
+                const novasPresencas = presencasAtuais.map((presenca: PresencaRecord) => ({
+                    ...presenca,
+                    confirmada: true
+                }));
+
+                await updateDoc(userDocRef, { Presenca: novasPresencas });
+                console.log(`✅ Todas as ${novasPresencas.length} presenças do usuário principal foram confirmadas`);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('❌ Erro ao confirmar todas as presenças:', error);
+            return false;
+        }
+    };
+
+    const buscarPresencasDoDia = async (data: string = new Date().toISOString().split('T')[0]) => {
+        try {
+            setLoading(true);
+            const querySnapshot = await getDocs(collection(db, "usuarios"));
+            const todasPresencas: PresencaParaConfirmar[] = [];
+
+            querySnapshot.forEach((doc) => {
+                const usuarioData = doc.data();
+
+                // Presenças do usuário
+                const presencasUsuario = usuarioData.Presenca || [];
+                presencasUsuario.forEach((presenca: any) => {
+                    if (presenca.date === data) {
+                        todasPresencas.push({
+                            id: `usuario-${doc.id}-${presenca.date}`,
+                            usuarioId: doc.id,
+                            usuarioNome: usuarioData.nome,
+                            data: presenca.date,
+                            modalidades: usuarioData.modalidades?.map((m: any) => m.modalidade) || [],
+                            confirmada: presenca.confirmada || false,
+                            tipo: 'usuario'
+                        });
+                    }
+                });
+
+                // Presenças dos filhos
+                const filhos = usuarioData.filhos || [];
+                filhos.forEach((filho: any) => {
+                    const presencasFilho = filho.Presenca || [];
+                    presencasFilho.forEach((presenca: any) => {
+                        if (presenca.date === data) {
+                            todasPresencas.push({
+                                id: `filho-${doc.id}-${filho.id}-${presenca.date}`, 
+                                usuarioId: doc.id,
+                                usuarioNome: usuarioData.nome,
+                                filhoId: filho.id, 
+                                filhoNome: filho.nome,
+                                data: presenca.date,
+                                modalidades: filho.modalidades?.map((m: any) => m.modalidade) || [],
+                                confirmada: presenca.confirmada || false,
+                                tipo: 'filho'
+                            });
+                        }
+                    });
+                });
+            });
+
+        } catch (error) {
+            console.error('Erro ao buscar presenças:', error);
+            Alert.alert('Erro', 'Não foi possível carregar as presenças');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     return {
         presencaRecords,
         loading,
@@ -526,6 +729,9 @@ export const usePresenca = (userId?: string) => {
         isMonthWithinLimit,
         isFirstJanuary: isFirstJanuary(),
         calcularPorcentagemPresenca,
-        getSemestreInfo
+        getSemestreInfo,
+        confirmarPresenca,
+        confirmarTodasPresencas,
+        buscarPresencasDoDia
     };
 };

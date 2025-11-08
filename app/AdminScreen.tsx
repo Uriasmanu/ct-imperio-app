@@ -19,6 +19,7 @@ import { LoadingScreen } from "@/components/Admin/LoadingScreen";
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as abas
@@ -38,6 +39,13 @@ export default function AdminScreen() {
   });
   const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
 
+
+  // Use o hook para presenças administrativas
+  const { 
+    loading: presencasLoading, 
+    confirmarPresenca,
+    buscarPresencasDoDia 
+  } = usePresenca();
 
   // 🔄 VERIFICAR ACESSO
   useEffect(() => {
@@ -77,7 +85,7 @@ export default function AdminScreen() {
     if (!isAdmin) return;
     setRefreshing(true);
     carregarUsuarios();
-    
+    buscarPresencasDoDia();
   };
 
   useEffect(() => {
@@ -134,7 +142,20 @@ export default function AdminScreen() {
                   <Ionicons name="calendar" size={22} color="#B8860B" />
                   <Text style={styles.sectionTitle}>Presenças para Confirmar</Text>
                 </View>
-                
+                <TouchableOpacity 
+                  style={[
+                    styles.refreshButton,
+                    presencasLoading && styles.refreshButtonDisabled
+                  ]}
+                  onPress={() => buscarPresencasDoDia()}
+                  disabled={presencasLoading}
+                >
+                  <Ionicons 
+                    name="refresh" 
+                    size={20} 
+                    color="#B8860B"
+                  />
+                </TouchableOpacity>
               </View>
               
             </View>
@@ -244,7 +265,25 @@ export default function AdminScreen() {
 
         {/* ABAS DE NAVEGAÇÃO */}
         <View style={styles.tabsContainer}>
-          
+          <TouchableOpacity 
+            style={[
+              styles.tabButton,
+              abaAtiva === 'presencas' && styles.tabButtonActive
+            ]}
+            onPress={() => setAbaAtiva('presencas')}
+          >
+            <Ionicons 
+              name="calendar" 
+              size={20} 
+              color={abaAtiva === 'presencas' ? "#000" : "#B8860B"} 
+            />
+            <Text style={[
+              styles.tabButtonText,
+              abaAtiva === 'presencas' && styles.tabButtonTextActive
+            ]}>
+              Presenças
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity 
             style={[

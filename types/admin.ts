@@ -7,7 +7,6 @@ export interface PresencaParaConfirmar {
   filhoId?: string;
   filhoNome?: string;
   data: string;
-  timestamp: Date;
   modalidades: string[];
   confirmada: boolean;
   tipo: 'usuario' | 'filho';
