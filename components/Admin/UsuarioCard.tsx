@@ -23,6 +23,9 @@ export const UsuarioCard: React.FC<UsuarioCardProps> = ({
   const [expanded, setExpanded] = useState(true);
   const rotateAnim = useState(new Animated.Value(0))[0];
 
+  const isPendente = !usuario.pagamento && usuario.modalidades?.length > 0;
+
+
   const toggleExpanded = () => {
     const toValue = expanded ? 0 : 1;
     Animated.timing(rotateAnim, {

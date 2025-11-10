@@ -331,7 +331,7 @@ export default function perfilScreen() {
 
         {usuario?.filhos?.length ? (
           usuario.filhos.map((filho, index) => (
-            <View key={filho.id || `filho-${index}`}  style={styles.filhoCard}>
+            <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
               <View style={styles.filhoHeader}>
                 <View style={styles.filhoInfoHeader}>
                   <Text style={styles.filhoName}>{filho.nome}</Text>
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 2,
   },
   sectionHeader: {
     flexDirection: "row",

@@ -139,15 +139,21 @@ export default function AdminScreen() {
   });
 
   // 🎯 ESTATÍSTICAS
+
   const estatisticas = {
     total: usuarios.length,
     pagos: usuarios.filter(u => u.pagamento).length,
-    pendentes: usuarios.filter(u => !u.pagamento).length,
+    pendentes: usuarios.filter(
+      u => !u.pagamento && u.modalidades && u.modalidades.length > 0
+    ).length, // ✅ só conta pendente se tiver modalidade
     comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
-    totalAlunos: usuarios.reduce((total, usuario) =>
-      total + (usuario.filhos ? usuario.filhos.length : 0), 0
-    ) + usuarios.length
+    totalAlunos:
+      usuarios.reduce(
+        (total, usuario) => total + (usuario.filhos ? usuario.filhos.length : 0),
+        0
+      ) + usuarios.length,
   };
+
 
   // 🎯 RENDER CONTEÚDO POR ABA
   const renderConteudoAba = () => {
@@ -318,92 +324,98 @@ export default function AdminScreen() {
           </Text>
         </View>
 
-        {/* ABAS DE NAVEGAÇÃO */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              abaAtiva === 'presencas' && styles.tabButtonActive
-            ]}
-            onPress={() => setAbaAtiva('presencas')}
+        {/* ABAS DE NAVEGAÇÃO COM SCROLL HORIZONTAL */}
+        <View style={styles.tabsScrollContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabsContentContainer}
           >
-            <Ionicons
-              name="calendar"
-              size={20}
-              color={abaAtiva === 'presencas' ? "#000" : "#B8860B"}
-            />
-            <Text style={[
-              styles.tabButtonText,
-              abaAtiva === 'presencas' && styles.tabButtonTextActive
-            ]}>
-              Presenças
-            </Text>
-            {stats.pendentesHoje > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{stats.pendentesHoje}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                abaAtiva === 'presencas' && styles.tabButtonActive
+              ]}
+              onPress={() => setAbaAtiva('presencas')}
+            >
+              <Ionicons
+                name="calendar"
+                size={20}
+                color={abaAtiva === 'presencas' ? "#000" : "#B8860B"}
+              />
+              <Text style={[
+                styles.tabButtonText,
+                abaAtiva === 'presencas' && styles.tabButtonTextActive
+              ]}>
+                Presenças
+              </Text>
+              {stats.pendentesHoje > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{stats.pendentesHoje}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              abaAtiva === 'gestao' && styles.tabButtonActive
-            ]}
-            onPress={() => setAbaAtiva('gestao')}
-          >
-            <Ionicons
-              name="people"
-              size={20}
-              color={abaAtiva === 'gestao' ? "#000" : "#B8860B"}
-            />
-            <Text style={[
-              styles.tabButtonText,
-              abaAtiva === 'gestao' && styles.tabButtonTextActive
-            ]}>
-              Gestão
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                abaAtiva === 'gestao' && styles.tabButtonActive
+              ]}
+              onPress={() => setAbaAtiva('gestao')}
+            >
+              <Ionicons
+                name="people"
+                size={20}
+                color={abaAtiva === 'gestao' ? "#000" : "#B8860B"}
+              />
+              <Text style={[
+                styles.tabButtonText,
+                abaAtiva === 'gestao' && styles.tabButtonTextActive
+              ]}>
+                Gestão
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              abaAtiva === 'alunos' && styles.tabButtonActive
-            ]}
-            onPress={() => setAbaAtiva('alunos')}
-          >
-            <Ionicons
-              name="list"
-              size={20}
-              color={abaAtiva === 'alunos' ? "#000" : "#B8860B"}
-            />
-            <Text style={[
-              styles.tabButtonText,
-              abaAtiva === 'alunos' && styles.tabButtonTextActive
-            ]}>
-              Alunos
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                abaAtiva === 'alunos' && styles.tabButtonActive
+              ]}
+              onPress={() => setAbaAtiva('alunos')}
+            >
+              <Ionicons
+                name="list"
+                size={20}
+                color={abaAtiva === 'alunos' ? "#000" : "#B8860B"}
+              />
+              <Text style={[
+                styles.tabButtonText,
+                abaAtiva === 'alunos' && styles.tabButtonTextActive
+              ]}>
+                Alunos
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              abaAtiva === 'avisos' && styles.tabButtonActive
-            ]}
-            onPress={() => setAbaAtiva('avisos')}
-          >
-            <Ionicons
-              name="megaphone"
-              size={20}
-              color={abaAtiva === 'avisos' ? "#000" : "#B8860B"}
-            />
-            <Text style={[
-              styles.tabButtonText,
-              abaAtiva === 'avisos' && styles.tabButtonTextActive
-            ]}>
-              Avisos
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                abaAtiva === 'avisos' && styles.tabButtonActive
+              ]}
+              onPress={() => setAbaAtiva('avisos')}
+            >
+              <Ionicons
+                name="megaphone"
+                size={20}
+                color={abaAtiva === 'avisos' ? "#000" : "#B8860B"}
+              />
+              <Text style={[
+                styles.tabButtonText,
+                abaAtiva === 'avisos' && styles.tabButtonTextActive
+              ]}>
+                Avisos
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
 
@@ -469,23 +481,28 @@ const styles = StyleSheet.create({
     color: "#AAA",
     textAlign: 'center',
   },
-  tabsContainer: {
-    flexDirection: 'row',
+  // NOVOS ESTILOS PARA SCROLL HORIZONTAL NAS ABAS
+  tabsScrollContainer: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 4,
+  },
+  tabsContentContainer: {
+    flexDirection: 'row',
     gap: 4,
+    paddingHorizontal: 4,
   },
   tabButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     borderRadius: 8,
     position: 'relative',
+    minWidth: 100,
+    backgroundColor: 'transparent',
   },
   tabButtonActive: {
     backgroundColor: '#B8860B',

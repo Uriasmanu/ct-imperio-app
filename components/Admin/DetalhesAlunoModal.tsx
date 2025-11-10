@@ -3,12 +3,12 @@ import { UsuarioCompleto } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface DetalhesAlunoModalProps {
@@ -33,6 +33,66 @@ const formatarData = (data: string | Date) => {
   });
 };
 
+// Função para calcular informações do semestre (igual ao hook)
+const getSemestreInfo = () => {
+  const hoje = new Date();
+  const currentMonth = hoje.getMonth();
+  const isPrimeiroSemestre = currentMonth >= 0 && currentMonth <= 5;
+
+  return {
+    isPrimeiroSemestre,
+    nome: isPrimeiroSemestre ? '1º Semestre' : '2º Semestre',
+    periodo: isPrimeiroSemestre ? 'Jan-Jun' : 'Jul-Dez'
+  };
+};
+
+// Função para calcular dias úteis (igual ao hook)
+const calcularDiasUteis = (inicio: Date, fim: Date): number => {
+  let count = 0;
+  const current = new Date(inicio);
+
+  while (current <= fim) {
+    const day = current.getDay();
+    const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
+
+    // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
+    if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+};
+
+// Função para calcular porcentagem (igual ao hook)
+const calcularPorcentagemPresenca = (totalPresencas: number): number => {
+  const hoje = new Date();
+  const currentYear = hoje.getFullYear();
+  const currentMonth = hoje.getMonth();
+
+  // Definir semestres
+  let inicioSemestre: Date;
+  let fimSemestre: Date;
+
+  if (currentMonth >= 0 && currentMonth <= 5) {
+    // Primeiro semestre: janeiro a junho
+    inicioSemestre = new Date(currentYear, 0, 2);
+    fimSemestre = new Date(currentYear, 5, 30);
+  } else {
+    // Segundo semestre: julho a dezembro
+    inicioSemestre = new Date(currentYear, 6, 1);
+    fimSemestre = new Date(currentYear, 11, 31);
+  }
+
+  // Se hoje estiver antes do fim do semestre, usar a data atual como limite
+  const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
+
+  const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+
+  if (diasUteisNoSemestre === 0) return 0;
+  return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+};
+
 export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   visible,
   usuario,
@@ -52,11 +112,30 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   };
 
-  const calcularFrequencia = (avisaPresenca: string[] = []) => {
-    const totalPresencas = avisaPresenca.length;
+  // 🔥 CORREÇÃO: Função segura para obter presenças
+  const obterArrayPresenca = (dados: any, filho?: any): string[] => {
+    try {
+      if (filho) {
+        // Para filhos, tentar diferentes possíveis nomes de campo
+        return Array.isArray(filho.Presenca) ? filho.Presenca : 
+               Array.isArray(filho.presenca) ? filho.presenca :
+               Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
+      } else {
+        // Para usuário principal, tentar diferentes possíveis nomes de campo
+        return Array.isArray(dados.Presenca) ? dados.Presenca : 
+               Array.isArray(dados.presenca) ? dados.presenca :
+               Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
+      }
+    } catch {
+      return [];
+    }
+  };
+
+  const calcularFrequencia = (presencaArray: string[] = []) => {
+    const totalPresencas = presencaArray.length;
     
     // Filtrar presenças dos últimos 30 dias
-    const ultimoMes = avisaPresenca.filter(dataPresencaStr => {
+    const ultimoMes = presencaArray.filter(dataPresencaStr => {
       try {
         const dataPresenca = new Date(dataPresencaStr);
         const umMesAtras = new Date();
@@ -67,29 +146,29 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       }
     }).length;
 
-    return { total: totalPresencas, ultimoMes };
+    // 🔥 CORREÇÃO: Usar a função local para calcular porcentagem
+    const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
+
+    return { 
+      total: totalPresencas, 
+      ultimoMes,
+      porcentagemSemestre 
+    };
   };
 
-  const frequenciaUsuario = calcularFrequencia(usuario.avisaPresenca);
+  // 🔥 CORREÇÃO: Usar função segura para obter presenças
+  const presencaUsuario = obterArrayPresenca(usuario);
+  const frequenciaUsuario = calcularFrequencia(presencaUsuario);
 
-  // Encontrar a última aula (mais recente)
-  const encontrarUltimaAula = (avisaPresenca: string[] = []) => {
-    if (!avisaPresenca.length) return 'Nunca';
-    
-    try {
-      // Ordenar datas e pegar a mais recente
-      const datasOrdenadas = avisaPresenca
-        .map(data => new Date(data))
-        .filter(data => !isNaN(data.getTime()))
-        .sort((a, b) => b.getTime() - a.getTime());
-      
-      return datasOrdenadas.length > 0 ? formatarData(datasOrdenadas[0]) : 'Nunca';
-    } catch {
-      return 'Nunca';
-    }
+  // Determinar cor baseada na porcentagem
+  const getPorcentagemColor = (porcentagem: number): string => {
+    if (porcentagem >= 75) return '#22c55e'; // Verde
+    if (porcentagem >= 50) return '#eab308'; // Amarelo
+    return '#ef4444'; // Vermelho
   };
 
-  const ultimaAula = encontrarUltimaAula(usuario.avisaPresenca);
+  // Obter informações do semestre
+  const semestreInfo = getSemestreInfo();
 
   return (
     <Modal
@@ -188,7 +267,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
           {/* Frequência do Usuário */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Frequência</Text>
+            <Text style={styles.sectionTitle}>Frequência - {semestreInfo.nome}</Text>
             <View style={styles.frequenciaCard}>
               <View style={styles.frequenciaItem}>
                 <Text style={styles.frequenciaNumber}>
@@ -197,16 +276,16 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                 <Text style={styles.frequenciaLabel}>Total de aulas</Text>
               </View>
               <View style={styles.frequenciaItem}>
-                <Text style={styles.frequenciaNumber}>
-                  {frequenciaUsuario.ultimoMes}
+                <Text style={[
+                  styles.frequenciaNumber,
+                  { color: getPorcentagemColor(frequenciaUsuario.porcentagemSemestre) }
+                ]}>
+                  {frequenciaUsuario.porcentagemSemestre}%
                 </Text>
-                <Text style={styles.frequenciaLabel}>Últimos 30 dias</Text>
-              </View>
-              <View style={styles.frequenciaItem}>
-                <Text style={styles.frequenciaNumber}>
-                  {ultimaAula}
+                <Text style={styles.frequenciaLabel}>No semestre</Text>
+                <Text style={styles.semestreInfo}>
+                  {semestreInfo.periodo}
                 </Text>
-                <Text style={styles.frequenciaLabel}>Última aula</Text>
               </View>
             </View>
           </View>
@@ -217,8 +296,9 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
               <Text style={styles.sectionTitle}>Alunos Cadastrados</Text>
               <View style={styles.filhosList}>
                 {usuario.filhos.map((filho, index) => {
-                  const frequenciaFilho = calcularFrequencia(filho.avisaPresenca);
-                  const ultimaAulaFilho = encontrarUltimaAula(filho.avisaPresenca);
+                  // 🔥 CORREÇÃO: Usar função segura para obter presenças dos filhos
+                  const presencaFilho = obterArrayPresenca(usuario, filho);
+                  const frequenciaFilho = calcularFrequencia(presencaFilho);
                   
                   return (
                     <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
@@ -251,13 +331,13 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                           <Text style={styles.frequenciaLabel}>
                             Total: {frequenciaFilho.total} aulas
                           </Text>
-                          <Text style={styles.frequenciaSubLabel}>
-                            {frequenciaFilho.ultimoMes} nos últimos 30 dias
+                          <Text style={[
+                            styles.frequenciaPorcentagem,
+                            { color: getPorcentagemColor(frequenciaFilho.porcentagemSemestre) }
+                          ]}>
+                            {frequenciaFilho.porcentagemSemestre}% no semestre
                           </Text>
                         </View>
-                        <Text style={styles.ultimaAulaText}>
-                          Última aula: {ultimaAulaFilho}
-                        </Text>
                       </View>
 
                       <Text style={styles.filhoData}>
@@ -275,6 +355,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   );
 };
 
+// Os estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -421,6 +502,12 @@ const styles = StyleSheet.create({
     color: '#CCC',
     textAlign: 'center',
   },
+  semestreInfo: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 2,
+    textAlign: 'center',
+  },
   filhosList: {
     gap: 12,
   },
@@ -474,14 +561,10 @@ const styles = StyleSheet.create({
   frequenciaRow: {
     marginBottom: 4,
   },
-  frequenciaSubLabel: {
-    fontSize: 11,
-    color: '#888',
-  },
-  ultimaAulaText: {
+  frequenciaPorcentagem: {
     fontSize: 12,
-    color: '#B8860B',
-    fontStyle: 'italic',
+    fontWeight: '600',
+    marginTop: 4,
   },
   filhoData: {
     fontSize: 12,

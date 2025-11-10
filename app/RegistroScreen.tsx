@@ -37,6 +37,11 @@ const registroScreen = () => {
     if (result.success) {
       Alert.alert("Sucesso", "Usuário registrado! Faça login para continuar.");
 
+      // 🧹 Limpar os campos
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+
       // ⚡ Espera o RootLayout montar antes de navegar
       if (rootNavigationState?.key) {
         router.replace("/settingsScreen");
@@ -45,6 +50,7 @@ const registroScreen = () => {
       Alert.alert("Erro no Registro", result.error);
     }
   };
+
 
 
   const toggleShowPassword = () => {
