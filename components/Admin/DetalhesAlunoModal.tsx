@@ -293,7 +293,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           {/* Filhos */}
           {usuario.filhos && usuario.filhos.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Alunos Cadastrados</Text>
+              <Text style={styles.sectionTitle}>Filhos Registrados</Text>
               <View style={styles.filhosList}>
                 {usuario.filhos.map((filho, index) => {
                   // 🔥 CORREÇÃO: Usar função segura para obter presenças dos filhos

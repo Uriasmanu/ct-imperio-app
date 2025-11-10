@@ -165,7 +165,7 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                                     <ActivityIndicator size="small" color="#000" />
                                 ) : (
                                     <>
-                                        <Ionicons name="notifications" size={14} color="#000" />
+                                        <Ionicons name="notifications" size={12} color="#000" />
                                         <Text style={styles.avisarButtonText}>Avisar que pagou</Text>
                                     </>
                                 )}

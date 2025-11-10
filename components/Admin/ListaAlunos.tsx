@@ -28,19 +28,84 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
     const [busca, setBusca] = useState('');
     const [filtroModalidade, setFiltroModalidade] = useState('todas');
 
-    // Função para calcular porcentagem de frequência
-    const calcularFrequencia = (avisaPresenca: string[] = []) => {
-        const totalPresencas = avisaPresenca?.length || 0;
+    // 🔥 ADICIONE ESTA FUNÇÃO (igual ao modal):
+    const obterArrayPresenca = (dados: any, filho?: any): string[] => {
+        try {
+            if (filho) {
+                // Para filhos, tentar diferentes possíveis nomes de campo
+                return Array.isArray(filho.Presenca) ? filho.Presenca :
+                    Array.isArray(filho.presenca) ? filho.presenca :
+                        Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
+            } else {
+                // Para usuário principal, tentar diferentes possíveis nomes de campo
+                return Array.isArray(dados.Presenca) ? dados.Presenca :
+                    Array.isArray(dados.presenca) ? dados.presenca :
+                        Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
+            }
+        } catch {
+            return [];
+        }
+    };
 
-        // Considerando 4 semanas por mês (aproximação)
-        const presencasEsperadas = 16; // 4 aulas por semana × 4 semanas
-        const porcentagem = Math.min((totalPresencas / presencasEsperadas) * 100, 100);
+    // 🔄 FUNÇÃO ATUALIZADA: Usar obterArrayPresenca
+    const calcularFrequencia = (usuario: UsuarioCompleto) => {
+        // 🔥 USAR A MESMA LÓGICA DO MODAL
+        const presencaArray = obterArrayPresenca(usuario);
+        const totalPresencas = presencaArray.length;
+        const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
 
         return {
             total: totalPresencas,
-            porcentagem: Math.round(porcentagem)
+            porcentagem: porcentagemSemestre
         };
     };
+
+    // 🔥 ADICIONE ESTAS FUNÇÕES AUXILIARES (igual ao modal):
+    const calcularDiasUteis = (inicio: Date, fim: Date): number => {
+        let count = 0;
+        const current = new Date(inicio);
+
+        while (current <= fim) {
+            const day = current.getDay();
+            const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
+
+            // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
+            if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
+    };
+
+    const calcularPorcentagemPresenca = (totalPresencas: number): number => {
+        const hoje = new Date();
+        const currentYear = hoje.getFullYear();
+        const currentMonth = hoje.getMonth();
+
+        // Definir semestres
+        let inicioSemestre: Date;
+        let fimSemestre: Date;
+
+        if (currentMonth >= 0 && currentMonth <= 5) {
+            // Primeiro semestre: janeiro a junho
+            inicioSemestre = new Date(currentYear, 0, 2);
+            fimSemestre = new Date(currentYear, 5, 30);
+        } else {
+            // Segundo semestre: julho a dezembro
+            inicioSemestre = new Date(currentYear, 6, 1);
+            fimSemestre = new Date(currentYear, 11, 31);
+        }
+
+        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
+        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
+
+        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+
+        if (diasUteisNoSemestre === 0) return 0;
+        return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+    };
+
 
     // Função para formatar data do último pagamento
     const formatarUltimoPagamento = (dataUltimoPagamento: string) => {
@@ -217,7 +282,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                     usuariosFiltrados.map((usuario) => {
                         if (!usuario) return null;
 
-                        const frequencia = calcularFrequencia(usuario.avisaPresenca);
+                       const frequencia = calcularFrequencia(usuario);
                         const modalidadesAtivas = (usuario.modalidades || []).filter(m => m?.ativo);
                         const possuiFilhos = usuario.filhos && usuario.filhos.length > 0;
 
@@ -317,7 +382,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                                     {/* FILHOS */}
                                     <View style={styles.infoItem}>
                                         <Ionicons name="people" size={16} color="#B8860B" />
-                                        <Text style={styles.infoLabel}>Alunos cadastrados:</Text>
+                                        <Text style={styles.infoLabel}>Filhos Registrados:</Text>
                                         <Text style={styles.infoValue}>
                                             {possuiFilhos ? `${usuario.filhos!.length} aluno(s)` : 'Nenhum'}
                                         </Text>
