@@ -135,13 +135,23 @@ export const useLogin = () => {
     router.push('/registroScreen');
   };
 
+  // src/hooks/useLogin.ts
+
   const handleProfile = () => {
-    if (isLoggedIn) router.push('/perfilScreen');
-    else
+    if (isLoggedIn) {
+      router.push({
+        pathname: '/perfilScreen',
+        params: {
+          refresh: 'true',
+          timestamp: Date.now()
+        }
+      });
+    } else {
       Alert.alert('Acesso restrito', 'Você precisa estar logado para acessar o perfil.', [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Fazer login', onPress: handleLogin },
       ]);
+    }
   };
 
   return {

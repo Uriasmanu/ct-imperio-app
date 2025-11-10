@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { doc, updateDoc } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,7 @@ import { db } from "@/config/firebaseConfig";
 
 import { PresencaSection } from "@/components/perfil/PresencaSection";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocalSearchParams } from "expo-router";
 import {
   Filho,
   GraduacaoJiuJitsu,
@@ -31,6 +32,9 @@ export default function perfilScreen() {
   const [modalFilho, setModalFilho] = useState(false);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
 
+  const params = useLocalSearchParams();
+  const refresh = params.refresh as string;
+  const timestamp = params.timestamp as string;
 
   const {
     usuario,
@@ -41,7 +45,18 @@ export default function perfilScreen() {
     handlePagamentoAtualizado,
     adicionarFilho,
     editarFilho,
+    carregarUsuario,
   } = useAuth();
+
+
+  useEffect(() => {
+    if (refresh === 'true') {
+      const atualizarDados = async () => {
+        await carregarUsuario(true);
+      };
+      atualizarDados();
+    }
+  }, [refresh, timestamp, carregarUsuario]);
 
 
   const handleSalvarPerfil = async () => {

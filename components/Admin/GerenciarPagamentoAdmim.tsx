@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -8,8 +8,11 @@ import {
   View
 } from "react-native";
 
+import { db } from "@/config/firebaseConfig";
 import { usePagamento } from "@/hooks/usePagamento";
 import { Filho, Usuario } from "@/types/usuarios";
+import { differenceInDays } from "date-fns";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 interface GerenciarPagamentoAdmimProps {
   usuario: Usuario;
@@ -62,6 +65,51 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
   const pagamentoInfo = getPagamentoInfo();
   const statusInfo = getStatusInfo();
 
+  useEffect(() => {
+    const verificarPagamentoExpirado = async () => {
+      if (!item.dataUltimoPagamento) return;
+
+      const diasDesdePagamento = differenceInDays(
+        new Date(),
+        new Date(item.dataUltimoPagamento)
+      );
+
+      if (diasDesdePagamento >= 30 && item.pagamento) {
+        try {
+          if (!isFilho) {
+            // Usuário principal
+            const userRef = doc(db, "usuarios", item.id);
+            await updateDoc(userRef, {
+              pagamento: false,
+              avisoPagamento: false,
+            });
+          } else {
+            // Filho
+            const userRef = doc(db, "usuarios", usuario.id);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+              const usuarioData = userSnap.data() as Usuario;
+              const filhosAtualizados = usuarioData.filhos?.map(f =>
+                f.id === item.id
+                  ? { ...f, pagamento: false, avisoPagamento: false }
+                  : f
+              );
+
+              await updateDoc(userRef, { filhos: filhosAtualizados });
+            }
+          }
+
+          onPagamentoAtualizado?.();
+        } catch (error) {
+          console.error("Erro ao atualizar pagamento expirado:", error);
+        }
+      }
+    };
+
+    verificarPagamentoExpirado();
+  }, [item.dataUltimoPagamento, item.pagamento, item.id, isFilho, usuario.id, onPagamentoAtualizado]);
+
 
   return (
     <>
@@ -72,8 +120,8 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
           {
             backgroundColor: statusInfo.cor + "20",
             borderColor: statusInfo.cor,
-            minWidth: isFilho ? 100 : 120, 
-            paddingHorizontal: isFilho ? 8 : 12, 
+            minWidth: isFilho ? 100 : 120,
+            paddingHorizontal: isFilho ? 8 : 12,
           }
         ]}
         onPress={() => setModalPagamento(true)}
@@ -83,7 +131,7 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
           styles.statusButtonText,
           {
             color: statusInfo.cor,
-            fontSize: isFilho ? 10 : 12, 
+            fontSize: isFilho ? 10 : 12,
           }
         ]}>
           {statusInfo.texto}
