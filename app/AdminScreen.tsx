@@ -183,6 +183,16 @@ export default function AdminScreen() {
                   <Ionicons name="stats-chart" size={22} color="#B8860B" />
                   <Text style={styles.sectionTitle}>Estatísticas Gerais</Text>
                 </View>
+                <TouchableOpacity
+                  style={[
+                    styles.refreshButton,
+                    refreshing && styles.refreshButtonDisabled
+                  ]}
+                  onPress={onRefresh}
+                  disabled={refreshing}
+                >
+                  <Ionicons name="refresh" size={20} color="#B8860B" />
+                </TouchableOpacity>
               </View>
               <Estatisticas estatisticas={estatisticas} />
             </View>
@@ -347,7 +357,7 @@ export default function AdminScreen() {
               Avisos
             </Text>
           </TouchableOpacity>
-        </View> 
+        </View>
       </View>
 
       {/* CONTEÚDO PRINCIPAL */}
