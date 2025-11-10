@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { differenceInDays } from "date-fns";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -53,7 +54,7 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
                             ? {
                                 ...f,
                                 avisoPagamento: true,
-                                dataUltimoPagamento: new Date().toISOString()
+                                dataUltimoPagamento: new Date().toISOString(),
                             }
                             : f
                     );
@@ -110,6 +111,50 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
             return "alert-circle";
         }
     };
+
+    useEffect(() => {
+        const verificarPagamentoExpirado = async () => {
+            if (!item.dataUltimoPagamento) return;
+
+            const diasDesdePagamento = differenceInDays(
+                new Date(),
+                new Date(item.dataUltimoPagamento)
+            );
+
+            if (diasDesdePagamento >= 30 && item.pagamento) {
+                try {
+                    if (tipo === "usuario") {
+                        const userRef = doc(db, "usuarios", item.id);
+                        await updateDoc(userRef, {
+                            pagamento: false,
+                            avisoPagamento: false,
+                        });
+                    } else if (usuarioId) {
+                        const userRef = doc(db, "usuarios", usuarioId);
+                        const userSnap = await getDoc(userRef);
+
+                        if (userSnap.exists()) {
+                            const usuario = userSnap.data() as Usuario;
+                            const filhosAtualizados = usuario.filhos?.map(f =>
+                                f.id === item.id
+                                    ? { ...f, pagamento: false, avisoPagamento: false }
+                                    : f
+                            );
+
+                            await updateDoc(userRef, { filhos: filhosAtualizados });
+                        }
+                    }
+
+                    onPagamentoAtualizado?.();
+                } catch (error) {
+                    console.error("Erro ao atualizar pagamento expirado:", error);
+                }
+            }
+        };
+
+        verificarPagamentoExpirado();
+    }, []);
+
 
     return (
         <>
@@ -192,8 +237,8 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
 
                             <View style={[
                                 styles.statusBadge,
-                                item.pagamento ? styles.statusBadgePago : 
-                                item.avisoPagamento ? styles.statusBadgeAguardando : styles.statusBadgePendente
+                                item.pagamento ? styles.statusBadgePago :
+                                    item.avisoPagamento ? styles.statusBadgeAguardando : styles.statusBadgePendente
                             ]}>
                                 <Text style={styles.statusBadgeText}>
                                     {getStatusText().toUpperCase()}

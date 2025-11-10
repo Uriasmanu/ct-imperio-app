@@ -30,7 +30,7 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
   const item = filho || usuario;
   const isFilho = !!filho;
 
-  // CORREÇÃO: Obter as propriedades de pagamento corretamente
+ 
   const getPagamentoInfo = () => {
     if (isFilho && filho) {
       return {
