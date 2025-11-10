@@ -114,7 +114,7 @@ export default function AdminScreen() {
     }
   }, [isAdmin]);
 
-  // 🎯 APLICAR FILTROS
+  // 🎯 APLICAR FILTROS - VERSÃO CORRIGIDA
   const usuariosFiltrados = usuarios.filter(usuario => {
     if (filtros.busca &&
       !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
@@ -128,11 +128,21 @@ export default function AdminScreen() {
       if (filtros.statusPagamento === "pendentes" && usuario.pagamento) return false;
     }
 
-    if (
-      filtros.modalidade !== "todas" &&
-      !usuario.modalidades.some(m => m.modalidade === filtros.modalidade)
-    ) {
-      return false;
+    // ✅ CORREÇÃO: Tratar modalidades opcionais corretamente
+    if (filtros.modalidade !== "todas") {
+      // Se o usuário não tem modalidades ou array vazio, não aparece no filtro
+      if (!usuario.modalidades || usuario.modalidades.length === 0) {
+        return false;
+      }
+
+      // Verificar se alguma modalidade corresponde ao filtro
+      const temModalidade = usuario.modalidades.some(m =>
+        m && m.modalidade === filtros.modalidade && m.ativo !== false
+      );
+
+      if (!temModalidade) {
+        return false;
+      }
     }
 
     return true;

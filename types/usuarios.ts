@@ -25,7 +25,7 @@ export interface CalendarDay {
 export interface Filho {
   id: string;
   nome: string;
-  modalidades: ModalidadeAluno[];
+  modalidades?: ModalidadeAluno[];
   observacao?: string;
   dataDeRegistro: string;
   pagamento: boolean;
@@ -39,7 +39,7 @@ export interface Filho {
 export interface Usuario {
   id: string;
   nome: string;
-  modalidades: ModalidadeAluno[];
+  modalidades?: ModalidadeAluno[];
   observacao?: string;
   email: string;
   telefone: string;
