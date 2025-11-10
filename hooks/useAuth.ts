@@ -353,6 +353,11 @@ export const useAuth = () => {
     }
   }, []);
 
+    const forcarAtualizacao = useCallback(() => {
+    setAtualizacao(prev => prev + 1);
+  }, []);
+
+
   return {
     usuario,
     setUsuario: atualizarUsuario,
@@ -360,12 +365,13 @@ export const useAuth = () => {
     refreshing,
     carregarUsuario,
     onRefresh,
-    handlePagamentoAtualizado,
+    handlePagamentoAtualizado: forcarAtualizacao,
     verificarPagamentosFilhos,
     setLoading,
     estaOnline,
     adicionarFilho,
     editarFilho,
     logout,
+    forcarAtualizacao,
   };
 };

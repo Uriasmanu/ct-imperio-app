@@ -1,3 +1,4 @@
+import { UserProvider, useUser } from '@/contexts/UserContext'; // ✅ ADD IMPORT
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
@@ -27,6 +28,7 @@ function HeaderLeftWithImage({ onPress }: { onPress: () => void }) {
 // Componente de Drawer personalizado
 function CustomDrawerContent(props: any) {
   const { isAdmin, loading } = useAdminAuth();
+  const { usuario } = useUser(); // ✅ ADD: Pegar usuário do contexto
   const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
@@ -65,7 +67,7 @@ function CustomDrawerContent(props: any) {
         <View style={styles.drawerHeaderText}>
           <Text style={styles.drawerTitle}>CT Imperio</Text>
           <Text style={styles.drawerSubtitle}>
-            {showAdmin ? 'Administrador' : 'Bem-vindo(a)'}
+            {showAdmin ? 'Administrador' : `Bem-vindo(a), ${usuario?.nome?.split(' ')[0] || 'Aluno'}`}
           </Text>
         </View>
       </View>
@@ -124,7 +126,17 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-export default function RootLayout() {
+// ✅ ADD: Componente wrapper para usar o contexto
+function RootLayoutWithProvider() {
+  return (
+    <UserProvider>
+      <RootLayoutContent />
+    </UserProvider>
+  );
+}
+
+// ✅ ADD: Separar o conteúdo do layout
+function RootLayoutContent() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -310,3 +322,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
 });
+
+// ✅ UPDATE: Exportar o componente com provider
+export default RootLayoutWithProvider;

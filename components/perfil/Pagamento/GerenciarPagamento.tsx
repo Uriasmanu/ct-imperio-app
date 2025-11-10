@@ -1,22 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
-import { differenceInDays } from "date-fns";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
     ActivityIndicator,
-    Alert,
     Modal,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 
 import { db } from "@/config/firebaseConfig";
+import { usePagamento } from "@/hooks/usePagamento";
 import { Filho, Usuario } from "@/types/usuarios";
+import { differenceInDays } from "date-fns";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 interface GerenciarPagamentoProps {
     item: Usuario | Filho;
-    usuarioId?: string; // Opcional - só necessário para filhos
+    usuarioId?: string;
     onPagamentoAtualizado: () => void;
     tipo: "usuario" | "filho";
 }
@@ -27,57 +27,21 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
     onPagamentoAtualizado,
     tipo,
 }) => {
-    const [modalPagamento, setModalPagamento] = useState(false);
-    const [processando, setProcessando] = useState(false);
+    const {
+        modalPagamento,
+        setModalPagamento,
+        processando,
+        handleAvisarPagamento,
+        formatarData,
+        dataUltimoPagamento
+    } = usePagamento({
+        item,
+        usuarioId,
+        tipo,
+        onPagamentoAtualizado,
+    });
 
-    const handleAvisarPagamento = async () => {
-        setProcessando(true);
-        try {
-            if (tipo === "usuario") {
-                // Atualizar usuário principal
-                const userRef = doc(db, "usuarios", item.id);
-                await updateDoc(userRef, {
-                    avisoPagamento: true,
-                    dataUltimoPagamento: new Date().toISOString()
-                });
-            } else {
-                // Atualizar filho
-                if (!usuarioId) throw new Error("ID do usuário é necessário para filhos");
 
-                const userRef = doc(db, "usuarios", usuarioId);
-                const userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    const usuario = userSnap.data() as Usuario;
-                    const filhosAtualizados = usuario.filhos?.map(f =>
-                        f.id === item.id
-                            ? {
-                                ...f,
-                                avisoPagamento: true,
-                                dataUltimoPagamento: new Date().toISOString(),
-                            }
-                            : f
-                    );
-
-                    await updateDoc(userRef, { filhos: filhosAtualizados });
-                }
-            }
-
-            onPagamentoAtualizado();
-            Alert.alert("Sucesso", `Pagamento de ${item.nome} foi avisado e está aguardando confirmação!`);
-        } catch (error) {
-            console.error("Erro ao avisar pagamento:", error);
-            Alert.alert("Erro", "Não foi possível avisar o pagamento.");
-        } finally {
-            setProcessando(false);
-        }
-    };
-
-    const formatarData = (data: string) => {
-        return new Date(data).toLocaleDateString("pt-BR");
-    };
-
-    const dataUltimoPagamento = 'dataUltimoPagamento' in item ? item.dataUltimoPagamento : undefined;
 
     // Determinar o texto a ser exibido baseado no status
     const getStatusText = () => {

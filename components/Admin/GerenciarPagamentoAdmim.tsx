@@ -1,16 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import React, { useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
-import { db } from "@/config/firebaseConfig";
+import { usePagamento } from "@/hooks/usePagamento";
 import { Filho, Usuario } from "@/types/usuarios";
 
 interface GerenciarPagamentoAdmimProps {
@@ -24,13 +22,27 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
   filho,
   onPagamentoAtualizado,
 }) => {
-  const [modalPagamento, setModalPagamento] = useState(false);
-  const [processando, setProcessando] = useState(false);
-
   const item = filho || usuario;
   const isFilho = !!filho;
 
- 
+  const {
+    modalPagamento,
+    setModalPagamento,
+    processando,
+    handleConfirmarPagamento,
+    handleReverterPagamento,
+    formatarData,
+    getStatusInfo,
+    dataUltimoPagamento
+  } = usePagamento({
+    item,
+    usuarioId: usuario.id,
+    tipo: isFilho ? 'filho' : 'usuario',
+    onPagamentoAtualizado,
+  });
+
+
+
   const getPagamentoInfo = () => {
     if (isFilho && filho) {
       return {
@@ -48,127 +60,8 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
   };
 
   const pagamentoInfo = getPagamentoInfo();
-
-  const handleConfirmarPagamento = async () => {
-    setProcessando(true);
-    try {
-      if (isFilho) {
-        // Atualizar pagamento do filho
-        const userRef = doc(db, "usuarios", usuario.id);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const usuarioData = userSnap.data() as Usuario;
-          const filhosAtualizados = usuarioData.filhos?.map(f =>
-            f.id === filho.id
-              ? {
-                  ...f,
-                  pagamento: true,
-                  avisoPagamento: false,
-                  dataUltimoPagamento: new Date().toISOString()
-                }
-              : f
-          );
-
-          await updateDoc(userRef, { filhos: filhosAtualizados });
-        }
-      } else {
-        // Atualizar pagamento do usuário principal
-        const userRef = doc(db, "usuarios", usuario.id);
-        await updateDoc(userRef, {
-          pagamento: true,
-          avisoPagamento: false,
-          dataUltimoPagamento: new Date().toISOString()
-        });
-      }
-
-      onPagamentoAtualizado();
-      Alert.alert("Sucesso", `Pagamento de ${item.nome} confirmado com sucesso!`);
-      setModalPagamento(false);
-    } catch (error) {
-      console.error("Erro ao confirmar pagamento:", error);
-      Alert.alert("Erro", "Não foi possível confirmar o pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const handleReverterPagamento = async () => {
-    setProcessando(true);
-    try {
-      if (isFilho) {
-        // Reverter pagamento do filho
-        const userRef = doc(db, "usuarios", usuario.id);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const usuarioData = userSnap.data() as Usuario;
-          const filhosAtualizados = usuarioData.filhos?.map(f =>
-            f.id === filho.id
-              ? {
-                  ...f,
-                  pagamento: false,
-                  avisoPagamento: false
-                }
-              : f
-          );
-
-          await updateDoc(userRef, { filhos: filhosAtualizados });
-        }
-      } else {
-        // Reverter pagamento do usuário principal
-        const userRef = doc(db, "usuarios", usuario.id);
-        await updateDoc(userRef, {
-          pagamento: false,
-          avisoPagamento: false
-        });
-      }
-
-      onPagamentoAtualizado();
-      Alert.alert("Sucesso", `Pagamento de ${item.nome} revertido para pendente!`);
-      setModalPagamento(false);
-    } catch (error) {
-      console.error("Erro ao reverter pagamento:", error);
-      Alert.alert("Erro", "Não foi possível reverter o pagamento.");
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString("pt-BR");
-  };
-
-  // CORREÇÃO: Textos mais curtos para filhos
-  const getStatusInfo = () => {
-    if (pagamentoInfo.pagamento) {
-      return {
-        texto: isFilho ? "Pago" : "Pago",
-        textoLongo: "Pago",
-        cor: "#22c55e",
-        icone: "checkmark-circle",
-        descricao: "Pagamento confirmado pelo administrador"
-      };
-    } else if (pagamentoInfo.avisoPagamento) {
-      return {
-        texto: isFilho ? "Aguardando" : "Aguardando Confirmação", // Texto mais curto para filhos
-        textoLongo: "Aguardando Confirmação",
-        cor: "#f59e0b",
-        icone: "time",
-        descricao: "Aluno avisou que pagou - aguardando confirmação"
-      };
-    } else {
-      return {
-        texto: isFilho ? "Pendente" : "Pendente",
-        textoLongo: "Pendente",
-        cor: "#ef4444",
-        icone: "alert-circle",
-        descricao: "Aguardando pagamento"
-      };
-    }
-  };
-
   const statusInfo = getStatusInfo();
+
 
   return (
     <>
@@ -176,21 +69,21 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
       <TouchableOpacity
         style={[
           styles.statusButton,
-          { 
+          {
             backgroundColor: statusInfo.cor + "20",
             borderColor: statusInfo.cor,
-            minWidth: isFilho ? 100 : 120, // Largura menor para filhos
-            paddingHorizontal: isFilho ? 8 : 12, // Padding menor para filhos
+            minWidth: isFilho ? 100 : 120, 
+            paddingHorizontal: isFilho ? 8 : 12, 
           }
         ]}
         onPress={() => setModalPagamento(true)}
       >
         <Ionicons name={statusInfo.icone as any} size={isFilho ? 14 : 16} color={statusInfo.cor} />
         <Text style={[
-          styles.statusButtonText, 
-          { 
+          styles.statusButtonText,
+          {
             color: statusInfo.cor,
-            fontSize: isFilho ? 10 : 12, // Fonte menor para filhos
+            fontSize: isFilho ? 10 : 12, 
           }
         ]}>
           {statusInfo.texto}
@@ -218,10 +111,10 @@ export const GerenciarPagamentoAdmim: React.FC<GerenciarPagamentoAdmimProps> = (
 
             <View style={styles.pagamentoInfo}>
               <View style={styles.alunoInfo}>
-                <Ionicons 
-                  name={isFilho ? "person-outline" : "person"} 
-                  size={20} 
-                  color="#B8860B" 
+                <Ionicons
+                  name={isFilho ? "person-outline" : "person"}
+                  size={20}
+                  color="#B8860B"
                 />
                 <View>
                   <Text style={styles.pagamentoNome}>{item.nome}</Text>
