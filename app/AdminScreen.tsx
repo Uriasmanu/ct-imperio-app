@@ -1,5 +1,5 @@
+// adminScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -13,9 +13,11 @@ import {
 } from "react-native";
 
 import { AcessoNegado } from "@/components/Admin/AcessoNegado";
-import { AvisosManager } from "@/components/Admin/AvisosManager"; // ✅ ADD IMPORT
+import { AvisosManager } from "@/components/Admin/AvisosManager";
+import { DetalhesAlunoModal } from '@/components/Admin/DetalhesAlunoModal';
 import { Estatisticas } from "@/components/Admin/Estatisticas";
 import { Filtros } from "@/components/Admin/Filtros";
+import { ListaAlunos } from '@/components/Admin/ListaAlunos';
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
 import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirmar";
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
@@ -25,11 +27,10 @@ import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as abas
-type AdminTab = 'presencas' | 'gestao' | 'avisos';
+type AdminTab = 'presencas' | 'gestao' | 'alunos' | 'avisos';
 
 // 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
-  const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAdminAuth();
   const [usuarios, setUsuarios] = useState<UsuarioCompleto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,21 @@ export default function AdminScreen() {
     buscarPresencasDoDia,
     confirmarTodasPresencasHoje,
   } = usePresenca();
+
+  const [alunoSelecionado, setAlunoSelecionado] = useState<UsuarioCompleto | null>(null);
+  const [modalDetalhesVisible, setModalDetalhesVisible] = useState(false);
+
+  // Função para abrir detalhes do aluno
+  const handleAbrirDetalhesAluno = (usuario: UsuarioCompleto) => {
+    setAlunoSelecionado(usuario);
+    setModalDetalhesVisible(true);
+  };
+
+  // Função para fechar modal
+  const handleFecharDetalhes = () => {
+    setModalDetalhesVisible(false);
+    setAlunoSelecionado(null);
+  };
 
   // 🔄 VERIFICAR ACESSO
   useEffect(() => {
@@ -257,7 +273,19 @@ export default function AdminScreen() {
           </View>
         );
 
-      case 'avisos': // ✅ ADD CASE PARA AVISOS
+      case 'alunos':
+        return (
+          <View style={styles.abaContent}>
+            <ListaAlunos
+              usuarios={usuarios}
+              onAbrirDetalhes={handleAbrirDetalhesAluno}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          </View>
+        );
+
+      case 'avisos':
         return (
           <View style={styles.abaContent}>
             <AvisosManager isVisible={abaAtiva === 'avisos'} />
@@ -280,7 +308,6 @@ export default function AdminScreen() {
 
   return (
     <View style={styles.container}>
-
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
@@ -341,6 +368,26 @@ export default function AdminScreen() {
           <TouchableOpacity
             style={[
               styles.tabButton,
+              abaAtiva === 'alunos' && styles.tabButtonActive
+            ]}
+            onPress={() => setAbaAtiva('alunos')}
+          >
+            <Ionicons
+              name="list"
+              size={20}
+              color={abaAtiva === 'alunos' ? "#000" : "#B8860B"}
+            />
+            <Text style={[
+              styles.tabButtonText,
+              abaAtiva === 'alunos' && styles.tabButtonTextActive
+            ]}>
+              Alunos
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
               abaAtiva === 'avisos' && styles.tabButtonActive
             ]}
             onPress={() => setAbaAtiva('avisos')}
@@ -378,6 +425,13 @@ export default function AdminScreen() {
         {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
       </ScrollView>
+
+      {/* MODAL DE DETALHES DO ALUNO */}
+      <DetalhesAlunoModal
+        visible={modalDetalhesVisible}
+        usuario={alunoSelecionado}
+        onClose={handleFecharDetalhes}
+      />
     </View>
   );
 }
