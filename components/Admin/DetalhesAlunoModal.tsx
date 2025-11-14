@@ -220,8 +220,8 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   onClose,
 }) => {
   const [marcandoPresenca, setMarcandoPresenca] = useState<string | null>(null);
-  const [presencaStates, setPresencaStates] = useState<{[key: string]: PresencaState}>({});
-  
+  const [presencaStates, setPresencaStates] = useState<{ [key: string]: PresencaState }>({});
+
   const {
     loading,
     checkInAdmin,
@@ -237,7 +237,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   }, [visible, usuario]);
 
   const carregarEstadosPresenca = async () => {
-    const novosEstados: {[key: string]: PresencaState} = {};
+    const novosEstados: { [key: string]: PresencaState } = {};
 
     // Verificar presença do usuário principal
     const estadoUsuario = await checkPresencaToday(usuario!.id, false);
@@ -257,7 +257,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   const handleMarcarPresenca = async (userId: string, userName: string, isChild: boolean = false, childId?: string, childName?: string) => {
     const targetId = isChild && childId ? childId : userId;
     setMarcandoPresenca(targetId);
-    
+
     try {
       const success = await checkInAdmin(userId, userName, isChild, childId, childName);
       if (success) {
@@ -478,7 +478,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                 <View>
                   <Text style={styles.presencaNome}>{usuario.nome}</Text>
                 </View>
-                <BotaoMarcarPresencaUsuario 
+                <BotaoMarcarPresencaUsuario
                   usuario={usuario}
                   estadoUsuario={presencaStates[usuario.id] || { hasPresenca: false, isConfirmed: false }}
                   loading={loading}
@@ -539,7 +539,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                       </View>
 
                       <View style={styles.filhoPresencaSection}>
-                        <BotaoMarcarPresencaFilho 
+                        <BotaoMarcarPresencaFilho
                           filho={filho}
                           usuario={usuario}
                           estadoFilho={presencaStates[filho.id] || { hasPresenca: false, isConfirmed: false }}
@@ -548,10 +548,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                           onMarcarPresenca={handleMarcarPresenca}
                         />
                       </View>
-
-                      <Text style={styles.filhoData}>
-                        Registrado em: {formatarData(filho.dataDeRegistro)}
-                      </Text>
                     </View>
                   );
                 })}
@@ -840,7 +836,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   filhoPresencaSection: {
-    marginTop: 12,
+
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#333',
