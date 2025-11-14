@@ -1,8 +1,11 @@
 // components/Admin/DetalhesAlunoModal.tsx
+import { usePresencaAdmin } from '@/hooks/usePresencaAdmin';
 import { UsuarioCompleto } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -17,15 +20,20 @@ interface DetalhesAlunoModalProps {
   onClose: () => void;
 }
 
+interface PresencaState {
+  hasPresenca: boolean;
+  isConfirmed: boolean;
+}
+
 // Função para formatar datas
 const formatarData = (data: string | Date) => {
   if (!data) return 'Não informado';
-  
+
   const dataObj = typeof data === 'string' ? new Date(data) : data;
-  
+
   // Verificar se a data é válida
   if (isNaN(dataObj.getTime())) return 'Data inválida';
-  
+
   return dataObj.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -93,19 +101,185 @@ const calcularPorcentagemPresenca = (totalPresencas: number): number => {
   return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
 };
 
+// Componente BotaoMarcarPresencaUsuario separado
+const BotaoMarcarPresencaUsuario: React.FC<{
+  usuario: UsuarioCompleto;
+  estadoUsuario: PresencaState;
+  loading: boolean;
+  marcandoPresenca: string | null;
+  onMarcarPresenca: (usuarioId: string, usuarioNome: string, isChild?: boolean, childId?: string, childName?: string) => Promise<void>;
+}> = ({ usuario, estadoUsuario, loading, marcandoPresenca, onMarcarPresenca }) => {
+  const handleMarcarPresenca = async () => {
+    if (estadoUsuario.hasPresenca) {
+      Alert.alert('Aviso', `${usuario.nome} já marcou presença para hoje. Tente novamente amanhã.`);
+      return;
+    }
+
+    await onMarcarPresenca(usuario.id, usuario.nome, false);
+  };
+
+  const isLoading = loading || marcandoPresenca === usuario.id;
+  const hasPresenca = estadoUsuario.hasPresenca;
+  const isConfirmed = estadoUsuario.isConfirmed;
+
+  return (
+    <View style={styles.presencaContainer}>
+      <TouchableOpacity
+        style={[
+          styles.presencaButton,
+          !hasPresenca && styles.presencaButtonAvailable,
+          hasPresenca && !isConfirmed && styles.presencaButtonPending,
+          hasPresenca && isConfirmed && styles.presencaButtonConfirmed,
+        ]}
+        onPress={handleMarcarPresenca}
+        disabled={isLoading || hasPresenca}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#000" />
+        ) : !hasPresenca ? (
+          <View style={styles.buttonContent}>
+            <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
+            <Text style={styles.presencaButtonText}>MARCAR PRESENÇA</Text>
+          </View>
+        ) : hasPresenca && !isConfirmed ? (
+          <View style={styles.buttonContent}>
+            <Ionicons name="time" size={20} color="#F59E0B" />
+            <Text style={styles.presencaButtonText}>AGUARDANDO CONFIRMAÇÃO</Text>
+          </View>
+        ) : (
+          <View style={styles.buttonContent}>
+            <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+            <Text style={styles.presencaButtonConfirmedText}>PRESENÇA CONFIRMADA</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Componente BotaoMarcarPresencaFilho separado
+const BotaoMarcarPresencaFilho: React.FC<{
+  filho: any;
+  usuario: UsuarioCompleto;
+  estadoFilho: PresencaState;
+  loading: boolean;
+  marcandoPresenca: string | null;
+  onMarcarPresenca: (usuarioId: string, usuarioNome: string, isChild?: boolean, childId?: string, childName?: string) => Promise<void>;
+}> = ({ filho, usuario, estadoFilho, loading, marcandoPresenca, onMarcarPresenca }) => {
+  const handleMarcarPresenca = async () => {
+    if (estadoFilho.hasPresenca) {
+      Alert.alert('Aviso', `${filho.nome} já marcou presença para hoje. Tente novamente amanhã.`);
+      return;
+    }
+
+    await onMarcarPresenca(usuario.id, usuario.nome, true, filho.id, filho.nome);
+  };
+
+  const isLoading = loading || marcandoPresenca === filho.id;
+  const hasPresenca = estadoFilho.hasPresenca;
+  const isConfirmed = estadoFilho.isConfirmed;
+
+  return (
+    <View style={styles.presencaContainer}>
+      <TouchableOpacity
+        style={[
+          styles.presencaButton,
+          !hasPresenca && styles.presencaButtonAvailable,
+          hasPresenca && !isConfirmed && styles.presencaButtonPending,
+          hasPresenca && isConfirmed && styles.presencaButtonConfirmed,
+        ]}
+        onPress={handleMarcarPresenca}
+        disabled={isLoading || hasPresenca}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#000" />
+        ) : !hasPresenca ? (
+          <View style={styles.buttonContent}>
+            <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
+            <Text style={styles.presencaButtonText}>MARCAR PRESENÇA</Text>
+          </View>
+        ) : hasPresenca && !isConfirmed ? (
+          <View style={styles.buttonContent}>
+            <Ionicons name="time" size={20} color="#F59E0B" />
+            <Text style={styles.presencaButtonText}>AGUARDANDO CONFIRMAÇÃO</Text>
+          </View>
+        ) : (
+          <View style={styles.buttonContent}>
+            <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+            <Text style={styles.presencaButtonConfirmedText}>PRESENÇA CONFIRMADA</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   visible,
   usuario,
   onClose,
 }) => {
-  if (!usuario) return null;
+  const [marcandoPresenca, setMarcandoPresenca] = useState<string | null>(null);
+  const [presencaStates, setPresencaStates] = useState<{[key: string]: PresencaState}>({});
+  
+  const {
+    loading,
+    checkInAdmin,
+    checkPresencaToday,
+    todayString,
+  } = usePresencaAdmin();
+
+  // 🔥 NOVO: Carregar estados de presença quando o modal abrir
+  useEffect(() => {
+    if (visible && usuario) {
+      carregarEstadosPresenca();
+    }
+  }, [visible, usuario]);
+
+  const carregarEstadosPresenca = async () => {
+    const novosEstados: {[key: string]: PresencaState} = {};
+
+    // Verificar presença do usuário principal
+    const estadoUsuario = await checkPresencaToday(usuario!.id, false);
+    novosEstados[usuario!.id] = estadoUsuario;
+
+    // Verificar presença dos filhos
+    if (usuario!.filhos) {
+      for (const filho of usuario!.filhos) {
+        const estadoFilho = await checkPresencaToday(usuario!.id, true, filho.id);
+        novosEstados[filho.id] = estadoFilho;
+      }
+    }
+
+    setPresencaStates(novosEstados);
+  };
+
+  const handleMarcarPresenca = async (userId: string, userName: string, isChild: boolean = false, childId?: string, childName?: string) => {
+    const targetId = isChild && childId ? childId : userId;
+    setMarcandoPresenca(targetId);
+    
+    try {
+      const success = await checkInAdmin(userId, userName, isChild, childId, childName);
+      if (success) {
+        // Atualizar estado local
+        setPresencaStates(prev => ({
+          ...prev,
+          [targetId]: { hasPresenca: true, isConfirmed: false }
+        }));
+      }
+    } catch (error) {
+      console.error('Erro ao marcar presença:', error);
+    } finally {
+      setMarcandoPresenca(null);
+    }
+  };
 
   const formatarGraduacao = (graduacao: any, modalidade: string) => {
     if (!graduacao) return 'Sem graduação';
 
     if (modalidade === 'Muay Thai') {
-      return graduacao?.pontaBranca 
-        ? `${graduacao.cor} (Ponta Branca)` 
+      return graduacao?.pontaBranca
+        ? `${graduacao.cor} (Ponta Branca)`
         : graduacao.cor;
     } else {
       return `${graduacao.cor} - ${graduacao.grau ?? 0}º Grau`;
@@ -117,14 +291,14 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     try {
       if (filho) {
         // Para filhos, tentar diferentes possíveis nomes de campo
-        return Array.isArray(filho.Presenca) ? filho.Presenca : 
-               Array.isArray(filho.presenca) ? filho.presenca :
-               Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
+        return Array.isArray(filho.Presenca) ? filho.Presenca :
+          Array.isArray(filho.presenca) ? filho.presenca :
+            Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
       } else {
         // Para usuário principal, tentar diferentes possíveis nomes de campo
-        return Array.isArray(dados.Presenca) ? dados.Presenca : 
-               Array.isArray(dados.presenca) ? dados.presenca :
-               Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
+        return Array.isArray(dados.Presenca) ? dados.Presenca :
+          Array.isArray(dados.presenca) ? dados.presenca :
+            Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
       }
     } catch {
       return [];
@@ -133,7 +307,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
   const calcularFrequencia = (presencaArray: string[] = []) => {
     const totalPresencas = presencaArray.length;
-    
+
     // Filtrar presenças dos últimos 30 dias
     const ultimoMes = presencaArray.filter(dataPresencaStr => {
       try {
@@ -149,16 +323,12 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     // 🔥 CORREÇÃO: Usar a função local para calcular porcentagem
     const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
 
-    return { 
-      total: totalPresencas, 
+    return {
+      total: totalPresencas,
       ultimoMes,
-      porcentagemSemestre 
+      porcentagemSemestre
     };
   };
-
-  // 🔥 CORREÇÃO: Usar função segura para obter presenças
-  const presencaUsuario = obterArrayPresenca(usuario);
-  const frequenciaUsuario = calcularFrequencia(presencaUsuario);
 
   // Determinar cor baseada na porcentagem
   const getPorcentagemColor = (porcentagem: number): string => {
@@ -169,6 +339,17 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
   // Obter informações do semestre
   const semestreInfo = getSemestreInfo();
+
+  if (!usuario) return null;
+
+  // 🔥 CORREÇÃO: Usar função segura para obter presenças
+  const presencaUsuario = obterArrayPresenca(usuario);
+  const frequenciaUsuario = calcularFrequencia(presencaUsuario);
+
+  // Verificar se o usuário tem modalidades ativas
+  const usuarioTemModalidadeAtiva = usuario.modalidades &&
+    usuario.modalidades.length > 0 &&
+    usuario.modalidades.some(m => m.ativo);
 
   return (
     <Modal
@@ -230,7 +411,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                   {usuario.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
                 </Text>
                 <Text style={styles.pagamentoData}>
-                  Dia de pagamento: {usuario.dataPagamento ? 
+                  Dia de pagamento: {usuario.dataPagamento ?
                     new Date(usuario.dataPagamento).getDate() : '-'} de cada mês
                 </Text>
               </View>
@@ -290,16 +471,33 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
+          {usuario.modalidades?.some(m => m.ativo) && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Marcar Presença</Text>
+              <View style={styles.presencaCard}>
+                <View>
+                  <Text style={styles.presencaNome}>{usuario.nome}</Text>
+                </View>
+                <BotaoMarcarPresencaUsuario 
+                  usuario={usuario}
+                  estadoUsuario={presencaStates[usuario.id] || { hasPresenca: false, isConfirmed: false }}
+                  loading={loading}
+                  marcandoPresenca={marcandoPresenca}
+                  onMarcarPresenca={handleMarcarPresenca}
+                />
+              </View>
+            </View>
+          )}
+
           {/* Filhos */}
           {usuario.filhos && usuario.filhos.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Filhos Registrados</Text>
+              <Text style={styles.sectionTitle}>Alunos Dependentes</Text>
               <View style={styles.filhosList}>
                 {usuario.filhos.map((filho, index) => {
-                  // 🔥 CORREÇÃO: Usar função segura para obter presenças dos filhos
                   const presencaFilho = obterArrayPresenca(usuario, filho);
                   const frequenciaFilho = calcularFrequencia(presencaFilho);
-                  
+
                   return (
                     <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
                       <View style={styles.filhoHeader}>
@@ -308,7 +506,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                           <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
                         )}
                       </View>
-                      
+
                       {/* Modalidades do Filho */}
                       {filho.modalidades && filho.modalidades.length > 0 && (
                         <View style={styles.filhoModalidades}>
@@ -340,6 +538,17 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         </View>
                       </View>
 
+                      <View style={styles.filhoPresencaSection}>
+                        <BotaoMarcarPresencaFilho 
+                          filho={filho}
+                          usuario={usuario}
+                          estadoFilho={presencaStates[filho.id] || { hasPresenca: false, isConfirmed: false }}
+                          loading={loading}
+                          marcandoPresenca={marcandoPresenca}
+                          onMarcarPresenca={handleMarcarPresenca}
+                        />
+                      </View>
+
                       <Text style={styles.filhoData}>
                         Registrado em: {formatarData(filho.dataDeRegistro)}
                       </Text>
@@ -355,7 +564,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   );
 };
 
-// Os estilos permanecem os mesmos...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -570,5 +778,72 @@ const styles = StyleSheet.create({
   filhoData: {
     fontSize: 12,
     color: '#666',
+  },
+  // NOVOS ESTILOS PARA PRESENÇA
+  presencaCard: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    alignItems: 'center',
+    gap: 12,
+  },
+  presencaNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+    textAlign: 'center',
+  },
+  presencaContainer: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  presencaButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+  },
+  presencaButtonAvailable: {
+    backgroundColor: '#3B82F6',
+  },
+  presencaButtonPending: {
+    backgroundColor: '#F59E0B',
+  },
+  presencaButtonConfirmed: {
+    backgroundColor: '#1e3a28',
+    borderColor: '#22c55e',
+    borderWidth: 1,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  presencaButtonText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  presencaButtonConfirmedText: {
+    color: '#22c55e',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  ultimaPresenca: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  filhoPresencaSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    alignItems: 'center',
   },
 });
