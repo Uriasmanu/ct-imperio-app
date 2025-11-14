@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
     backgroundColor: '#000',
+    marginTop: 30
   },
   backButton: {
     padding: 8,

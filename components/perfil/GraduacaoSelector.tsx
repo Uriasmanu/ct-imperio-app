@@ -1,6 +1,6 @@
 import { GraduacaoJiuJitsu, GraduacaoMuayThai, graduaçõesJiuJitsu, graduaçõesMuayThai } from '@/types/graduacoes';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // ← Adicionei StyleSheet aqui
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface GraduacaoSelectorProps {
     modalidade: string;
@@ -84,7 +84,7 @@ export const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
         const atual = graduacaoAtual as GraduacaoMuayThai;
         return (
             <View style={styles.graduacaoContainer}>
-                <Text style={styles.modalLabel}>Grau (Kruang):</Text>
+                <Text style={styles.modalLabel}>Praijed:</Text>
                 <View style={styles.grauButtonsContainer}>
                     {graduaçõesMuayThai.map((grad) => (
                         <TouchableOpacity

@@ -3,7 +3,7 @@
 import { GraduacaoJiuJitsu, GraduacaoMuayThai } from "./graduacoes";
 
 export interface ModalidadeAluno {
-  modalidade: "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA";
+  modalidade: "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA" | "No-Gi";
   graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu;
   dataInicio: string;
   ativo: boolean;

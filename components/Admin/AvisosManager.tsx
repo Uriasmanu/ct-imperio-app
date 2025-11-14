@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     headerTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#FFF',
     },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         backgroundColor: '#B8860B',
-        paddingHorizontal: 16,
+        paddingHorizontal: 10,
         paddingVertical: 10,
         borderRadius: 8,
     },

@@ -128,9 +128,7 @@ export default function AdminScreen() {
       if (filtros.statusPagamento === "pendentes" && usuario.pagamento) return false;
     }
 
-    // ✅ CORREÇÃO: Tratar modalidades opcionais corretamente
     if (filtros.modalidade !== "todas") {
-      // Se o usuário não tem modalidades ou array vazio, não aparece no filtro
       if (!usuario.modalidades || usuario.modalidades.length === 0) {
         return false;
       }
@@ -155,7 +153,7 @@ export default function AdminScreen() {
     pagos: usuarios.filter(u => u.pagamento).length,
     pendentes: usuarios.filter(
       u => !u.pagamento && u.modalidades && u.modalidades.length > 0
-    ).length, // ✅ só conta pendente se tiver modalidade
+    ).length, 
     comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
     totalAlunos:
       usuarios.reduce(

@@ -14,11 +14,11 @@ export const MultiModalidadeSelector: React.FC<MultiModalidadeSelectorProps> = (
   modalidades,
   onModalidadesChange,
 }) => {
-  const todasModalidades: Array<"Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA"> = [
-    "Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"
+  const todasModalidades: Array<"Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA"> = [
+    "Jiu-Jitsu", "Muay Thai", "Boxe", "MMA", "No-Gi"
   ];
 
-  const toggleModalidade = (modalidade: "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA") => {
+  const toggleModalidade = (modalidade: "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA") => {
     const existe = modalidades.find(m => m.modalidade === modalidade);
     
     if (existe) {

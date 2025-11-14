@@ -301,7 +301,6 @@ export default function perfilScreen() {
 
 
           <View style={styles.infoField}>
-            <Text style={styles.infoLabel}>Modalidades</Text>
             {editando ? (
               <MultiModalidadeSelector
                 modalidades={usuario?.modalidades || []}
