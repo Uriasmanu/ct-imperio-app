@@ -31,6 +31,22 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [confirmandoTodas, setConfirmandoTodas] = useState(false);
 
+
+  // Função para verificar se uma data é hoje
+  const isHoje = (dataString: string) => {
+    const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    return dataString === hoje;
+  };
+
+  // Filtrar presenças de hoje
+  const presencasHoje = presencas.filter(presenca => isHoje(presenca.data));
+  const presencasPendentesHoje = presencasHoje.filter(p => !p.confirmada);
+
+  // Verificar se há presenças de hoje para mostrar o botão
+  const temPresencasHoje = presencasHoje.length > 0;
+  const temPresencasPendentesHoje = presencasPendentesHoje.length > 0;
+
+
   // Função para confirmar todas as presenças
   const handleConfirmarTodas = async () => {
     if (!onConfirmarTodas) return;
@@ -44,7 +60,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
     Alert.alert(
       'Confirmar Todas as Presenças',
-      `Deseja confirmar todas as ${presencasPendentes.length} presenças pendentes de hoje?`,
+      `Deseja confirmar todas as ${presencasPendentesHoje.length} presenças pendentes de hoje?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -117,7 +133,8 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
       <View style={styles.header}>
         <Text style={styles.title}>Presenças para Confirmar</Text>
 
-        {stats.pendentesHoje > 0 && (
+        {/* MOSTRAR BOTÃO APENAS SE HOUVER PRESENÇAS PENDENTES HOJE */}
+        {temPresencasPendentesHoje && onConfirmarTodas && (
           <TouchableOpacity
             style={[
               styles.confirmarTodasButton,
@@ -132,12 +149,13 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
               <>
                 <Ionicons name="checkmark-done" size={18} color="#000" />
                 <Text style={styles.confirmarTodasText}>
-                  Confirmar Todas ({stats.pendentesHoje})
+                  Confirmar Todas ({presencasPendentesHoje.length})
                 </Text>
               </>
             )}
           </TouchableOpacity>
         )}
+
       </View>
       {/* Estatísticas */}
       <View style={styles.statsContainer}>
@@ -398,14 +416,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  
+
   title: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1,
   },
-  
+
   confirmarTodasButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -415,12 +433,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
   },
-  
+
   confirmarTodasButtonDisabled: {
     opacity: 0.6,
     backgroundColor: '#666',
   },
-  
+
   confirmarTodasText: {
     color: '#000',
     fontSize: 12,
