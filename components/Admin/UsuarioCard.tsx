@@ -23,8 +23,8 @@ export const UsuarioCard: React.FC<UsuarioCardProps> = ({
   const [expanded, setExpanded] = useState(true);
   const rotateAnim = useState(new Animated.Value(0))[0];
 
-  const isPendente = !usuario.pagamento && usuario.modalidades?.length > 0;
-
+  const temModalidade = (usuario.modalidades?.length ?? 0) > 0;
+  const isPendente = !usuario.pagamento && temModalidade;
 
   const toggleExpanded = () => {
     const toValue = expanded ? 0 : 1;
@@ -61,7 +61,7 @@ export const UsuarioCard: React.FC<UsuarioCardProps> = ({
     if (!usuario.dataUltimoPagamento) return "#ef4444";
     const diff = Math.floor(
       (new Date().getTime() - new Date(usuario.dataUltimoPagamento).getTime()) /
-        (1000 * 60 * 60 * 24)
+      (1000 * 60 * 60 * 24)
     );
     if (diff <= 30) return "#22c55e";
     if (diff <= 60) return "#eab308";
@@ -89,10 +89,10 @@ export const UsuarioCard: React.FC<UsuarioCardProps> = ({
                         m.modalidade === "Muay Thai"
                           ? "#dc2626"
                           : m.modalidade === "Jiu-Jitsu"
-                          ? "#1e40af"
-                          : m.modalidade === "Boxe"
-                          ? "#059669"
-                          : "#7c3aed",
+                            ? "#1e40af"
+                            : m.modalidade === "Boxe"
+                              ? "#059669"
+                              : "#7c3aed",
                     },
                   ]}
                 >
@@ -102,11 +102,13 @@ export const UsuarioCard: React.FC<UsuarioCardProps> = ({
             </View>
           </ScrollView>
         </View>
+        {temModalidade && (
+          <GerenciarPagamentoAdmim
+            usuario={usuario}
+            onPagamentoAtualizado={onPagamentoAtualizado}
+          />
+        )}
 
-        <GerenciarPagamentoAdmim
-          usuario={usuario}
-          onPagamentoAtualizado={onPagamentoAtualizado}
-        />
       </View>
 
       {/* Informações de pagamento */}

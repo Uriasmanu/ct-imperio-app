@@ -114,7 +114,6 @@ export default function AdminScreen() {
     }
   }, [isAdmin]);
 
-  // 🎯 APLICAR FILTROS - VERSÃO CORRIGIDA
   const usuariosFiltrados = usuarios.filter(usuario => {
     if (filtros.busca &&
       !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
@@ -146,21 +145,26 @@ export default function AdminScreen() {
     return true;
   });
 
-  // 🎯 ESTATÍSTICAS
-
   const estatisticas = {
     total: usuarios.length,
+
+    // PENDENTES: Adultos com modalidade sem pagamento + TODOS os filhos
+    pendentes: usuarios.filter(u =>
+      !u.pagamento && u.modalidades && u.modalidades.length > 0
+    ).length + usuarios.reduce((total, usuario) =>
+      total + (usuario.filhos ? usuario.filhos.length : 0), 0
+    ),
+
+    // PAGOS: Apenas adultos com pagamento (filhos não pagam separadamente)
     pagos: usuarios.filter(u => u.pagamento).length,
-    pendentes: usuarios.filter(
-      u => !u.pagamento && u.modalidades && u.modalidades.length > 0
-    ).length, 
+
     comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
-    totalAlunos:
-      usuarios.reduce(
-        (total, usuario) => total + (usuario.filhos ? usuario.filhos.length : 0),
-        0
-      ) + usuarios.length,
+
+    totalAlunos: usuarios.reduce(
+      (total, usuario) => total + (usuario.filhos ? usuario.filhos.length : 0), 0
+    ) + usuarios.length,
   };
+
 
 
   // 🎯 RENDER CONTEÚDO POR ABA
