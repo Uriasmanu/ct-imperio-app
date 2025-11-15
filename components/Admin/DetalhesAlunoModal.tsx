@@ -14,10 +14,14 @@ import {
   View,
 } from 'react-native';
 
+// Hook de pagamento administrativo
+import { usePagamentoAdmin } from '@/hooks/usePagamentoAdmin';
+
 interface DetalhesAlunoModalProps {
   visible: boolean;
   usuario: UsuarioCompleto | null;
   onClose: () => void;
+  onPagamentoAtualizado?: () => void;
 }
 
 interface PresencaState {
@@ -31,7 +35,6 @@ const formatarData = (data: string | Date) => {
 
   const dataObj = typeof data === 'string' ? new Date(data) : data;
 
-  // Verificar se a data é válida
   if (isNaN(dataObj.getTime())) return 'Data inválida';
 
   return dataObj.toLocaleDateString('pt-BR', {
@@ -41,7 +44,7 @@ const formatarData = (data: string | Date) => {
   });
 };
 
-// Função para calcular informações do semestre (igual ao hook)
+// Função para calcular informações do semestre
 const getSemestreInfo = () => {
   const hoje = new Date();
   const currentMonth = hoje.getMonth();
@@ -54,7 +57,7 @@ const getSemestreInfo = () => {
   };
 };
 
-// Função para calcular dias úteis (igual ao hook)
+// Função para calcular dias úteis
 const calcularDiasUteis = (inicio: Date, fim: Date): number => {
   let count = 0;
   const current = new Date(inicio);
@@ -63,7 +66,6 @@ const calcularDiasUteis = (inicio: Date, fim: Date): number => {
     const day = current.getDay();
     const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
 
-    // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
     if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
       count++;
     }
@@ -72,36 +74,172 @@ const calcularDiasUteis = (inicio: Date, fim: Date): number => {
   return count;
 };
 
-// Função para calcular porcentagem (igual ao hook)
+// Função para calcular porcentagem
 const calcularPorcentagemPresenca = (totalPresencas: number): number => {
   const hoje = new Date();
   const currentYear = hoje.getFullYear();
   const currentMonth = hoje.getMonth();
 
-  // Definir semestres
   let inicioSemestre: Date;
   let fimSemestre: Date;
 
   if (currentMonth >= 0 && currentMonth <= 5) {
-    // Primeiro semestre: janeiro a junho
     inicioSemestre = new Date(currentYear, 0, 2);
     fimSemestre = new Date(currentYear, 5, 30);
   } else {
-    // Segundo semestre: julho a dezembro
     inicioSemestre = new Date(currentYear, 6, 1);
     fimSemestre = new Date(currentYear, 11, 31);
   }
 
-  // Se hoje estiver antes do fim do semestre, usar a data atual como limite
   const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
-
   const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
 
   if (diasUteisNoSemestre === 0) return 0;
   return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
 };
 
-// Componente BotaoMarcarPresencaUsuario separado
+// Componente para Gerenciar Pagamento do ADMIN
+const GerenciarPagamentoAdmin: React.FC<{
+  item: UsuarioCompleto | any;
+  tipo: "usuario" | "filho";
+  usuarioId?: string;
+  onPagamentoAtualizado: () => void;
+}> = ({ item, tipo, usuarioId, onPagamentoAtualizado }) => {
+  const {
+    modalPagamento,
+    setModalPagamento,
+    processando,
+    handleConfirmarPagamento,
+    handleReverterPagamento,
+    formatarData,
+    getStatusInfo,
+    dataUltimoPagamento
+  } = usePagamentoAdmin({
+    item,
+    usuarioId,
+    tipo,
+    onPagamentoAtualizado,
+  });
+
+  const statusInfo = getStatusInfo();
+
+  return (
+    <>
+      <View style={styles.pagamentoContainer}>
+        {/* Status do Pagamento - Sempre clicável para o admin */}
+        <TouchableOpacity
+          style={[
+            styles.statusContainer,
+            item.pagamento ? styles.pagamentoPago :
+            item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
+          ]}
+          onPress={() => setModalPagamento(true)}
+        >
+          <Ionicons
+            name={statusInfo.icone as any}
+            size={16}
+            color={statusInfo.cor}
+          />
+          <Text style={[styles.statusText, { color: statusInfo.cor }]}>
+            {statusInfo.texto}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={modalPagamento}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => !processando && setModalPagamento(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gerenciar Pagamento - ADMIN</Text>
+              <TouchableOpacity
+                onPress={() => !processando && setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.pagamentoInfo}>
+              <View style={styles.alunoInfo}>
+                <Ionicons name="person" size={20} color="#B8860B" />
+                <Text style={styles.pagamentoNome}>{item.nome}</Text>
+              </View>
+
+              <View style={[
+                styles.statusBadge,
+                { backgroundColor: `${statusInfo.cor}20` }
+              ]}>
+                <Ionicons name={statusInfo.icone as any} size={16} color={statusInfo.cor} />
+                <Text style={[styles.statusBadgeText, { color: statusInfo.cor }]}>
+                  {statusInfo.textoLongo.toUpperCase()}
+                </Text>
+              </View>
+
+              <Text style={styles.statusDescricao}>
+                {statusInfo.descricao}
+              </Text>
+
+              {dataUltimoPagamento && (
+                <View style={styles.dataInfo}>
+                  <Ionicons name="calendar" size={16} color="#666" />
+                  <Text style={styles.pagamentoData}>
+                    Último pagamento: {formatarData(dataUltimoPagamento)}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalPagamento(false)}
+                disabled={processando}
+              >
+                <Text style={styles.cancelButtonText}>Fechar</Text>
+              </TouchableOpacity>
+
+              {/* BOTÕES DO ADMIN: Confirmar ou Reverter pagamento */}
+              {!item.pagamento ? (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmarPagamento}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <Text style={styles.confirmButtonText}>
+                      {item.avisoPagamento ? 'Confirmar Pagamento' : 'Marcar como Pago'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.reverterButton]}
+                  onPress={handleReverterPagamento}
+                  disabled={processando}
+                >
+                  {processando ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <Text style={styles.reverterButtonText}>Reverter para Pendente</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+// Componente BotaoMarcarPresencaUsuario
 const BotaoMarcarPresencaUsuario: React.FC<{
   usuario: UsuarioCompleto;
   estadoUsuario: PresencaState;
@@ -157,7 +295,7 @@ const BotaoMarcarPresencaUsuario: React.FC<{
   );
 };
 
-// Componente BotaoMarcarPresencaFilho separado
+// Componente BotaoMarcarPresencaFilho
 const BotaoMarcarPresencaFilho: React.FC<{
   filho: any;
   usuario: UsuarioCompleto;
@@ -218,6 +356,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   visible,
   usuario,
   onClose,
+  onPagamentoAtualizado,
 }) => {
   const [marcandoPresenca, setMarcandoPresenca] = useState<string | null>(null);
   const [presencaStates, setPresencaStates] = useState<{ [key: string]: PresencaState }>({});
@@ -229,7 +368,10 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     todayString,
   } = usePresencaAdmin();
 
-  // 🔥 NOVO: Carregar estados de presença quando o modal abrir
+  const handlePagamentoAtualizado = () => {
+    onPagamentoAtualizado?.();
+  };
+
   useEffect(() => {
     if (visible && usuario) {
       carregarEstadosPresenca();
@@ -261,7 +403,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     try {
       const success = await checkInAdmin(userId, userName, isChild, childId, childName);
       if (success) {
-        // Atualizar estado local
         setPresencaStates(prev => ({
           ...prev,
           [targetId]: { hasPresenca: true, isConfirmed: false }
@@ -286,16 +427,13 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   };
 
-  // 🔥 CORREÇÃO: Função segura para obter presenças
   const obterArrayPresenca = (dados: any, filho?: any): string[] => {
     try {
       if (filho) {
-        // Para filhos, tentar diferentes possíveis nomes de campo
         return Array.isArray(filho.Presenca) ? filho.Presenca :
           Array.isArray(filho.presenca) ? filho.presenca :
             Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
       } else {
-        // Para usuário principal, tentar diferentes possíveis nomes de campo
         return Array.isArray(dados.Presenca) ? dados.Presenca :
           Array.isArray(dados.presenca) ? dados.presenca :
             Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
@@ -308,7 +446,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   const calcularFrequencia = (presencaArray: string[] = []) => {
     const totalPresencas = presencaArray.length;
 
-    // Filtrar presenças dos últimos 30 dias
     const ultimoMes = presencaArray.filter(dataPresencaStr => {
       try {
         const dataPresenca = new Date(dataPresencaStr);
@@ -320,7 +457,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       }
     }).length;
 
-    // 🔥 CORREÇÃO: Usar a função local para calcular porcentagem
     const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
 
     return {
@@ -330,26 +466,18 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     };
   };
 
-  // Determinar cor baseada na porcentagem
   const getPorcentagemColor = (porcentagem: number): string => {
-    if (porcentagem >= 75) return '#22c55e'; // Verde
-    if (porcentagem >= 50) return '#eab308'; // Amarelo
-    return '#ef4444'; // Vermelho
+    if (porcentagem >= 75) return '#22c55e';
+    if (porcentagem >= 50) return '#eab308';
+    return '#ef4444';
   };
 
-  // Obter informações do semestre
   const semestreInfo = getSemestreInfo();
 
   if (!usuario) return null;
 
-  // 🔥 CORREÇÃO: Usar função segura para obter presenças
   const presencaUsuario = obterArrayPresenca(usuario);
   const frequenciaUsuario = calcularFrequencia(presencaUsuario);
-
-  // Verificar se o usuário tem modalidades ativas
-  const usuarioTemModalidadeAtiva = usuario.modalidades &&
-    usuario.modalidades.length > 0 &&
-    usuario.modalidades.some(m => m.ativo);
 
   return (
     <Modal
@@ -397,24 +525,29 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           {/* Status do Pagamento */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Status do Pagamento</Text>
-            <View style={[
-              styles.pagamentoCard,
-              { backgroundColor: usuario.pagamento ? '#1a3a1a' : '#3a1a1a' }
-            ]}>
-              <Ionicons
-                name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
-                size={24}
-                color={usuario.pagamento ? "#22c55e" : "#ef4444"}
-              />
-              <View style={styles.pagamentoInfo}>
-                <Text style={styles.pagamentoStatus}>
-                  {usuario.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
-                </Text>
-                <Text style={styles.pagamentoData}>
-                  Dia de pagamento: {usuario.dataPagamento ?
-                    new Date(usuario.dataPagamento).getDate() : '-'} de cada mês
-                </Text>
+            <View style={styles.pagamentoSectionCard}>
+              <View style={styles.pagamentoInfoHeader}>
+                <Ionicons
+                  name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
+                  size={24}
+                  color={usuario.pagamento ? "#22c55e" : "#ef4444"}
+                />
+                <View style={styles.pagamentoInfoText}>
+                  <Text style={styles.pagamentoStatus}>
+                    {usuario.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
+                  </Text>
+                  <Text style={styles.pagamentoData}>
+                    Dia de pagamento: {usuario.dataPagamento ?
+                      new Date(usuario.dataPagamento).getDate() : '-'} de cada mês
+                  </Text>
+                </View>
               </View>
+              
+              <GerenciarPagamentoAdmin
+                item={usuario}
+                tipo="usuario"
+                onPagamentoAtualizado={handlePagamentoAtualizado}
+              />
             </View>
           </View>
 
@@ -471,6 +604,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
+          {/* Marcar Presença do Usuário */}
           {usuario.modalidades?.some(m => m.ativo) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Marcar Presença</Text>
@@ -507,6 +641,16 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         )}
                       </View>
 
+                      {/* Pagamento do Filho */}
+                      <View style={styles.filhoPagamentoSection}>
+                        <GerenciarPagamentoAdmin
+                          item={filho}
+                          tipo="filho"
+                          usuarioId={usuario.id}
+                          onPagamentoAtualizado={handlePagamentoAtualizado}
+                        />
+                      </View>
+
                       {/* Modalidades do Filho */}
                       {filho.modalidades && filho.modalidades.length > 0 && (
                         <View style={styles.filhoModalidades}>
@@ -538,6 +682,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         </View>
                       </View>
 
+                      {/* Marcar Presença do Filho */}
                       <View style={styles.filhoPresencaSection}>
                         <BotaoMarcarPresencaFilho
                           filho={filho}
@@ -627,16 +772,20 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  pagamentoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  pagamentoSectionCard: {
+    backgroundColor: '#1a1a1a',
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#333',
-    gap: 12,
   },
-  pagamentoInfo: {
+  pagamentoInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  pagamentoInfoText: {
     flex: 1,
   },
   pagamentoStatus: {
@@ -741,6 +890,12 @@ const styles = StyleSheet.create({
     color: '#B8860B',
     fontWeight: '500',
   },
+  filhoPagamentoSection: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
   filhoModalidades: {
     gap: 8,
     marginBottom: 12,
@@ -775,7 +930,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-  // NOVOS ESTILOS PARA PRESENÇA
   presencaCard: {
     backgroundColor: '#1a1a1a',
     padding: 16,
@@ -836,10 +990,154 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   filhoPresencaSection: {
-
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#333',
     alignItems: 'center',
+  },
+  pagamentoContainer: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 44,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  pagamentoPago: {
+    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    borderColor: "#22c55e",
+  },
+  pagamentoAguardando: {
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    borderColor: "#f59e0b",
+  },
+  pagamentoPendente: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderColor: "#ef4444",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 16,
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "90%",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  pagamentoInfo: {
+    backgroundColor: "#2a2a2a",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    gap: 12,
+  },
+  alunoInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pagamentoNome: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  statusDescricao: {
+    fontSize: 14,
+    color: '#CCC',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  dataInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    justifyContent: 'center',
+  },
+
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 50,
+  },
+  cancelButton: {
+    backgroundColor: "#2a2a2a",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  confirmButton: {
+    backgroundColor: '#22c55e',
+  },
+  reverterButton: {
+    backgroundColor: '#ef4444',
+  },
+  cancelButtonText: {
+    color: "#CCC",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  confirmButtonText: {
+    color: "#000",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  reverterButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });
