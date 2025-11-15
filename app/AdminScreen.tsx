@@ -148,15 +148,29 @@ export default function AdminScreen() {
   const estatisticas = {
     total: usuarios.length,
 
-    // PENDENTES: Adultos com modalidade sem pagamento + TODOS os filhos
-    pendentes: usuarios.filter(u =>
-      !u.pagamento && u.modalidades && u.modalidades.length > 0
-    ).length + usuarios.reduce((total, usuario) =>
-      total + (usuario.filhos ? usuario.filhos.length : 0), 0
-    ),
+    pendentes: usuarios.reduce((totalPendentes, usuario) => {
+      const usuarioPendente = !usuario.pagamento &&
+        usuario.modalidades &&
+        usuario.modalidades.some(m => m.ativo !== false) ? 1 : 0;
 
-    // PAGOS: Apenas adultos com pagamento (filhos não pagam separadamente)
-    pagos: usuarios.filter(u => u.pagamento).length,
+      const filhosPendentes = usuario.filhos ? usuario.filhos.filter(filho =>
+        !filho.pagamento &&
+        filho.modalidades &&
+        filho.modalidades.some(m => m.ativo !== false)
+      ).length : 0;
+
+      return totalPendentes + usuarioPendente + filhosPendentes;
+    }, 0),
+
+    pagos: usuarios.reduce((totalPagos, usuario) => {
+      const usuarioPago = usuario.pagamento ? 1 : 0;
+
+      const filhosPagos = usuario.filhos ? usuario.filhos.filter(filho =>
+        filho.pagamento
+      ).length : 0;
+
+      return totalPagos + usuarioPago + filhosPagos;
+    }, 0),
 
     comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
 
@@ -164,7 +178,6 @@ export default function AdminScreen() {
       (total, usuario) => total + (usuario.filhos ? usuario.filhos.length : 0), 0
     ) + usuarios.length,
   };
-
 
 
   // 🎯 RENDER CONTEÚDO POR ABA
