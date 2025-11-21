@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 // Hook de pagamento administrativo
+import { useDeletarUsuario } from '@/hooks/useDeletarUsuario';
 import { usePagamentoAdmin } from '@/hooks/usePagamentoAdmin';
 
 interface DetalhesAlunoModalProps {
@@ -22,6 +23,7 @@ interface DetalhesAlunoModalProps {
   usuario: UsuarioCompleto | null;
   onClose: () => void;
   onPagamentoAtualizado?: () => void;
+  onUsuarioDeletado?: () => void;
 }
 
 interface PresencaState {
@@ -131,7 +133,7 @@ const GerenciarPagamentoAdmin: React.FC<{
           style={[
             styles.statusContainer,
             item.pagamento ? styles.pagamentoPago :
-            item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
+              item.avisoPagamento ? styles.pagamentoAguardando : styles.pagamentoPendente
           ]}
           onPress={() => setModalPagamento(true)}
         >
@@ -357,9 +359,63 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   usuario,
   onClose,
   onPagamentoAtualizado,
+  onUsuarioDeletado,
 }) => {
   const [marcandoPresenca, setMarcandoPresenca] = useState<string | null>(null);
   const [presencaStates, setPresencaStates] = useState<{ [key: string]: PresencaState }>({});
+  const [modalDeleteVisible, setModalDeleteVisible] = useState(false);
+
+  const { deletando, deletarUsuario } = useDeletarUsuario();
+
+  // Função para deletar usuário
+  const handleDeletarUsuario = async () => {
+    if (!usuario) return;
+
+    try {
+      const success = await deletarUsuario(usuario.id, usuario.nome);
+
+      if (success) {
+        Alert.alert(
+          'Sucesso',
+          'Usuário deletado com sucesso!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setModalDeleteVisible(false);
+                onClose();
+                onUsuarioDeletado?.(); // Notificar que o usuário foi deletado
+              }
+            }
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Erro ao deletar usuário:', error);
+      Alert.alert(
+        'Erro',
+        `Não foi possível deletar o usuário: ${error.message || 'Tente novamente.'}`
+      );
+    }
+  };
+
+  const confirmarDelecao = () => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      `Tem certeza que deseja excluir o usuário "${usuario?.nome}"? Esta ação não pode ser desfeita e irá remover:\n\n• Dados pessoais\n• Histórico de pagamentos\n• Histórico de presenças\n• Dados dos dependentes`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: () => setModalDeleteVisible(true)
+        }
+      ]
+    );
+  };
 
   const {
     loading,
@@ -493,8 +549,77 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             <Ionicons name="arrow-back" size={24} color="#B8860B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detalhes do Aluno</Text>
-          <View style={styles.placeholder} />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={confirmarDelecao}
+              disabled={deletando}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={24}
+                color={deletando ? "#666" : "#ef4444"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Modal de Confirmação de Deleção */}
+        <Modal
+          visible={modalDeleteVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => !deletando && setModalDeleteVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Confirmar Exclusão</Text>
+                <TouchableOpacity
+                  onPress={() => !deletando && setModalDeleteVisible(false)}
+                  disabled={deletando}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.deleteContent}>
+                <Ionicons name="warning" size={48} color="#ef4444" />
+                <Text style={styles.deleteTitle}>Atenção!</Text>
+                <Text style={styles.deleteText}>
+                  Esta ação irá excluir permanentemente o usuário {'"'}
+                  <Text style={styles.deleteUserName}>{usuario?.nome}</Text>
+                  {'"'}, todos os seus dados, histórico de pagamentos e presenças.
+                </Text>
+                <Text style={styles.deleteWarning}>
+                  ⚠️ Esta ação não pode ser desfeita!
+                </Text>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setModalDeleteVisible(false)}
+                  disabled={deletando}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.deleteConfirmButton]}
+                  onPress={handleDeletarUsuario}
+                  disabled={deletando}
+                >
+                  {deletando ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles.deleteConfirmButtonText}>Excluir Permanentemente</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <ScrollView style={styles.content}>
           {/* Informações Básicas */}
@@ -542,7 +667,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                   </Text>
                 </View>
               </View>
-              
+
               <GerenciarPagamentoAdmin
                 item={usuario}
                 tipo="usuario"
@@ -1138,6 +1263,50 @@ const styles = StyleSheet.create({
   reverterButtonText: {
     color: "#FFF",
     fontWeight: "600",
+    fontSize: 16,
+  },
+  // Adicione ao styles existente
+  headerActions: {
+    width: 40,
+    alignItems: 'flex-end',
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  deleteContent: {
+    padding: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  deleteText: {
+    fontSize: 14,
+    color: '#CCC',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  deleteUserName: {
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  deleteWarning: {
+    fontSize: 14,
+    color: '#ef4444',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  deleteConfirmButton: {
+    backgroundColor: '#ef4444',
+  },
+  deleteConfirmButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
     fontSize: 16,
   },
 });
