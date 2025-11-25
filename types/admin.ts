@@ -27,3 +27,17 @@ export interface FiltrosState {
   statusPagamento: "todos" | "pagos" | "pendentes";
   modalidade: "todas" | "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA";
 }
+
+export interface Professor {
+  id: string;
+  nome: string;
+  email: string;
+}
+
+
+export const professores: Professor[] = [
+  { id: "1", nome: "Mestre Will", email: "will@academia.com" },
+  { id: "2", nome: "Instrutor Rui", email: "rui@academia.com" },
+  { id: "3", nome: "Instrutor Gustavo (Jagunço)", email: "gustavo@academia.com" },
+  { id: "4", nome: "Instrutora Aline", email: "aline@academia.com" }
+];
