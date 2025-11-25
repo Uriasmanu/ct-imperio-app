@@ -240,7 +240,7 @@ export const usePresenca = (userId?: string) => {
         );
 
         return () => unsubscribe();
-    }, [currentUserId, userId, isChild, usuario?.id]); a
+    }, [currentUserId, userId, isChild, usuario?.id]); 
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
