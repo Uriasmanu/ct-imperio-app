@@ -27,6 +27,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
 }) => {
     const [busca, setBusca] = useState('');
     const [filtroModalidade, setFiltroModalidade] = useState('todas');
+    const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
     // 🔥 ADICIONE ESTA FUNÇÃO (igual ao modal):
     const obterArrayPresenca = (dados: any, filho?: any): string[] => {
@@ -106,7 +107,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
     };
 
-
     // Função para formatar data do último pagamento
     const formatarUltimoPagamento = (dataUltimoPagamento: string) => {
         if (!dataUltimoPagamento) return 'Nunca';
@@ -160,104 +160,66 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
                 </View>
 
-                {/* BARRA DE BUSCA */}
-                <View style={styles.buscaContainer}>
-                    <Ionicons name="search" size={20} color="#666" />
-                    <TextInput
-                        style={styles.buscaInput}
-                        placeholder="Buscar aluno..."
-                        placeholderTextColor="#666"
-                        value={busca}
-                        onChangeText={setBusca}
-                    />
-                    {busca ? (
-                        <TouchableOpacity onPress={() => setBusca('')}>
-                            <Ionicons name="close-circle" size={20} color="#666" />
-                        </TouchableOpacity>
-                    ) : null}
+                {/* BARRA DE BUSCA E BOTÃO DE FILTRO */}
+                <View style={styles.filtrosHeader}>
+                    <View style={styles.buscaContainer}>
+                        <Ionicons name="search" size={20} color="#666" />
+                        <TextInput
+                            style={styles.buscaInput}
+                            placeholder="Buscar aluno..."
+                            placeholderTextColor="#666"
+                            value={busca}
+                            onChangeText={setBusca}
+                        />
+                        {busca ? (
+                            <TouchableOpacity onPress={() => setBusca('')}>
+                                <Ionicons name="close-circle" size={20} color="#666" />
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.filtroButton}
+                        onPress={() => setMostrarFiltros(!mostrarFiltros)}
+                    >
+                        <Ionicons name="filter" size={20} color="#B8860B" />
+                        <Text style={styles.filtroButtonText}>Filtros</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* FILTRO DE MODALIDADE */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.filtrosHorizontal}
-                >
-                    <TouchableOpacity
-                        style={[
-                            styles.filtroChip,
-                            filtroModalidade === 'todas' && styles.filtroChipAtivo
-                        ]}
-                        onPress={() => setFiltroModalidade('todas')}
-                    >
-                        <Text style={[
-                            styles.filtroChipText,
-                            filtroModalidade === 'todas' && styles.filtroChipTextAtivo
-                        ]}>
-                            Todas
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.filtroChip,
-                            filtroModalidade === 'Muay Thai' && styles.filtroChipAtivo
-                        ]}
-                        onPress={() => setFiltroModalidade('Muay Thai')}
-                    >
-                        <Text style={[
-                            styles.filtroChipText,
-                            filtroModalidade === 'Muay Thai' && styles.filtroChipTextAtivo
-                        ]}>
-                            Muay Thai
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.filtroChip,
-                            filtroModalidade === 'Jiu-Jitsu' && styles.filtroChipAtivo
-                        ]}
-                        onPress={() => setFiltroModalidade('Jiu-Jitsu')}
-                    >
-                        <Text style={[
-                            styles.filtroChipText,
-                            filtroModalidade === 'Jiu-Jitsu' && styles.filtroChipTextAtivo
-                        ]}>
-                            Jiu-Jitsu
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.filtroChip,
-                            filtroModalidade === 'Boxe' && styles.filtroChipAtivo
-                        ]}
-                        onPress={() => setFiltroModalidade('Boxe')}
-                    >
-                        <Text style={[
-                            styles.filtroChipText,
-                            filtroModalidade === 'Boxe' && styles.filtroChipTextAtivo
-                        ]}>
-                            Boxe
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.filtroChip,
-                            filtroModalidade === 'MMA' && styles.filtroChipAtivo
-                        ]}
-                        onPress={() => setFiltroModalidade('MMA')}
-                    >
-                        <Text style={[
-                            styles.filtroChipText,
-                            filtroModalidade === 'MMA' && styles.filtroChipTextAtivo
-                        ]}>
-                            MMA
-                        </Text>
-                    </TouchableOpacity>
-                </ScrollView>
+                {/* FILTROS AVANÇADOS (igual ao da Gestão) */}
+                {mostrarFiltros && (
+                    <View style={styles.filtrosAvancados}>
+                        <View style={styles.filtroGrupo}>
+                            <Text style={styles.filtroLabel}>Modalidade</Text>
+                            <View style={styles.filtroBotoes}>
+                                {[
+                                    { value: "todas" as const, label: "Todas" },
+                                    { value: "Jiu-Jitsu" as const, label: "Jiu-Jitsu" },
+                                    { value: "Muay Thai" as const, label: "Muay Thai" },
+                                    { value: "Boxe" as const, label: "Boxe" },
+                                    { value: "MMA" as const, label: "MMA" }
+                                ].map((opcao) => (
+                                    <TouchableOpacity
+                                        key={opcao.value}
+                                        style={[
+                                            styles.filtroOpcao,
+                                            filtroModalidade === opcao.value && styles.filtroOpcaoSelecionada
+                                        ]}
+                                        onPress={() => setFiltroModalidade(opcao.value)}
+                                    >
+                                        <Text style={[
+                                            styles.filtroOpcaoTexto,
+                                            filtroModalidade === opcao.value && styles.filtroOpcaoTextoSelecionado
+                                        ]}>
+                                            {opcao.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    </View>
+                )}
             </View>
 
             {/* LISTA DE ALUNOS */}
@@ -276,13 +238,18 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                     <Text style={styles.resultadosTexto}>
                         {usuariosFiltrados.length} de {usuarios.length} alunos
                     </Text>
+                    {filtroModalidade !== 'todas' && (
+                        <Text style={styles.filtroAtivoTexto}>
+                            Filtro: {filtroModalidade}
+                        </Text>
+                    )}
                 </View>
 
                 {usuariosFiltrados.length > 0 ? (
                     usuariosFiltrados.map((usuario) => {
                         if (!usuario) return null;
 
-                       const frequencia = calcularFrequencia(usuario);
+                        const frequencia = calcularFrequencia(usuario);
                         const modalidadesAtivas = (usuario.modalidades || []).filter(m => m?.ativo);
                         const possuiFilhos = usuario.filhos && usuario.filhos.length > 0;
 
@@ -427,8 +394,15 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#B8860B',
         letterSpacing: 0.5,
+        marginTop: 2
+    },
+    filtrosHeader: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 12,
     },
     buscaContainer: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#1a1a1a',
@@ -437,7 +411,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#333',
-        marginBottom: 12,
         gap: 12,
     },
     buscaInput: {
@@ -445,30 +418,57 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
     },
-    filtrosHorizontal: {
-        marginBottom: 8,
-    },
-    filtroChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+    filtroButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        padding: 10,
         backgroundColor: '#1a1a1a',
-        borderRadius: 20,
+        borderRadius: 8,
         borderWidth: 1,
         borderColor: '#333',
-        marginRight: 8,
     },
-    filtroChipAtivo: {
-        backgroundColor: '#B8860B',
-        borderColor: '#B8860B',
+    filtroButtonText: {
+        color: '#B8860B',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
-    filtroChipText: {
-        color: '#CCC',
+    filtrosAvancados: {
+        backgroundColor: '#1a1a1a',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    filtroGrupo: {
+        marginBottom: 10,
+    },
+    filtroLabel: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        marginBottom: 6,
         fontSize: 12,
-        fontWeight: '600',
     },
-    filtroChipTextAtivo: {
+    filtroBotoes: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    filtroOpcao: {
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: '#333',
+    },
+    filtroOpcaoSelecionada: {
+        backgroundColor: '#B8860B',
+    },
+    filtroOpcaoTexto: {
+        color: '#B8860B',
+        fontSize: 12,
+    },
+    filtroOpcaoTextoSelecionado: {
         color: '#000',
-        fontWeight: '700',
+        fontWeight: 'bold',
     },
     listaContainer: {
         flex: 1,
@@ -480,6 +480,12 @@ const styles = StyleSheet.create({
     resultadosTexto: {
         color: '#AAA',
         fontSize: 14,
+        fontWeight: '500',
+        marginBottom: 4,
+    },
+    filtroAtivoTexto: {
+        color: '#B8860B',
+        fontSize: 12,
         fontWeight: '500',
     },
     alunoCard: {
