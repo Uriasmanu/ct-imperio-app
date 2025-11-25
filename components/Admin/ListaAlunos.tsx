@@ -146,41 +146,58 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         return modalidade.professor || modalidade.professorId || modalidade.instrutor;
     };
 
-    // Filtrar usuários com validações
-// Filtrar usuários com validações - CORRIGIDO
-const usuariosFiltrados = usuarios.filter(usuario => {
-    if (!usuario) return false;
+    // Filtrar usuários com validações - VERSÃO COMPLETA COM FILHOS
+    const usuariosFiltrados = usuarios.filter(usuario => {
+        if (!usuario) return false;
 
-    // Filtro por busca
-    if (busca && !usuario.nome?.toLowerCase().includes(busca.toLowerCase())) {
-        return false;
-    }
+        // Filtro por busca (usuário principal E filhos)
+        if (busca) {
+            const buscaLower = busca.toLowerCase();
+            const usuarioMatch = usuario.nome?.toLowerCase().includes(buscaLower);
 
-    // Filtro por modalidade
-    if (filtroModalidade !== 'todas') {
-        const modalidades = usuario.modalidades || [];
-        if (!modalidades.some(m => m?.modalidade === filtroModalidade)) {
-            return false;
+            // Verificar se algum filho corresponde à busca
+            const filhosMatch = usuario.filhos?.some(filho =>
+                filho.nome?.toLowerCase().includes(buscaLower)
+            ) || false;
+
+            if (!usuarioMatch && !filhosMatch) {
+                return false;
+            }
         }
-    }
 
-    if (filtroProfessor !== 'todos') {
-        
-        // Verificar no campo professor (string)
-        const temProfessorCampo = usuario.professor === filtroProfessor;
-        
-        // Verificar na lista professores (array)
-        const temProfessorLista = usuario.professores?.some(p => p === filtroProfessor) || false;
-        
-        const resultado = temProfessorCampo || temProfessorLista;
+        // Filtro por modalidade (usuário principal E filhos)
+        if (filtroModalidade !== 'todas') {
+            const modalidadesUsuario = usuario.modalidades || [];
+            const modalidadesFilhos = usuario.filhos?.flatMap(filho => filho.modalidades || []) || [];
 
-        if (!resultado) {
-            return false;
+            const temModalidadeUsuario = modalidadesUsuario.some(m => m?.modalidade === filtroModalidade);
+            const temModalidadeFilhos = modalidadesFilhos.some(m => m?.modalidade === filtroModalidade);
+
+            if (!temModalidadeUsuario && !temModalidadeFilhos) {
+                return false;
+            }
         }
-    }
 
-    return true;
-});
+        // Filtro por professor (usuário principal E filhos)
+        if (filtroProfessor !== 'todos') {
+            // Verificar usuário principal
+            const usuarioTemProfessor =
+                (usuario as any).professor === filtroProfessor || 
+                usuario.professores?.some(p => p === filtroProfessor) || false; 
+
+            // Verificar filhos
+            const filhosTemProfessor = usuario.filhos?.some(filho =>
+                (filho as any).professor === filtroProfessor ||
+                filho.professores?.some(p => p === filtroProfessor) 
+            ) || false;
+
+            if (!usuarioTemProfessor && !filhosTemProfessor) {
+                return false;
+            }
+        }
+
+        return true;
+    });
 
     return (
         <View style={styles.container}>
