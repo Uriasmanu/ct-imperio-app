@@ -19,7 +19,9 @@ import { GerenciarPagamento } from "@/components/perfil/Pagamento/GerenciarPagam
 import { db } from "@/config/firebaseConfig";
 
 import { PresencaSection } from "@/components/perfil/PresencaSection";
+import { ProfessorSelector } from "@/components/perfil/ProfessorSelector";
 import { useAuth } from "@/hooks/useAuth";
+import { professores } from "@/types/admin";
 import { useLocalSearchParams } from "expo-router";
 import {
   Filho,
@@ -78,6 +80,7 @@ export default function perfilScreen() {
         telefone: usuario.telefone ?? "",
         observacao: usuario.observacao ?? "",
         modalidades: usuario.modalidades ?? [],
+        professores: usuario.professores ?? [],
       });
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
@@ -207,6 +210,27 @@ export default function perfilScreen() {
     return ativa ? ativa.graduacao : usuario.modalidades[0].graduacao;
   };
 
+  const renderProfessoresUsuario = () => {
+    if (!usuario?.professores || usuario.professores.length === 0) {
+      return <Text style={styles.infoValue}>Nenhum professor selecionado</Text>;
+    }
+
+    const professoresSelecionados = professores.filter(prof =>
+      usuario.professores?.includes(prof.id)
+    );
+
+    return (
+      <View style={styles.professoresList}>
+        {professoresSelecionados.map((professor) => (
+          <View key={professor.id} style={styles.professorItem}>
+            <Text style={styles.professorNome}>{professor.nome}</Text>
+            <Text style={styles.professorEmail}>{professor.email}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -313,6 +337,20 @@ export default function perfilScreen() {
             )}
           </View>
 
+          <View style={styles.infoField}>
+            <Text style={styles.infoLabel}>Professores</Text>
+            {editando ? (
+              <ProfessorSelector
+                professoresSelecionados={usuario?.professores || []}
+                onProfessoresChange={(professoresIds) => {
+                  if (usuario) atualizarUsuario({ ...usuario, professores: professoresIds });
+                }}
+              />
+            ) : (
+              renderProfessoresUsuario()
+            )}
+          </View>
+
           {editando && (
             <TouchableOpacity style={styles.saveButton} onPress={handleSalvarPerfil}>
               <Ionicons name="save" size={20} color="#000" />
@@ -408,7 +446,7 @@ export default function perfilScreen() {
   );
 }
 
-// --------- STYLES (mesmos que você já tinha) ---------
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -724,5 +762,25 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 14,
     textAlign: "center",
+  },
+  professoresList: {
+    gap: 12,
+  },
+  professorItem: {
+    backgroundColor: '#2a2a2a',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  professorNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  professorEmail: {
+    fontSize: 12,
+    color: '#B8860B',
   },
 });

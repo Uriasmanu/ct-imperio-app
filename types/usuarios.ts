@@ -34,6 +34,7 @@ export interface Filho {
   dataPagamento: string;
   dataUltimoPagamento: string;
   avisaPresenca?: string[];
+  professores?: string[];
 }
 
 export interface Usuario {
@@ -51,6 +52,7 @@ export interface Usuario {
   dataPagamento: string;
   dataUltimoPagamento: string;
   avisaPresenca?: string[];
+  professores?: string[]; 
 }
 
 export { GraduacaoJiuJitsu, GraduacaoMuayThai };
