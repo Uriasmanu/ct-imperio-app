@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { MultiModalidadeSelector } from "./MultiModalidadeSelector";
+import { ProfessorSelector } from "./ProfessorSelector";
 
 interface ModalFilhoProps {
   visible: boolean;
@@ -33,6 +34,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
   const [idade, setIdade] = useState("");
   const [observacao, setObservacao] = useState("");
   const [modalidades, setModalidades] = useState<ModalidadeAluno[]>([]);
+  const [professores, setProfessores] = useState<string[]>([]);
 
   useEffect(() => {
     if (filhoEmEdicao) {
@@ -40,6 +42,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
       setIdade(filhoEmEdicao.idade?.toString() || "");
       setObservacao(filhoEmEdicao.observacao || "");
       setModalidades(filhoEmEdicao.modalidades || []);
+      setProfessores(filhoEmEdicao.professores || []);
     } else {
       resetForm();
     }
@@ -50,6 +53,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
     setIdade("");
     setObservacao("");
     setModalidades([]);
+    setProfessores([]);
   };
 
   const handleSalvar = () => {
@@ -79,6 +83,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
       idade: idadeNumero,
       observacao: observacao.trim(),
       modalidades: modalidades,
+      professores: professores,
       dataDeRegistro: filhoEmEdicao?.dataDeRegistro || new Date().toISOString(),
       pagamento: filhoEmEdicao?.pagamento || false,
       avisoPagamento: filhoEmEdicao?.avisoPagamento || false,
@@ -148,6 +153,13 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
               <MultiModalidadeSelector
                 modalidades={modalidades}
                 onModalidadesChange={setModalidades}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <ProfessorSelector
+                professoresSelecionados={professores}
+                onProfessoresChange={setProfessores}
               />
             </View>
 
