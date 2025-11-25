@@ -1,3 +1,4 @@
+
 export interface ClassSchedule {
   id: string;
   title: string;
@@ -130,7 +131,7 @@ export const classSchedule: ClassSchedule[] = [
     id: '14',
     title: 'Boxe Misto (Manhã)',
     instructor: 'Instrutor Jagunço (Gustavo)',
-    startTime: '8:00',
+    startTime: '08:00',
     endTime: '09:00',
     days: ['Terça', 'Quinta'],
     current: true,
