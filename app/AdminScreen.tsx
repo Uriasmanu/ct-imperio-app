@@ -1,4 +1,3 @@
-
 import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -26,8 +25,8 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
-// Tipos para as abas
-type AdminTab = 'presencas' | 'gestao' | 'alunos' | 'avisos';
+// Tipos para as seções
+type AdminSection = 'presencas' | 'gestao' | 'alunos' | 'avisos';
 
 // COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
@@ -41,7 +40,7 @@ export default function AdminScreen() {
     modalidade: "todas",
     professor: "todos"
   });
-  const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
+  const [secaoAtiva, setSecaoAtiva] = useState<AdminSection>('presencas');
 
   // Use o hook para presenças administrativas
   const {
@@ -180,13 +179,12 @@ export default function AdminScreen() {
     ) + usuarios.length,
   };
 
-
-  // RENDER CONTEÚDO POR ABA
-  const renderConteudoAba = () => {
-    switch (abaAtiva) {
+  // RENDER CONTEÚDO POR SEÇÃO
+  const renderConteudoSecao = () => {
+    switch (secaoAtiva) {
       case 'presencas':
         return (
-          <View style={styles.abaContent}>
+          <View style={styles.secaoContent}>
             {/* SEÇÃO: PRESENÇAS PARA CONFIRMAR */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -223,7 +221,7 @@ export default function AdminScreen() {
 
       case 'gestao':
         return (
-          <View style={styles.abaContent}>
+          <View style={styles.secaoContent}>
             {/* SEÇÃO: ESTATÍSTICAS */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -307,7 +305,7 @@ export default function AdminScreen() {
 
       case 'alunos':
         return (
-          <View style={styles.abaContent}>
+          <View style={styles.secaoContent}>
             <ListaAlunos
               usuarios={usuarios}
               onAbrirDetalhes={handleAbrirDetalhesAluno}
@@ -319,14 +317,97 @@ export default function AdminScreen() {
 
       case 'avisos':
         return (
-          <View style={styles.abaContent}>
-            <AvisosManager isVisible={abaAtiva === 'avisos'} />
+          <View style={styles.secaoContent}>
+            <AvisosManager isVisible={secaoAtiva === 'avisos'} />
           </View>
         );
 
       default:
         return null;
     }
+  };
+
+  // RENDER CARDS DE NAVEGAÇÃO
+  const renderCardsNavegacao = () => {
+    const cards = [
+      {
+        key: 'presencas' as AdminSection,
+        title: 'Presenças',
+        icon: 'calendar',
+        description: 'Confirmar presenças do dia',
+        badge: stats.pendentesHoje > 0 ? stats.pendentesHoje : undefined,
+        color: '#B8860B'
+      },
+      {
+        key: 'gestao' as AdminSection,
+        title: 'Gestão',
+        icon: 'people',
+        description: 'Gerenciar usuários e pagamentos',
+        color: '#10B981'
+      },
+      {
+        key: 'alunos' as AdminSection,
+        title: 'Alunos',
+        icon: 'list',
+        description: 'Lista completa de alunos',
+        color: '#3B82F6'
+      },
+      {
+        key: 'avisos' as AdminSection,
+        title: 'Avisos',
+        icon: 'megaphone',
+        description: 'Gerenciar avisos e notificações',
+        color: '#EF4444'
+      }
+    ];
+
+    return (
+      <View style={styles.cardsContainer}>
+        {cards.map((card) => (
+          <TouchableOpacity
+            key={card.key}
+            style={[
+              styles.card,
+              { borderLeftColor: card.color }
+            ]}
+            onPress={() => setSecaoAtiva(card.key)}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIconContainer, { backgroundColor: card.color }]}>
+                <Ionicons name={card.icon as any} size={24} color="#FFF" />
+              </View>
+              {card.badge && (
+                <View style={styles.cardBadge}>
+                  <Text style={styles.cardBadgeText}>{card.badge}</Text>
+                </View>
+              )}
+            </View>
+            
+            <Text style={styles.cardTitle}>{card.title}</Text>
+            <Text style={styles.cardDescription}>{card.description}</Text>
+            
+            <View style={styles.cardArrow}>
+              <Ionicons name="chevron-forward" size={20} color={card.color} />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  // RENDER BOTÃO VOLTAR
+  const renderBotaoVoltar = () => {
+    if (secaoAtiva === null) return null;
+
+    return (
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setSecaoAtiva(null as any)}
+      >
+        <Ionicons name="arrow-back" size={20} color="#B8860B" />
+        <Text style={styles.backButtonText}>Voltar ao Menu</Text>
+      </TouchableOpacity>
+    );
   };
 
   // RENDER STATES
@@ -349,100 +430,6 @@ export default function AdminScreen() {
             Logado como: {user?.email}
           </Text>
         </View>
-
-        {/* ABAS DE NAVEGAÇÃO COM SCROLL HORIZONTAL */}
-        <View style={styles.tabsScrollContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsContentContainer}
-          >
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                abaAtiva === 'presencas' && styles.tabButtonActive
-              ]}
-              onPress={() => setAbaAtiva('presencas')}
-            >
-              <Ionicons
-                name="calendar"
-                size={20}
-                color={abaAtiva === 'presencas' ? "#000" : "#B8860B"}
-              />
-              <Text style={[
-                styles.tabButtonText,
-                abaAtiva === 'presencas' && styles.tabButtonTextActive
-              ]}>
-                Presenças
-              </Text>
-              {stats.pendentesHoje > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{stats.pendentesHoje}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                abaAtiva === 'gestao' && styles.tabButtonActive
-              ]}
-              onPress={() => setAbaAtiva('gestao')}
-            >
-              <Ionicons
-                name="people"
-                size={20}
-                color={abaAtiva === 'gestao' ? "#000" : "#B8860B"}
-              />
-              <Text style={[
-                styles.tabButtonText,
-                abaAtiva === 'gestao' && styles.tabButtonTextActive
-              ]}>
-                Gestão
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                abaAtiva === 'alunos' && styles.tabButtonActive
-              ]}
-              onPress={() => setAbaAtiva('alunos')}
-            >
-              <Ionicons
-                name="list"
-                size={20}
-                color={abaAtiva === 'alunos' ? "#000" : "#B8860B"}
-              />
-              <Text style={[
-                styles.tabButtonText,
-                abaAtiva === 'alunos' && styles.tabButtonTextActive
-              ]}>
-                Alunos
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                abaAtiva === 'avisos' && styles.tabButtonActive
-              ]}
-              onPress={() => setAbaAtiva('avisos')}
-            >
-              <Ionicons
-                name="megaphone"
-                size={20}
-                color={abaAtiva === 'avisos' ? "#000" : "#B8860B"}
-              />
-              <Text style={[
-                styles.tabButtonText,
-                abaAtiva === 'avisos' && styles.tabButtonTextActive
-              ]}>
-                Avisos
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
       </View>
 
       {/* CONTEÚDO PRINCIPAL */}
@@ -458,7 +445,17 @@ export default function AdminScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {renderConteudoAba()}
+        {/* BOTÃO VOLTAR (quando em uma seção) */}
+        {secaoAtiva && renderBotaoVoltar()}
+
+        {/* CONTEÚDO DINÂMICO */}
+        {secaoAtiva ? (
+          renderConteudoSecao()
+        ) : (
+          <View style={styles.menuContainer}>
+            {renderCardsNavegacao()}
+          </View>
+        )}
 
         {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
@@ -507,57 +504,101 @@ const styles = StyleSheet.create({
     color: "#AAA",
     textAlign: 'center',
   },
-  tabsScrollContainer: {
+  menuContainer: {
+    paddingTop: 20,
+    alignItems: 'center',
+  },
+  menuTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  menuSubtitle: {
+    fontSize: 16,
+    color: '#AAA',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  cardsContainer: {
+    width: '100%',
+    gap: 16,
+    marginBottom: 20,
+  },
+  card: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 4,
-  },
-  tabsContentContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 4,
-  },
-  tabButton: {
+    borderRadius: 16,
+    padding: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#B8860B',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    justifyContent: 'space-between',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     position: 'relative',
-    minWidth: 100,
-    backgroundColor: 'transparent',
   },
-  tabButtonActive: {
-    backgroundColor: '#B8860B',
-  },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#B8860B',
-  },
-  tabButtonTextActive: {
-    color: '#000',
-    fontWeight: '700',
-  },
-  badge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+  cardIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
   },
-  badgeText: {
+  cardBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  cardBadgeText: {
     color: '#FFF',
     fontSize: 10,
     fontWeight: 'bold',
   },
-  abaContent: {
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+    flex: 1,
+  },
+  cardDescription: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+    flex: 1,
+  },
+  cardArrow: {
+    marginLeft: 12,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    marginTop: 15
+  },
+  backButtonText: {
+    color: '#B8860B',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secaoContent: {
     paddingTop: 20,
   },
   section: {
