@@ -20,6 +20,7 @@ export interface PresencaStats {
 
 export interface UsuarioCompleto extends Usuario {
   id: string;
+  professor?: string;
 }
 
 export interface FiltrosState {

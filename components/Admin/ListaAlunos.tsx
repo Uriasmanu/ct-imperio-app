@@ -147,39 +147,40 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
     };
 
     // Filtrar usuários com validações
-    const usuariosFiltrados = usuarios.filter(usuario => {
-        if (!usuario) return false;
+// Filtrar usuários com validações - CORRIGIDO
+const usuariosFiltrados = usuarios.filter(usuario => {
+    if (!usuario) return false;
 
-        // Filtro por busca
-        if (busca && !usuario.nome?.toLowerCase().includes(busca.toLowerCase())) {
+    // Filtro por busca
+    if (busca && !usuario.nome?.toLowerCase().includes(busca.toLowerCase())) {
+        return false;
+    }
+
+    // Filtro por modalidade
+    if (filtroModalidade !== 'todas') {
+        const modalidades = usuario.modalidades || [];
+        if (!modalidades.some(m => m?.modalidade === filtroModalidade)) {
             return false;
         }
+    }
 
-        // Filtro por modalidade
-        if (filtroModalidade !== 'todas') {
-            const modalidades = usuario.modalidades || [];
-            if (!modalidades.some(m => m?.modalidade === filtroModalidade)) {
-                return false;
-            }
+    if (filtroProfessor !== 'todos') {
+        
+        // Verificar no campo professor (string)
+        const temProfessorCampo = usuario.professor === filtroProfessor;
+        
+        // Verificar na lista professores (array)
+        const temProfessorLista = usuario.professores?.some(p => p === filtroProfessor) || false;
+        
+        const resultado = temProfessorCampo || temProfessorLista;
+
+        if (!resultado) {
+            return false;
         }
+    }
 
-        // Filtro por professor - COM VERIFICAÇÃO DE TIPO SEGURA
-        if (filtroProfessor !== 'todos') {
-            const modalidades = usuario.modalidades || [];
-
-            // Verificar se alguma modalidade tem o professor selecionado
-            const temProfessor = modalidades.some(m => {
-                // Verificar se a propriedade professor existe e corresponde
-                return m && 'professor' in m && m.professor === filtroProfessor;
-            });
-
-            if (!temProfessor) {
-                return false;
-            }
-        }
-
-        return true;
-    });
+    return true;
+});
 
     return (
         <View style={styles.container}>
