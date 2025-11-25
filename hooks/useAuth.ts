@@ -13,10 +13,6 @@ const USUARIO_CACHE_KEY = '@academia:usuario_cache';
 const LOGOUT_BY_USER_KEY = '@academia:logout_manual';
 const CREDENCIAIS_SECURAS_KEY = 'academia_credenciais';
 
-// ===============================
-// 🔐 FUNÇÕES AUXILIARES SEGURAS
-// (mantidas exportadas para compatibilidade)
-// ===============================
 export async function salvarCredenciaisSeguras(email: string, senha: string) {
   try {
     await SecureStore.setItemAsync(

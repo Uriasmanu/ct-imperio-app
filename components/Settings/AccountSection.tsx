@@ -2,9 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface User {
-  name: string;
+  nome?: string;            
   email: string;
   avatar?: string;
+  since?: string;
 }
 
 interface AccountSectionProps {
@@ -25,8 +26,9 @@ const AccountSection: React.FC<AccountSectionProps> = ({
   handleLogin,
 }) => {
   // Função para obter a primeira letra do nome
-  const getFirstLetter = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  const getFirstLetter = (nome: string | undefined) => {
+    if (!nome || nome.trim() === '') return '??';
+    return nome.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
   return (
@@ -38,11 +40,11 @@ const AccountSection: React.FC<AccountSectionProps> = ({
           <View style={styles.userInfo}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {getFirstLetter(user.name)}
+                {getFirstLetter(user.nome)}
               </Text>
             </View>
             <View style={styles.userDetails}>
-              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userName}>{user.nome}</Text>
               <Text style={styles.userEmail}>{user.email}</Text>
             </View>
           </View>

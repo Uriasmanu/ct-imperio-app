@@ -11,13 +11,15 @@ import {
 
 import AccountSection from '@/components/Settings/AccountSection';
 import LoginModal from '@/components/Settings/LoginModal';
+import { useUser } from '@/contexts/UserContext';
 import { useLogin } from '@/hooks/useLogin';
 import { appConfig, gymData } from './../utils/constants';
 
 
 const settingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
-
+  const { usuario } = useUser();
+  
   const {
     isLoggedIn,
     showLoginModal,
@@ -68,14 +70,13 @@ const settingsScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <AccountSection
-        isLoggedIn={isLoggedIn}
-        user={user}
+        isLoggedIn={!!usuario}
+        user={usuario}
         handleProfile={handleProfile}
         handleLogout={handleLogout}
         handleRegister={handleRegister}
         handleLogin={handleLogin}
       />
-
       {/* Seção de Informações da Academia */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>

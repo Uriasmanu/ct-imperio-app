@@ -1,46 +1,27 @@
 // src/hooks/useLogin.ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { signOut } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { auth } from '@/config/firebaseConfig';
+import { useUser } from '@/contexts/UserContext';
 import { loginUsuario } from '@/services/usuarioService';
-
-interface User {
-  name: string;
-  email: string;
-  since: string;
-  avatar: string;
-}
+import { salvarCredenciaisSeguras } from './useAuth';
 
 export const useLogin = () => {
   const router = useRouter();
+  const { usuario, recarregarUsuario } = useUser();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
 
-  // 🟢 Carregar dados de login salvos no AsyncStorage
+
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('@user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          setIsLoggedIn(true);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar usuário armazenado:', error);
-      }
-    };
-    loadUserData();
-  }, []);
+    setIsLoggedIn(!!usuario);
+  }, [usuario]);
 
   const handleLogin = () => {
     setShowLoginModal(true);
@@ -84,22 +65,15 @@ export const useLogin = () => {
         return;
       }
 
-      // ✅ Login bem-sucedido
-      const nomeUsuario = firebaseUser.email?.split('@')[0] || 'Usuário';
-      const newUser: User = {
-        name: nomeUsuario,
-        email: firebaseUser.email || 'E-mail não disponível',
-        since: new Date().toISOString().split('T')[0],
-        avatar: nomeUsuario.charAt(0).toUpperCase(),
-      };
+      await salvarCredenciaisSeguras(email, password);
 
-      setUser(newUser);
-      setIsLoggedIn(true);
+      // Força recarregamento do contexto
+      await recarregarUsuario();
+
       setShowLoginModal(false);
       setEmail('');
       setPassword('');
 
-      await AsyncStorage.setItem('@user', JSON.stringify(newUser));
       Alert.alert('Login realizado', `Bem-vindo(a), ${firebaseUser.email}!`);
     } catch (err) {
       console.error('Erro no login:', err);
@@ -117,10 +91,8 @@ export const useLogin = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await signOut(auth);
-            setIsLoggedIn(false);
-            setUser(null);
-            await AsyncStorage.removeItem('@user');
+            await auth.signOut();
+            // O useAuth vai detectar o signOut e limpar automaticamente
             Alert.alert('Logout realizado', 'Você saiu da sua conta.');
           } catch (err) {
             Alert.alert('Erro', 'Não foi possível sair.');
@@ -155,12 +127,12 @@ export const useLogin = () => {
   };
 
   return {
-    isLoggedIn,
+    isLoggedIn: !!usuario,
     showLoginModal,
     email,
     password,
     loading,
-    user,
+    user: usuario,
     setShowLoginModal,
     setEmail,
     setPassword,
