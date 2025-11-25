@@ -1,4 +1,4 @@
-// adminScreen.tsx
+
 import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
@@ -29,7 +29,7 @@ import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 // Tipos para as abas
 type AdminTab = 'presencas' | 'gestao' | 'alunos' | 'avisos';
 
-// 🎯 COMPONENTE PRINCIPAL ADMIN SCREEN
+// COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
   const { user, isAdmin, loading: authLoading } = useAdminAuth();
   const [usuarios, setUsuarios] = useState<UsuarioCompleto[]>([]);
@@ -38,7 +38,8 @@ export default function AdminScreen() {
   const [filtros, setFiltros] = useState<FiltrosState>({
     busca: "",
     statusPagamento: "todos",
-    modalidade: "todas"
+    modalidade: "todas",
+    professor: "todos"
   });
   const [abaAtiva, setAbaAtiva] = useState<AdminTab>('presencas');
 
@@ -67,14 +68,14 @@ export default function AdminScreen() {
     setAlunoSelecionado(null);
   };
 
-  // 🔄 VERIFICAR ACESSO
+  // VERIFICAR ACESSO
   useEffect(() => {
     if (!authLoading && !isAdmin) {
       setLoading(false);
     }
   }, [authLoading, isAdmin]);
 
-  // 🔄 CARREGAR USUÁRIOS (apenas se for admin)
+  // CARREGAR USUÁRIOS (apenas se for admin)
   const carregarUsuarios = async () => {
     if (!isAdmin) return;
 
@@ -100,7 +101,7 @@ export default function AdminScreen() {
     }
   };
 
-  // 🔄 PULL TO REFRESH
+  // PULL TO REFRESH
   const onRefresh = () => {
     if (!isAdmin) return;
     setRefreshing(true);
@@ -180,7 +181,7 @@ export default function AdminScreen() {
   };
 
 
-  // 🎯 RENDER CONTEÚDO POR ABA
+  // RENDER CONTEÚDO POR ABA
   const renderConteudoAba = () => {
     switch (abaAtiva) {
       case 'presencas':
@@ -328,7 +329,7 @@ export default function AdminScreen() {
     }
   };
 
-  // 🎯 RENDER STATES
+  // RENDER STATES
   if (authLoading || loading) {
     return <LoadingScreen />;
   }
@@ -506,7 +507,6 @@ const styles = StyleSheet.create({
     color: "#AAA",
     textAlign: 'center',
   },
-  // NOVOS ESTILOS PARA SCROLL HORIZONTAL NAS ABAS
   tabsScrollContainer: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,

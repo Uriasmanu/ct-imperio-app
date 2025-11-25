@@ -1,4 +1,3 @@
-// src/components/perfil/ModalFilho.tsx
 import { Filho, ModalidadeAluno } from "@/types/usuarios";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";

@@ -1,4 +1,3 @@
-// src/components/perfil/ModalCalendario.tsx
 import { usePresenca } from '@/hooks/usePresenca';
 import React from 'react';
 import {
@@ -24,7 +23,7 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
     const {
         presencaRecords,
         todayString,
-        currentYear // ← Adicione esta linha
+        currentYear 
     } = usePresenca(userId);
 
     // Preparar dados para o calendário
@@ -70,7 +69,6 @@ export const ModalCalendario: React.FC<ModalCalendarioProps> = ({
 
                     {/* Calendário */}
                     <Calendar
-                        // Estilo
                         style={styles.calendar}
                         theme={{
                             // Cores principais

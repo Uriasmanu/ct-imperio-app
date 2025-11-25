@@ -1,4 +1,3 @@
-// Tela de avisos do usuário - arquivo separado
 import { Notice } from '@/types/Notice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -30,7 +29,6 @@ const COLOR_SYSTEM = {
     yellowBadge: '#000000',
     darkBadge: '#FFD700',
   },
-  // Adicionei as cores originais para compatibilidade
   fightYellow: '#FFD700',
   arenaBlack: '#1a1a1a',
   gray400: '#9ca3af',
@@ -54,7 +52,6 @@ const EmptyNotices = () => {
   );
 };
 
-// Função de cor otimizada
 const getColorStyle = (color: Notice['color']) => {
   switch (color) {
     case 'bg-fight-yellow':
@@ -252,7 +249,6 @@ export default function AvisosScreen() {
   );
 }
 
-// ⚙️ Styles
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 

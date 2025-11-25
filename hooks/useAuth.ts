@@ -44,9 +44,6 @@ export async function removerCredenciaisSeguras() {
   }
 }
 
-// ===============================
-// 🚪 FLAG DE LOGOUT MANUAL (mantida exportada)
-// ===============================
 export async function setLogoutByUserFlag(value: boolean) {
   try {
     await AsyncStorage.setItem(LOGOUT_BY_USER_KEY, JSON.stringify(value));
@@ -65,9 +62,6 @@ export async function getLogoutByUserFlag() {
   }
 }
 
-// ===============================
-// 🎯 Hook centralizado useUsuario
-// ===============================
 export const useAuth = () => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);

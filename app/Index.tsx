@@ -148,7 +148,6 @@ export default function IndexScreen() {
     setProgressMap(newProgressMap);
   };
 
-  // FUNÇÃO MODIFICADA: Azul Escuro com Gradiente Elegante
   const getGradientColor = (progress: number): string => {
     const baseBlue = 150;
     const additionalBlue = Math.floor((progress / 100) * 105);
@@ -284,7 +283,7 @@ export default function IndexScreen() {
                     />
                   </View>
 
-                  <View style={styles.classInfo}>
+                  <View>
                     <Text style={styles.currentClassText}>{classItem.title}</Text>
                     <View style={styles.classDetails}>
                       <View style={styles.detailItem}>
@@ -399,7 +398,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: theme.spacing.md,
   },
-  // ESTILOS DO BOTÃO
   button: {
     backgroundColor: theme.colors.primary,
     flexDirection: 'row',
@@ -561,9 +559,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderRadius: 3,
   },
-  classInfo: {
-    // Espaço para informações
-  },
+
   currentClassText: {
     fontSize: 18,
     fontWeight: 'bold',

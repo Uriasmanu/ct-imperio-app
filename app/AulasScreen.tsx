@@ -89,8 +89,6 @@ export default function aulasScreen() {
     const startTotalMinutes = startHours * 60 + startMinutes;
     const endTotalMinutes = endHours * 60 + endMinutes;
 
-
-
     // Se a aula já terminou
     if (currentTotalMinutes > endTotalMinutes) {
       return 'finished';

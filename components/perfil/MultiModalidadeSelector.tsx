@@ -1,4 +1,3 @@
-// src/components/perfil/MultiModalidadeSelector.tsx
 import { ModalidadeAluno } from '@/types/usuarios';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';

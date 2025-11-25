@@ -105,13 +105,11 @@ export default function Rules() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Handler seguro para o scroll
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     { 
       useNativeDriver: true,
       listener: (event: any) => {
-        // Opcional: adicionar lógica adicional de scroll aqui
       }
     }
   );
@@ -164,14 +162,13 @@ export default function Rules() {
         </Text>
       </Animated.View>
 
-      {/* Lista de Regras com ScrollView - CORRIGIDO */}
       <Animated.ScrollView 
         ref={scrollViewRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
         scrollEventThrottle={16}
-        onScroll={handleScroll} // CORREÇÃO APLICADA
+        onScroll={handleScroll} 
       >
         {rules.map((rule) => (
           <TouchableOpacity

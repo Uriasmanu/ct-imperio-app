@@ -1,4 +1,3 @@
-// src/components/perfil/PresencaSection.tsx
 import { usePresenca } from '@/hooks/usePresenca';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -85,7 +84,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
 
 
     const handleCheckIn = async () => {
-        // 🔥 VERIFICAÇÃO PRINCIPAL: Só permite marcar se for um novo dia OU se nunca marcou
+        // Só permite marcar se for um novo dia OU se nunca marcou
         if (!isNewDay() && isPresencaCheckedInToday) {
             Alert.alert('Aviso', 'Você já marcou presença para hoje. Tente novamente amanhã.');
             return;
@@ -183,9 +182,8 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkInButton,
-                            // 🔥 LÓGICA DO BOTÃO:
                             isNewDay()
-                                ? styles.availableButton // Novo dia: pode marcar
+                                ? styles.availableButton 
                                 : isPresencaCheckedInToday
                                     ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
                                     : styles.availableButton
@@ -194,7 +192,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                         disabled={!isNewDay() && isPresencaCheckedInToday}
                     >
                         {isNewDay() ? (
-                            // 🔥 NOVO DIA: Mostra "MARCAR PRESENÇA"
+                            // NOVO DIA: Mostra "MARCAR PRESENÇA"
                             <View style={styles.buttonContent}>
                                 <Ionicons name="checkmark-circle-outline" size={20} color="#000" />
                                 <Text style={styles.checkInText}>MARCAR PRESENÇA</Text>

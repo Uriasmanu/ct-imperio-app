@@ -1,4 +1,3 @@
-// components/Admin/DetalhesAlunoModal.tsx
 import { usePresencaAdmin } from '@/hooks/usePresencaAdmin';
 import { professores, UsuarioCompleto } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
@@ -384,7 +383,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
               onPress: () => {
                 setModalDeleteVisible(false);
                 onClose();
-                onUsuarioDeletado?.(); // Notificar que o usuário foi deletado
+                onUsuarioDeletado?.(); 
               }
             }
           ]
@@ -1322,7 +1321,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  // Adicione ao styles existente
   headerActions: {
     width: 40,
     alignItems: 'flex-end',

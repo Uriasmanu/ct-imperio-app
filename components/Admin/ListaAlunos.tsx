@@ -20,7 +20,7 @@ interface ListaAlunosProps {
 }
 
 export const ListaAlunos: React.FC<ListaAlunosProps> = ({
-    usuarios = [], // Valor padrão para evitar undefined
+    usuarios = [], 
     onAbrirDetalhes,
     refreshing,
     onRefresh,
@@ -30,7 +30,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
     const [filtroProfessor, setFiltroProfessor] = useState('todos');
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-    // 🔥 ADICIONE ESTA FUNÇÃO (igual ao modal):
     const obterArrayPresenca = (dados: any, filho?: any): string[] => {
         try {
             if (filho) {
@@ -49,9 +48,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         }
     };
 
-    // 🔄 FUNÇÃO ATUALIZADA: Usar obterArrayPresenca
     const calcularFrequencia = (usuario: UsuarioCompleto) => {
-        // 🔥 USAR A MESMA LÓGICA DO MODAL
         const presencaArray = obterArrayPresenca(usuario);
         const totalPresencas = presencaArray.length;
         const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
@@ -62,7 +59,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         };
     };
 
-    // 🔥 ADICIONE ESTAS FUNÇÕES AUXILIARES (igual ao modal):
     const calcularDiasUteis = (inicio: Date, fim: Date): number => {
         let count = 0;
         const current = new Date(inicio);

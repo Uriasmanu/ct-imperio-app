@@ -24,20 +24,20 @@ interface AvisosManagerProps {
 const COLOR_SYSTEM = {
   // Cores de fundo
   backgrounds: {
-    yellow: '#FFD700',     // Amarelo vibrante
-    gray: '#4B5563',       // Cinza mais escuro para melhor contraste
-    red: '#DC2626',        // Vermelho mais suave
-    green: '#059669',      // Verde mais escuro
+    yellow: '#FFD700',     
+    gray: '#4B5563',      
+    red: '#DC2626',       
+    green: '#059669',     
   },
   // Cores de texto para cada fundo
   texts: {
-    onYellow: '#000000',   // Preto no amarelo - máximo contraste
-    onDark: '#FFFFFF',     // Branco em fundos escuros
+    onYellow: '#000000',   
+    onDark: '#FFFFFF',    
   },
   // Cores para badges e elementos secundários
   accents: {
-    yellowBadge: '#000000', // Preto para badge no amarelo
-    darkBadge: '#FFD700',   // Amarelo para badge em fundos escuros
+    yellowBadge: '#000000',
+    darkBadge: '#FFD700',  
   }
 };
 
@@ -140,7 +140,7 @@ export const AvisosManager: React.FC<AvisosManagerProps> = ({ isVisible }) => {
                     textColor: COLOR_SYSTEM.texts.onYellow,
                     badgeColor: COLOR_SYSTEM.accents.yellowBadge,
                     badgeTextColor: COLOR_SYSTEM.backgrounds.yellow,
-                    detailColor: '#6B7280', // Cinza escuro para detalhes
+                    detailColor: '#6B7280', 
                     actionBg: 'rgba(0,0,0,0.1)'
                 };
             case 'bg-gray-700':
@@ -149,7 +149,7 @@ export const AvisosManager: React.FC<AvisosManagerProps> = ({ isVisible }) => {
                     textColor: COLOR_SYSTEM.texts.onDark,
                     badgeColor: COLOR_SYSTEM.accents.darkBadge,
                     badgeTextColor: COLOR_SYSTEM.backgrounds.gray,
-                    detailColor: '#D1D5DB', // Cinza claro para detalhes
+                    detailColor: '#D1D5DB',
                     actionBg: 'rgba(255,255,255,0.1)'
                 };
             case 'bg-punch-red':
@@ -158,7 +158,7 @@ export const AvisosManager: React.FC<AvisosManagerProps> = ({ isVisible }) => {
                     textColor: COLOR_SYSTEM.texts.onDark,
                     badgeColor: COLOR_SYSTEM.accents.darkBadge,
                     badgeTextColor: COLOR_SYSTEM.backgrounds.red,
-                    detailColor: '#FECACA', // Vermelho claro para detalhes
+                    detailColor: '#FECACA',
                     actionBg: 'rgba(255,255,255,0.1)'
                 };
             case 'bg-green-500':
@@ -167,7 +167,7 @@ export const AvisosManager: React.FC<AvisosManagerProps> = ({ isVisible }) => {
                     textColor: COLOR_SYSTEM.texts.onDark,
                     badgeColor: COLOR_SYSTEM.accents.darkBadge,
                     badgeTextColor: COLOR_SYSTEM.backgrounds.green,
-                    detailColor: '#A7F3D0', // Verde claro para detalhes
+                    detailColor: '#A7F3D0', 
                     actionBg: 'rgba(255,255,255,0.1)'
                 };
             default:

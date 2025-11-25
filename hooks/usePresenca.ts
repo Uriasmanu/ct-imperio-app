@@ -27,7 +27,7 @@ export const usePresenca = (userId?: string) => {
     const todayString = formatDate(today);
     const currentYear = today.getFullYear();
 
-    // 🔥 FUNÇÃO CRÍTICA: Verificar se é um novo dia
+    // FUNÇÃO CRÍTICA: Verificar se é um novo dia
     const isNewDay = (): boolean => {
         if (presencaRecords.length === 0) return true;
 
@@ -83,7 +83,7 @@ export const usePresenca = (userId?: string) => {
         return null;
     };
 
-    // 🔥 FUNÇÃO CRÍTICA: Remover presenças antigas do Firebase
+    // FUNÇÃO CRÍTICA: Remover presenças antigas do Firebase
     const removeOldPresencasFromFirebase = async (userData: any, userDocRef: any): Promise<boolean> => {
         try {
             let presencaArray: string[] = [];
@@ -130,7 +130,7 @@ export const usePresenca = (userId?: string) => {
         }
     };
 
-    // 🔥 FUNÇÃO CRÍTICA: Limpar TODAS as presenças no dia 1º de janeiro
+    // FUNÇÃO CRÍTICA: Limpar TODAS as presenças no dia 1º de janeiro
     const clearAllPresencasOnNewYear = async (userData: any, userDocRef: any): Promise<boolean> => {
         try {
             if (isChild) {
@@ -185,7 +185,7 @@ export const usePresenca = (userId?: string) => {
                     const filhos = userData.filhos || [];
                     const filho = filhos.find((f: Filho) => f.id === userId);
 
-                    // 🔥 CORREÇÃO CRÍTICA: Verificar se encontrou o filho
+                    // Verificar se encontrou o filho
                     if (!filho) {
                         setPresencaRecords([]);
                         setLoading(false);
@@ -196,7 +196,7 @@ export const usePresenca = (userId?: string) => {
                     presencaArray = userData.Presenca || [];
                 }
 
-                // 🔥 CORREÇÃO: Converter corretamente para PresencaRecord[]
+                // Converter corretamente para PresencaRecord[]
                 const records: PresencaRecord[] = presencaArray
                     .map((item: any) => {
                         // Se for string (formato antigo)
@@ -210,7 +210,7 @@ export const usePresenca = (userId?: string) => {
                         // Se for objeto (formato novo)
                         if (typeof item === 'object' && item !== null) {
                             return {
-                                date: item.date || item, // 🔥 CORREÇÃO: Suporte a ambos os formatos
+                                date: item.date || item,
                                 timestamp: new Date((item.date || item) + 'T00:00:00'),
                                 confirmada: item.confirmada || false
                             };
@@ -240,7 +240,7 @@ export const usePresenca = (userId?: string) => {
         );
 
         return () => unsubscribe();
-    }, [currentUserId, userId, isChild, usuario?.id]); // 🔥 ADD usuario?.id como dependência
+    }, [currentUserId, userId, isChild, usuario?.id]); a
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString
@@ -605,7 +605,7 @@ export const usePresenca = (userId?: string) => {
                 return false;
             }
 
-            // 🔥 ATUALIZAR A LISTA LOCAL APÓS CONFIRMAR
+            // ATUALIZAR A LISTA LOCAL APÓS CONFIRMAR
             setTimeout(() => {
                 buscarPresencasDoDia(); // Usar a mesma data da presença confirmada
             }, 1000);
@@ -633,7 +633,7 @@ export const usePresenca = (userId?: string) => {
                 const usuarioId = userDoc.id;
                 let needsUpdate = false;
 
-                // 🔄 Atualizar presenças do usuário principal
+                // Atualizar presenças do usuário principal
                 const presencasUsuario = usuarioData.Presenca || [];
                 const novasPresencasUsuario = presencasUsuario.map((presenca: any) => {
                     const presencaDate = typeof presenca === 'string' ? presenca : presenca.date;
@@ -653,7 +653,7 @@ export const usePresenca = (userId?: string) => {
                     return presenca;
                 });
 
-                // 🔄 Atualizar presenças dos filhos
+                // Atualizar presenças dos filhos
                 const filhos = usuarioData.filhos || [];
                 const novosFilhos = filhos.map((filho: any) => {
                     const presencasFilho = filho.Presenca || [];
@@ -737,7 +737,7 @@ export const usePresenca = (userId?: string) => {
             querySnapshot.forEach((doc) => {
                 const usuarioData = doc.data();
 
-                // 🔥 Presenças do usuário
+                //  Presenças do usuário
                 const presencasUsuario = usuarioData.Presenca || [];
                 presencasUsuario.forEach((presenca: any) => {
                     const confirmada = presenca.confirmada || false;
@@ -757,7 +757,7 @@ export const usePresenca = (userId?: string) => {
                     }
                 });
 
-                // 🔥 Presenças dos filhos
+                //  Presenças dos filhos
                 const filhos = usuarioData.filhos || [];
                 filhos.forEach((filho: any) => {
                     const presencasFilho = filho.Presenca || [];
@@ -781,7 +781,7 @@ export const usePresenca = (userId?: string) => {
                 });
             });
 
-            // 🔥 Atualiza o estado
+            //  Atualiza o estado
             setPresencasParaConfirmar(todasPresencas);
 
         } catch (error) {

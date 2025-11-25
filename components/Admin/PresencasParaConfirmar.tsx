@@ -1,4 +1,3 @@
-// components/Admin/PresencasParaConfirmar.tsx
 import { PresencaParaConfirmar, PresencaStats } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';

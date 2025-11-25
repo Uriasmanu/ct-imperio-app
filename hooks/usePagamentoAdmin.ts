@@ -21,7 +21,7 @@ export const usePagamentoAdmin = ({
   const [modalPagamento, setModalPagamento] = useState(false);
   const [processando, setProcessando] = useState(false);
 
-  // 🔥 FUNÇÃO DO ADMIN: Confirmar pagamento
+  // FUNÇÃO DO ADMIN: Confirmar pagamento
   const handleConfirmarPagamento = async () => {
     setProcessando(true);
     try {
@@ -64,7 +64,7 @@ export const usePagamentoAdmin = ({
     }
   };
 
-  // 🔥 FUNÇÃO DO ADMIN: Reverter para pendente
+  // FUNÇÃO DO ADMIN: Reverter para pendente
   const handleReverterPagamento = async () => {
     setProcessando(true);
     try {
