@@ -1,6 +1,6 @@
 // components/Admin/DetalhesAlunoModal.tsx
 import { usePresencaAdmin } from '@/hooks/usePresencaAdmin';
-import { UsuarioCompleto } from '@/types/admin';
+import { professores, UsuarioCompleto } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -483,6 +483,23 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   };
 
+  const obterNomesProfessores = (professorIds: string[] | undefined): string[] => {
+    if (!professorIds || professorIds.length === 0) return [];
+
+    return professorIds
+      .map(id => {
+        const professor = professores.find(p => p.id === id);
+        return professor ? professor.nome : null;
+      })
+      .filter((nome): nome is string => nome !== null);
+  };
+
+  const obterProfessoresCompletos = (professorIds: string[] | undefined) => {
+    if (!professorIds || professorIds.length === 0) return [];
+
+    return professores.filter(prof => professorIds.includes(prof.id));
+  };
+
   const obterArrayPresenca = (dados: any, filho?: any): string[] => {
     try {
       if (filho) {
@@ -704,6 +721,30 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
+          {/* Professores do Usuário */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Professores</Text>
+            <View style={styles.professoresCard}>
+              {usuario.professores && usuario.professores.length > 0 ? (
+                <View style={styles.professoresList}>
+                  {obterProfessoresCompletos(usuario.professores).map((professor) => (
+                    <View key={professor.id} style={styles.professorItem}>
+                      <View style={styles.professorInfo}>
+                        <Ionicons name="person-circle-outline" size={20} color="#B8860B" />
+                        <View style={styles.professorDetails}>
+                          <Text style={styles.professorNome}>{professor.nome}</Text>
+                          <Text style={styles.professorEmail}>{professor.email}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.semProfessoresText}>Nenhum professor associado</Text>
+              )}
+            </View>
+          </View>
+
           {/* Frequência do Usuário */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Frequência - {semestreInfo.nome}</Text>
@@ -789,6 +830,22 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                               </Text>
                             </View>
                           ))}
+                        </View>
+                      )}
+
+                      {/* Professores do Filho */}
+                      {filho.professores && filho.professores.length > 0 && (
+                        <View style={styles.filhoProfessoresSection}>
+                          <Text style={styles.filhoSectionLabel}>Professores:</Text>
+                          <View style={styles.filhoProfessoresList}>
+                            {obterProfessoresCompletos(filho.professores).map((professor) => (
+                              <View key={professor.id} style={styles.filhoProfessorChip}>
+                                <Text style={styles.filhoProfessorChipText}>
+                                  {professor.nome}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
                         </View>
                       )}
 
@@ -1308,5 +1365,82 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '600',
     fontSize: 16,
+  },
+
+  professoresCard: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  professoresList: {
+    gap: 12,
+  },
+  professorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  professorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  professorDetails: {
+    flex: 1,
+  },
+  professorNome: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  professorEmail: {
+    fontSize: 12,
+    color: '#B8860B',
+  },
+  semProfessoresText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 16,
+  },
+  filhoProfessoresSection: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  filhoSectionLabel: {
+    fontSize: 12,
+    color: '#B8860B',
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  filhoProfessoresList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filhoProfessorChip: {
+    backgroundColor: '#333',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+  },
+  filhoProfessorChipText: {
+    fontSize: 11,
+    color: '#B8860B',
+    fontWeight: '500',
   },
 });
