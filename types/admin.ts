@@ -26,6 +26,7 @@ export interface FiltrosState {
   busca: string;
   statusPagamento: "todos" | "pagos" | "pendentes";
   modalidade: "todas" | "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA";
+  professor: "todos" | string; 
 }
 
 export interface Professor {

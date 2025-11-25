@@ -1,5 +1,5 @@
 // components/Admin/ListaAlunos.tsx
-import { UsuarioCompleto } from '@/types/admin';
+import { UsuarioCompleto, professores } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -27,6 +27,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
 }) => {
     const [busca, setBusca] = useState('');
     const [filtroModalidade, setFiltroModalidade] = useState('todas');
+    const [filtroProfessor, setFiltroProfessor] = useState('todos');
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
     // 🔥 ADICIONE ESTA FUNÇÃO (igual ao modal):
@@ -131,6 +132,20 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         }
     };
 
+    // Função para obter o nome do professor pelo ID
+    const obterNomeProfessor = (professorId: string): string => {
+        const professor = professores.find(p => p.id === professorId);
+        return professor ? professor.nome : 'Professor não encontrado';
+    };
+
+    // Função auxiliar para obter professor de uma modalidade
+    const obterProfessorModalidade = (modalidade: any): string | undefined => {
+        if (!modalidade) return undefined;
+
+        // Tentar diferentes nomes de propriedade possíveis
+        return modalidade.professor || modalidade.professorId || modalidade.instrutor;
+    };
+
     // Filtrar usuários com validações
     const usuariosFiltrados = usuarios.filter(usuario => {
         if (!usuario) return false;
@@ -144,6 +159,21 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         if (filtroModalidade !== 'todas') {
             const modalidades = usuario.modalidades || [];
             if (!modalidades.some(m => m?.modalidade === filtroModalidade)) {
+                return false;
+            }
+        }
+
+        // Filtro por professor - COM VERIFICAÇÃO DE TIPO SEGURA
+        if (filtroProfessor !== 'todos') {
+            const modalidades = usuario.modalidades || [];
+
+            // Verificar se alguma modalidade tem o professor selecionado
+            const temProfessor = modalidades.some(m => {
+                // Verificar se a propriedade professor existe e corresponde
+                return m && 'professor' in m && m.professor === filtroProfessor;
+            });
+
+            if (!temProfessor) {
                 return false;
             }
         }
@@ -190,6 +220,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                 {/* FILTROS AVANÇADOS (igual ao da Gestão) */}
                 {mostrarFiltros && (
                     <View style={styles.filtrosAvancados}>
+                        {/* FILTRO DE MODALIDADE */}
                         <View style={styles.filtroGrupo}>
                             <Text style={styles.filtroLabel}>Modalidade</Text>
                             <View style={styles.filtroBotoes}>
@@ -218,6 +249,36 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                                 ))}
                             </View>
                         </View>
+
+                        {/* FILTRO DE PROFESSOR */}
+                        <View style={styles.filtroGrupo}>
+                            <Text style={styles.filtroLabel}>Professor</Text>
+                            <View style={styles.filtroBotoes}>
+                                {[
+                                    { value: "todos" as const, label: "Todos" },
+                                    ...professores.map(professor => ({
+                                        value: professor.id,
+                                        label: professor.nome
+                                    }))
+                                ].map((opcao) => (
+                                    <TouchableOpacity
+                                        key={opcao.value}
+                                        style={[
+                                            styles.filtroOpcao,
+                                            filtroProfessor === opcao.value && styles.filtroOpcaoSelecionada
+                                        ]}
+                                        onPress={() => setFiltroProfessor(opcao.value)}
+                                    >
+                                        <Text style={[
+                                            styles.filtroOpcaoTexto,
+                                            filtroProfessor === opcao.value && styles.filtroOpcaoTextoSelecionado
+                                        ]}>
+                                            {opcao.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
                     </View>
                 )}
             </View>
@@ -238,11 +299,22 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                     <Text style={styles.resultadosTexto}>
                         {usuariosFiltrados.length} de {usuarios.length} alunos
                     </Text>
-                    {filtroModalidade !== 'todas' && (
-                        <Text style={styles.filtroAtivoTexto}>
-                            Filtro: {filtroModalidade}
-                        </Text>
-                    )}
+                    <View style={styles.filtrosAtivosContainer}>
+                        {filtroModalidade !== 'todas' && (
+                            <View style={styles.filtroAtivoBadge}>
+                                <Text style={styles.filtroAtivoTexto}>
+                                    Modalidade: {filtroModalidade}
+                                </Text>
+                            </View>
+                        )}
+                        {filtroProfessor !== 'todos' && (
+                            <View style={styles.filtroAtivoBadge}>
+                                <Text style={styles.filtroAtivoTexto}>
+                                    Professor: {obterNomeProfessor(filtroProfessor)}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
 
                 {usuariosFiltrados.length > 0 ? (
@@ -316,7 +388,7 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                                         </Text>
                                     </View>
 
-                                    {/* MODALIDADES */}
+                                    {/* MODALIDADES E PROFESSORES */}
                                     <View style={styles.infoItem}>
                                         <Ionicons name="fitness" size={16} color="#B8860B" />
                                         <Text style={styles.infoLabel}>Modalidades:</Text>
@@ -325,19 +397,28 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                                                 modalidadesAtivas.map((modalidade, index) => (
                                                     <View
                                                         key={index}
-                                                        style={[
-                                                            styles.modalidadeBadge,
-                                                            {
-                                                                backgroundColor:
-                                                                    modalidade?.modalidade === "Muay Thai" ? "#dc2626" :
-                                                                        modalidade?.modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                                                                            modalidade?.modalidade === "Boxe" ? "#059669" : "#7c3aed",
-                                                            }
-                                                        ]}
+                                                        style={styles.modalidadeCompleta}
                                                     >
-                                                        <Text style={styles.modalidadeBadgeText}>
-                                                            {modalidade?.modalidade || 'Desconhecida'}
-                                                        </Text>
+                                                        <View
+                                                            style={[
+                                                                styles.modalidadeBadge,
+                                                                {
+                                                                    backgroundColor:
+                                                                        modalidade?.modalidade === "Muay Thai" ? "#dc2626" :
+                                                                            modalidade?.modalidade === "Jiu-Jitsu" ? "#1e40af" :
+                                                                                modalidade?.modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                                                                }
+                                                            ]}
+                                                        >
+                                                            <Text style={styles.modalidadeBadgeText}>
+                                                                {modalidade?.modalidade || 'Desconhecida'}
+                                                            </Text>
+                                                        </View>
+                                                        {modalidade && 'professor' in modalidade && modalidade.professor && (
+                                                            <Text style={styles.professorTexto}>
+                                                                com {obterNomeProfessor(modalidade.professor)}
+                                                            </Text>
+                                                        )}
                                                     </View>
                                                 ))
                                             ) : (
@@ -440,12 +521,12 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     filtroGrupo: {
-        marginBottom: 10,
+        marginBottom: 16,
     },
     filtroLabel: {
         color: '#FFF',
         fontWeight: 'bold',
-        marginBottom: 6,
+        marginBottom: 8,
         fontSize: 12,
     },
     filtroBotoes: {
@@ -481,10 +562,21 @@ const styles = StyleSheet.create({
         color: '#AAA',
         fontSize: 14,
         fontWeight: '500',
-        marginBottom: 4,
+        marginBottom: 8,
+    },
+    filtrosAtivosContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    filtroAtivoBadge: {
+        backgroundColor: '#B8860B',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
     filtroAtivoTexto: {
-        color: '#B8860B',
+        color: '#000',
         fontSize: 12,
         fontWeight: '500',
     },
@@ -565,9 +657,13 @@ const styles = StyleSheet.create({
     },
     modalidadesContainer: {
         flex: 1,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+        flexDirection: 'column',
         gap: 6,
+    },
+    modalidadeCompleta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     modalidadeBadge: {
         paddingHorizontal: 8,
@@ -578,6 +674,11 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#FFF',
         fontWeight: '600',
+    },
+    professorTexto: {
+        fontSize: 10,
+        color: '#AAA',
+        fontStyle: 'italic',
     },
     nenhumResultado: {
         alignItems: 'center',

@@ -7,6 +7,7 @@ export interface ModalidadeAluno {
   graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu;
   dataInicio: string;
   ativo: boolean;
+  professor?: string;
 }
 
 export interface PresencaRecord {
