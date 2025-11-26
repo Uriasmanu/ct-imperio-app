@@ -28,6 +28,10 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [filtroModalidade, setFiltroModalidade] = useState("todas");
     const [filtroProfessor, setFiltroProfessor] = useState("todos");
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
+    
+    // ESTADO PARA SELEÇÃO MÚLTIPLA
+    const [modoSelecao, setModoSelecao] = useState(false);
+    const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
 
     // TRANSFORMA TODOS OS USUÁRIOS E TODOS OS FILHOS EM UMA LISTA ÚNICA
     const listaExpandida = useMemo(() => {
@@ -104,9 +108,43 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         return d.toLocaleDateString("pt-BR");
     };
 
-    const obterNomeProfessor = (id: string) => {
-        const p = professores.find((x) => x.id === id);
-        return p ? p.nome : "Desconhecido";
+    // FUNÇÕES DE SELEÇÃO
+    const handleLongPress = (itemId: string) => {
+        setModoSelecao(true);
+        toggleSelecao(itemId);
+    };
+
+    const toggleSelecao = (itemId: string) => {
+        setItensSelecionados((prev) => {
+            const novo = new Set(prev);
+            if (novo.has(itemId)) {
+                novo.delete(itemId);
+            } else {
+                novo.add(itemId);
+            }
+            return novo;
+        });
+    };
+
+    const cancelarSelecao = () => {
+        setModoSelecao(false);
+        setItensSelecionados(new Set());
+    };
+
+    const selecionarTodos = () => {
+        setItensSelecionados(new Set(listaFiltrada.map((item) => item.id)));
+    };
+
+    const handlePress = (item: any) => {
+        if (modoSelecao) {
+            toggleSelecao(item.id);
+        } else {
+            onAbrirDetalhes(
+                item.isFilho
+                    ? usuarios.find((u) => u.id === item.paiId)!
+                    : item
+            );
+        }
     };
 
     return (
@@ -118,131 +156,179 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
                 </View>
 
-                <View style={styles.filtrosHeader}>
-                    <View style={styles.buscaContainer}>
-                        <Ionicons name="search" size={20} color="#666" />
-                        <TextInput
-                            style={styles.buscaInput}
-                            placeholder="Buscar aluno..."
-                            placeholderTextColor="#666"
-                            value={busca}
-                            onChangeText={setBusca}
-                        />
+                {/* BARRA DE SELEÇÃO MÚLTIPLA */}
+                {modoSelecao ? (
+                    <View style={styles.selecaoBar}>
+                        <View style={styles.selecaoInfo}>
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={24}
+                                color="#B8860B"
+                            />
+                            <Text style={styles.selecaoTexto}>
+                                {itensSelecionados.size} selecionado(s)
+                            </Text>
+                        </View>
 
-                        {busca.length > 0 && (
-                            <TouchableOpacity onPress={() => setBusca("")}>
+                        <View style={styles.selecaoAcoes}>
+                            <TouchableOpacity
+                                style={styles.selecaoBtn}
+                                onPress={selecionarTodos}
+                            >
                                 <Ionicons
-                                    name="close-circle"
+                                    name="checkbox"
                                     size={20}
-                                    color="#666"
+                                    color="#B8860B"
                                 />
+                                <Text style={styles.selecaoBtnTexto}>
+                                    Todos
+                                </Text>
                             </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.selecaoBtn}
+                                onPress={cancelarSelecao}
+                            >
+                                <Ionicons
+                                    name="close"
+                                    size={20}
+                                    color="#FF6B6B"
+                                />
+                                <Text style={[styles.selecaoBtnTexto, { color: "#FF6B6B" }]}>
+                                    Cancelar
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.filtrosHeader}>
+                            <View style={styles.buscaContainer}>
+                                <Ionicons name="search" size={20} color="#666" />
+                                <TextInput
+                                    style={styles.buscaInput}
+                                    placeholder="Buscar aluno..."
+                                    placeholderTextColor="#666"
+                                    value={busca}
+                                    onChangeText={setBusca}
+                                />
+
+                                {busca.length > 0 && (
+                                    <TouchableOpacity onPress={() => setBusca("")}>
+                                        <Ionicons
+                                            name="close-circle"
+                                            size={20}
+                                            color="#666"
+                                        />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.filtroButton}
+                                onPress={() => setMostrarFiltros(!mostrarFiltros)}
+                            >
+                                <Ionicons
+                                    name="filter"
+                                    size={20}
+                                    color="#B8860B"
+                                />
+                                <Text style={styles.filtroButtonText}>Filtros</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* PAINEL DE FILTROS */}
+                        {mostrarFiltros && (
+                            <View style={styles.filtrosAvancados}>
+                                {/* MODALIDADES */}
+                                <View style={styles.filtroGrupo}>
+                                    <Text style={styles.filtroLabel}>Modalidade</Text>
+                                    <View style={styles.filtroBotoes}>
+                                        {[
+                                            "todas",
+                                            "Jiu-Jitsu",
+                                            "Muay Thai",
+                                            "Boxe",
+                                            "MMA",
+                                        ].map((m) => (
+                                            <TouchableOpacity
+                                                key={m}
+                                                style={[
+                                                    styles.filtroOpcao,
+                                                    filtroModalidade === m &&
+                                                    styles.filtroOpcaoSelecionada,
+                                                ]}
+                                                onPress={() =>
+                                                    setFiltroModalidade(m)
+                                                }
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.filtroOpcaoTexto,
+                                                        filtroModalidade === m &&
+                                                        styles.filtroOpcaoTextoSelecionado,
+                                                    ]}
+                                                >
+                                                    {m}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+
+                                {/* PROFESSOR */}
+                                <View style={styles.filtroGrupo}>
+                                    <Text style={styles.filtroLabel}>Professor</Text>
+                                    <View style={styles.filtroBotoes}>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.filtroOpcao,
+                                                filtroProfessor === "todos" &&
+                                                styles.filtroOpcaoSelecionada,
+                                            ]}
+                                            onPress={() =>
+                                                setFiltroProfessor("todos")
+                                            }
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.filtroOpcaoTexto,
+                                                    filtroProfessor === "todos" &&
+                                                    styles.filtroOpcaoTextoSelecionado,
+                                                ]}
+                                            >
+                                                Todos
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        {professores.map((p) => (
+                                            <TouchableOpacity
+                                                key={p.id}
+                                                style={[
+                                                    styles.filtroOpcao,
+                                                    filtroProfessor === p.id &&
+                                                    styles.filtroOpcaoSelecionada,
+                                                ]}
+                                                onPress={() =>
+                                                    setFiltroProfessor(p.id)
+                                                }
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.filtroOpcaoTexto,
+                                                        filtroProfessor === p.id &&
+                                                        styles.filtroOpcaoTextoSelecionado,
+                                                    ]}
+                                                >
+                                                    {p.nome}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
                         )}
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.filtroButton}
-                        onPress={() => setMostrarFiltros(!mostrarFiltros)}
-                    >
-                        <Ionicons
-                            name="filter"
-                            size={20}
-                            color="#B8860B"
-                        />
-                        <Text style={styles.filtroButtonText}>Filtros</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* PAINEL DE FILTROS */}
-                {mostrarFiltros && (
-                    <View style={styles.filtrosAvancados}>
-                        {/* MODALIDADES */}
-                        <View style={styles.filtroGrupo}>
-                            <Text style={styles.filtroLabel}>Modalidade</Text>
-                            <View style={styles.filtroBotoes}>
-                                {[
-                                    "todas",
-                                    "Jiu-Jitsu",
-                                    "Muay Thai",
-                                    "Boxe",
-                                    "MMA",
-                                ].map((m) => (
-                                    <TouchableOpacity
-                                        key={m}
-                                        style={[
-                                            styles.filtroOpcao,
-                                            filtroModalidade === m &&
-                                                styles.filtroOpcaoSelecionada,
-                                        ]}
-                                        onPress={() =>
-                                            setFiltroModalidade(m)
-                                        }
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.filtroOpcaoTexto,
-                                                filtroModalidade === m &&
-                                                    styles.filtroOpcaoTextoSelecionado,
-                                            ]}
-                                        >
-                                            {m}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        {/* PROFESSOR */}
-                        <View style={styles.filtroGrupo}>
-                            <Text style={styles.filtroLabel}>Professor</Text>
-                            <View style={styles.filtroBotoes}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.filtroOpcao,
-                                        filtroProfessor === "todos" &&
-                                            styles.filtroOpcaoSelecionada,
-                                    ]}
-                                    onPress={() =>
-                                        setFiltroProfessor("todos")
-                                    }
-                                >
-                                    <Text
-                                        style={[
-                                            styles.filtroOpcaoTexto,
-                                            filtroProfessor === "todos" &&
-                                                styles.filtroOpcaoTextoSelecionado,
-                                        ]}
-                                    >
-                                        Todos
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {professores.map((p) => (
-                                    <TouchableOpacity
-                                        key={p.id}
-                                        style={[
-                                            styles.filtroOpcao,
-                                            filtroProfessor === p.id &&
-                                                styles.filtroOpcaoSelecionada,
-                                        ]}
-                                        onPress={() =>
-                                            setFiltroProfessor(p.id)
-                                        }
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.filtroOpcaoTexto,
-                                                filtroProfessor === p.id &&
-                                                    styles.filtroOpcaoTextoSelecionado,
-                                            ]}
-                                        >
-                                            {p.nome}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    </View>
+                    </>
                 )}
             </View>
 
@@ -275,79 +361,96 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                         </Text>
                     </View>
                 ) : (
-                    listaFiltrada.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={styles.alunoCard}
-                            onPress={() =>
-                                onAbrirDetalhes(
-                                    item.isFilho
-                                        ? usuarios.find(
-                                              (u) =>
-                                                  u.id === item.paiId
-                                          )!
-                                        : item
-                                )
-                            }
-                        >
-                            <View style={styles.cardHeader}>
-                                <View>
-                                    <Text style={styles.alunoNome}>
-                                        {item.nome}
-                                    </Text>
+                    listaFiltrada.map((item) => {
+                        const estaSelecionado = itensSelecionados.has(item.id);
 
-                                    {item.isFilho && (
-                                        <Text style={styles.filhoInfo}>
-                                            Filho de {item.paiNome}
+                        return (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={[
+                                    styles.alunoCard,
+                                    estaSelecionado && styles.alunoCardSelecionado,
+                                ]}
+                                onPress={() => handlePress(item)}
+                                onLongPress={() => handleLongPress(item.id)}
+                                delayLongPress={500}
+                            >
+                                {/* CHECKBOX DE SELEÇÃO */}
+                                {modoSelecao && (
+                                    <View style={styles.checkbox}>
+                                        <Ionicons
+                                            name={
+                                                estaSelecionado
+                                                    ? "checkmark-circle"
+                                                    : "ellipse-outline"
+                                            }
+                                            size={24}
+                                            color={estaSelecionado ? "#B8860B" : "#666"}
+                                        />
+                                    </View>
+                                )}
+
+                                <View style={styles.cardHeader}>
+                                    <View>
+                                        <Text style={styles.alunoNome}>
+                                            {item.nome}
                                         </Text>
+
+                                        {item.isFilho && (
+                                            <Text style={styles.filhoInfo}>
+                                                Filho de {item.paiNome}
+                                            </Text>
+                                        )}
+                                    </View>
+
+                                    {!modoSelecao && (
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={20}
+                                            color="#B8860B"
+                                        />
                                     )}
                                 </View>
 
-                                <Ionicons
-                                    name="chevron-forward"
-                                    size={20}
-                                    color="#B8860B"
-                                />
-                            </View>
+                                <View style={styles.cardContent}>
+                                    <View style={styles.infoItem}>
+                                        <Ionicons
+                                            name="cash"
+                                            size={16}
+                                            color="#B8860B"
+                                        />
+                                        <Text style={styles.infoLabel}>
+                                            Último pagamento:
+                                        </Text>
+                                        <Text style={styles.infoValue}>
+                                            {formatarUltimoPagamento(
+                                                item.dataUltimoPagamento
+                                            )}
+                                        </Text>
+                                    </View>
 
-                            <View style={styles.cardContent}>
-                                <View style={styles.infoItem}>
-                                    <Ionicons
-                                        name="cash"
-                                        size={16}
-                                        color="#B8860B"
-                                    />
-                                    <Text style={styles.infoLabel}>
-                                        Último pagamento:
-                                    </Text>
-                                    <Text style={styles.infoValue}>
-                                        {formatarUltimoPagamento(
-                                            item.dataUltimoPagamento
-                                        )}
-                                    </Text>
+                                    <View style={styles.infoItem}>
+                                        <Ionicons
+                                            name="fitness"
+                                            size={16}
+                                            color="#B8860B"
+                                        />
+                                        <Text style={styles.infoLabel}>
+                                            Modalidades:
+                                        </Text>
+
+                                        <Text style={styles.infoValue}>
+                                            {item.modalidades?.length > 0
+                                                ? item.modalidades
+                                                    .map((m: any) => m.modalidade)
+                                                    .join(", ")
+                                                : "Nenhuma"}
+                                        </Text>
+                                    </View>
                                 </View>
-
-                                <View style={styles.infoItem}>
-                                    <Ionicons
-                                        name="fitness"
-                                        size={16}
-                                        color="#B8860B"
-                                    />
-                                    <Text style={styles.infoLabel}>
-                                        Modalidades:
-                                    </Text>
-
-                                    <Text style={styles.infoValue}>
-                                        {item.modalidades?.length > 0
-                                            ? item.modalidades
-                                                  .map((m: any) => m.modalidade)
-                                                  .join(", ")
-                                            : "Nenhuma"}
-                                    </Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))
+                            </TouchableOpacity>
+                        );
+                    })
                 )}
 
                 <View style={{ height: 30 }} />
@@ -369,6 +472,43 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "700",
         color: "#B8860B",
+    },
+    selecaoBar: {
+        backgroundColor: "#1a1a1a",
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#B8860B",
+        marginBottom: 12,
+    },
+    selecaoInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 12,
+    },
+    selecaoTexto: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    selecaoAcoes: {
+        flexDirection: "row",
+        gap: 12,
+    },
+    selecaoBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        backgroundColor: "#333",
+        borderRadius: 8,
+    },
+    selecaoBtnTexto: {
+        color: "#B8860B",
+        fontSize: 14,
+        fontWeight: "600",
     },
     filtrosHeader: {
         flexDirection: "row",
@@ -446,6 +586,17 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         borderWidth: 1,
         borderColor: "#333",
+        position: "relative",
+    },
+    alunoCardSelecionado: {
+        borderColor: "#B8860B",
+        backgroundColor: "#2a2510",
+    },
+    checkbox: {
+        position: "absolute",
+        top: 12,
+        right: 12,
+        zIndex: 1,
     },
     cardHeader: {
         flexDirection: "row",
