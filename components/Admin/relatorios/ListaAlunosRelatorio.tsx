@@ -1,4 +1,4 @@
-import { UsuarioCompleto } from "@/types/admin";
+import { UsuarioCompleto, professores } from "@/types/admin";
 import { Ionicons } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -137,8 +137,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         setItensSelecionados(new Set(listaFiltrada.map((item) => item.id)));
     };
 
-
-
     const gerarPdfSelecionados = async () => {
         if (itensSelecionados.size === 0) {
             alert("Nenhum aluno selecionado");
@@ -192,22 +190,60 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         }
     };
 
-
     return (
         <View style={styles.container}>
             {/* TÍTULO E BUSCA */}
-
             <View style={styles.header}>
                 <View style={styles.sectionTitleContainer}>
                     <Ionicons name="list" size={22} color="#B8860B" />
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
                 </View>
 
-                {/* BARRA DE SELEÇÃO — aparece junto com a busca */}
+                {/* BARRA DE BUSCA - SEMPRE VISÍVEL */}
+                <View style={styles.filtrosHeader}>
+                    <View style={styles.buscaContainer}>
+                        <Ionicons name="search" size={20} color="#666" />
+                        <TextInput
+                            style={styles.buscaInput}
+                            placeholder="Buscar aluno..."
+                            placeholderTextColor="#666"
+                            value={busca}
+                            onChangeText={setBusca}
+                        />
+
+                        {busca.length > 0 && (
+                            <TouchableOpacity onPress={() => setBusca("")}>
+                                <Ionicons
+                                    name="close-circle"
+                                    size={20}
+                                    color="#666"
+                                />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.filtroButton}
+                        onPress={() => setMostrarFiltros(!mostrarFiltros)}
+                    >
+                        <Ionicons
+                            name="filter"
+                            size={20}
+                            color="#B8860B"
+                        />
+                        <Text style={styles.filtroButtonText}>Filtros</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* BARRA DE SELEÇÃO MÚLTIPLA */}
                 {modoSelecao && (
                     <View style={styles.selecaoBar}>
                         <View style={styles.selecaoInfo}>
-                            <Ionicons name="checkmark-circle" size={24} color="#B8860B" />
+                            <Ionicons
+                                name="checkmark-circle"
+                                size={24}
+                                color="#B8860B"
+                            />
                             <Text style={styles.selecaoTexto}>
                                 {itensSelecionados.size} selecionado(s)
                             </Text>
@@ -234,42 +270,98 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     </View>
                 )}
 
-                {/* BUSCA — sempre visível */}
-                <View style={styles.filtrosHeader}>
-                    <View style={styles.buscaContainer}>
-                        <Ionicons name="search" size={20} color="#666" />
-                        <TextInput
-                            style={styles.buscaInput}
-                            placeholder="Buscar aluno..."
-                            placeholderTextColor="#666"
-                            value={busca}
-                            onChangeText={setBusca}
-                        />
-
-                        {busca.length > 0 && (
-                            <TouchableOpacity onPress={() => setBusca("")}>
-                                <Ionicons name="close-circle" size={20} color="#666" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.filtroButton}
-                        onPress={() => setMostrarFiltros(!mostrarFiltros)}
-                    >
-                        <Ionicons name="filter" size={20} color="#B8860B" />
-                        <Text style={styles.filtroButtonText}>Filtros</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* FILTROS AVANÇADOS — também sempre disponíveis */}
+                {/* PAINEL DE FILTROS */}
                 {mostrarFiltros && (
                     <View style={styles.filtrosAvancados}>
-                        {/* ...resto igual... */}
+                        {/* MODALIDADES */}
+                        <View style={styles.filtroGrupo}>
+                            <Text style={styles.filtroLabel}>Modalidade</Text>
+                            <View style={styles.filtroBotoes}>
+                                {[
+                                    "todas",
+                                    "Jiu-Jitsu",
+                                    "Muay Thai",
+                                    "Boxe",
+                                    "MMA",
+                                ].map((m) => (
+                                    <TouchableOpacity
+                                        key={m}
+                                        style={[
+                                            styles.filtroOpcao,
+                                            filtroModalidade === m &&
+                                            styles.filtroOpcaoSelecionada,
+                                        ]}
+                                        onPress={() =>
+                                            setFiltroModalidade(m)
+                                        }
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.filtroOpcaoTexto,
+                                                filtroModalidade === m &&
+                                                styles.filtroOpcaoTextoSelecionado,
+                                            ]}
+                                        >
+                                            {m}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        {/* PROFESSOR */}
+                        <View style={styles.filtroGrupo}>
+                            <Text style={styles.filtroLabel}>Professor</Text>
+                            <View style={styles.filtroBotoes}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filtroOpcao,
+                                        filtroProfessor === "todos" &&
+                                        styles.filtroOpcaoSelecionada,
+                                    ]}
+                                    onPress={() =>
+                                        setFiltroProfessor("todos")
+                                    }
+                                >
+                                    <Text
+                                        style={[
+                                            styles.filtroOpcaoTexto,
+                                            filtroProfessor === "todos" &&
+                                            styles.filtroOpcaoTextoSelecionado,
+                                        ]}
+                                    >
+                                        Todos
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {professores.map((p) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        style={[
+                                            styles.filtroOpcao,
+                                            filtroProfessor === p.id &&
+                                            styles.filtroOpcaoSelecionada,
+                                        ]}
+                                        onPress={() =>
+                                            setFiltroProfessor(p.id)
+                                        }
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.filtroOpcaoTexto,
+                                                filtroProfessor === p.id &&
+                                                styles.filtroOpcaoTextoSelecionado,
+                                            ]}
+                                        >
+                                            {p.nome}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
                     </View>
                 )}
             </View>
-
 
             {/* LISTAGEM */}
             <ScrollView
@@ -310,7 +402,13 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                     styles.alunoCard,
                                     estaSelecionado && styles.alunoCardSelecionado,
                                 ]}
-                                onPress={() => toggleSelecao(item.id)}
+                                onPress={() => {
+                                    if (modoSelecao) {
+                                        toggleSelecao(item.id);
+                                    } else {
+                                        onAbrirDetalhes(item);
+                                    }
+                                }}
                                 onLongPress={() => handleLongPress(item.id)}
                                 delayLongPress={500}
                             >
