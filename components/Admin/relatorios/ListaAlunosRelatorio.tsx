@@ -169,22 +169,22 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     </thead>
                     <tbody>
                         ${selecionados
-                            .map(
-                                (s) => `
+                .map(
+                    (s) => `
                             <tr>
                                 <td>${s.nome}</td>
                                 <td>${s.dataUltimoPagamento
-                                    ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
-                                    : "Nunca"
-                                }</td>
+                            ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
+                            : "Nunca"
+                        }</td>
                                 <td>${s.modalidades?.length > 0
-                                    ? s.modalidades.map((m: any) => m.modalidade).join(", ")
-                                    : "Nenhuma"
-                                }</td>
+                            ? s.modalidades.map((m: any) => m.modalidade).join(", ")
+                            : "Nenhuma"
+                        }</td>
                             </tr>
                         `
-                            )
-                            .join("")}
+                )
+                .join("")}
                     </tbody>
                 </table>
             </body>
@@ -216,20 +216,20 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     <TouchableWithoutFeedback>
                         <View style={styles.modalContent}>
                             <Text style={styles.modalTitle}>Gerar Relatório PDF</Text>
-                            
+
                             <Text style={styles.periodoInfo}>
                                 Gerar relatório para {itensSelecionados.size} aluno(s) selecionado(s)?
                             </Text>
-                            
+
                             <View style={styles.modalButtons}>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={[styles.modalButton, styles.modalButtonSecondary]}
                                     onPress={() => setMostrarModalPeriodo(false)}
                                 >
                                     <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
                                 </TouchableOpacity>
-                                
-                                <TouchableOpacity 
+
+                                <TouchableOpacity
                                     style={[styles.modalButton, styles.modalButtonPrimary]}
                                     onPress={() => {
                                         gerarPdfSelecionados();
@@ -454,6 +454,9 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     listaFiltrada.map((item) => {
                         const estaSelecionado = itensSelecionados.has(item.id);
 
+                        // CALCULAR QUANTIDADE DE PRESENÇAS
+                        const quantidadePresencas = item.Presenca?.length || 0;
+
                         return (
                             <TouchableOpacity
                                 key={item.id}
@@ -496,6 +499,14 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                             </Text>
                                         )}
                                     </View>
+
+                                    {/* BADGE COM QUANTIDADE DE PRESENÇAS */}
+                                    <View style={styles.presencaBadge}>
+                                        <Ionicons name="calendar" size={14} color="#FFF" />
+                                        <Text style={styles.presencaText}>
+                                            {quantidadePresencas}
+                                        </Text>
+                                    </View>
                                 </View>
 
                                 <View style={styles.cardContent}>
@@ -537,6 +548,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                             </TouchableOpacity>
                         );
                     })
+                    
                 )}
 
                 <View style={{ height: 30 }} />
@@ -792,5 +804,19 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontWeight: "bold",
         fontSize: 14,
+    },
+    presencaBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#B8860B',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        gap: 4,
+    },
+    presencaText: {
+        color: '#000',
+        fontSize: 12,
+        fontWeight: 'bold',
     },
 });
