@@ -26,7 +26,7 @@ import { usePresenca } from '@/hooks/usePresenca';
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 // Tipos para as seções
-type AdminSection = 'presencas' | 'gestao' | 'alunos' | 'avisos';
+type AdminSection = 'presencas' | 'gestao' | 'alunos' | 'estoque' | 'relatorios' | 'avisos';
 
 // COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
@@ -315,6 +315,20 @@ export default function AdminScreen() {
           </View>
         );
 
+      case 'relatorios':
+        return (
+          <View style={styles.secaoContent}>
+            <AvisosManager isVisible={secaoAtiva === 'relatorios'} />
+          </View>
+        );
+
+      case 'estoque':
+        return (
+          <View style={styles.secaoContent}>
+            <AvisosManager isVisible={secaoAtiva === 'estoque'} />
+          </View>
+        );
+
       case 'avisos':
         return (
           <View style={styles.secaoContent}>
@@ -351,6 +365,20 @@ export default function AdminScreen() {
         icon: 'list',
         description: 'Lista completa de alunos',
         color: '#3B82F6'
+      },
+      {
+        key: 'relatorios' as AdminSection,
+        title: 'Relatorios',
+        icon: 'analytics',
+        description: 'Análise de presença e dados',
+        color: '#8B5CF6'
+      },
+            {
+        key: 'estoque' as AdminSection,
+        title: 'Estoque',
+        icon: 'cube',
+        description: 'Estoque de equipamentos e roupas',
+        color: '#84CC16'
       },
       {
         key: 'avisos' as AdminSection,
