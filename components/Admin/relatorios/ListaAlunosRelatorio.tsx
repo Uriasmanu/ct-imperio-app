@@ -135,17 +135,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         setItensSelecionados(new Set(listaFiltrada.map((item) => item.id)));
     };
 
-    const handlePress = (item: any) => {
-        if (modoSelecao) {
-            toggleSelecao(item.id);
-        } else {
-            onAbrirDetalhes(
-                item.isFilho
-                    ? usuarios.find((u) => u.id === item.paiId)!
-                    : item
-            );
-        }
-    };
 
     return (
         <View style={styles.container}>
@@ -371,7 +360,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                     styles.alunoCard,
                                     estaSelecionado && styles.alunoCardSelecionado,
                                 ]}
-                                onPress={() => handlePress(item)}
+                                onPress={() => toggleSelecao(item.id)}
                                 onLongPress={() => handleLongPress(item.id)}
                                 delayLongPress={500}
                             >
@@ -402,14 +391,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                             </Text>
                                         )}
                                     </View>
-
-                                    {!modoSelecao && (
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={20}
-                                            color="#B8860B"
-                                        />
-                                    )}
                                 </View>
 
                                 <View style={styles.cardContent}>
@@ -521,7 +502,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "#1a1a1a",
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 4,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "#333",
