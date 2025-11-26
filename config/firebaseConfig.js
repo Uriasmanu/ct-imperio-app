@@ -1,9 +1,10 @@
+// config/firebaseConfig.js
 import { criarUsuario } from '@/services/usuarioService';
 import { initializeApp } from 'firebase/app';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, deleteUser, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage'; // Adicione esta importação
 
-// Suas credenciais do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDAcAcRQHu_PMCtXTIeLts09lQlz5jBHzQ",
   authDomain: "ct-imperio-app-6fd93.firebaseapp.com",
@@ -17,10 +18,10 @@ const firebaseConfig = {
 // Inicializa o app Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa Auth e Firestore
+// Inicializa Auth, Firestore e Storage
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-
+export const storage = getStorage(app); // Agora está correto
 
 /**
  * Função para registrar um novo usuário com e-mail e senha no Firebase Auth.
@@ -58,7 +59,6 @@ export const registerUser = async (email, password, userData = {}) => {
       
       try {
         await deleteUser(user);
-  
       } catch (deleteError) {
         console.error("❌ Erro no rollback:", deleteError);
       }
@@ -137,10 +137,9 @@ export default {
   app, 
   auth, 
   db, 
+  storage, // Adicione storage nas exportações
   registerUser, 
   loginUser, 
   getCurrentUser, 
   logoutUser 
 };
-
-

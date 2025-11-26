@@ -1,3 +1,5 @@
+import { estoqueService } from "@/services/estoqueService";
+import { ItemEstoque, Pedido } from "@/types/estoque";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -7,67 +9,29 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { FormProduto } from "./FormProduto";
 
-interface ItemEstoque {
-    id: string;
-    nome: string;
-    quantidade: number;
-    tamanhos: { [key: string]: number };
-    preco: number;
-}
-
-interface Pedido {
-    id: string;
-    pessoa: string;
-    itens: { itemId: string; quantidade: number; tamanho?: string }[];
-    data: string;
-    pago: boolean;
-    total: number;
-}
 
 export const Estoque: React.FC = () => {
     const [abaAtiva, setAbaAtiva] = useState<"estoque" | "pedidos">("estoque");
     const [mostrarFormItem, setMostrarFormItem] = useState(false);
     const [mostrarFormPedido, setMostrarFormPedido] = useState(false);
+    const [estoque, setEstoque] = useState<ItemEstoque[]>([]);
 
-    // Dados mockados - será substituído por dados reais depois
-    const [estoque, setEstoque] = useState<ItemEstoque[]>([
-        {
-            id: "1",
-            nome: "Blusa de Jiu-Jitsu",
-            quantidade: 25,
-            tamanhos: { P: 5, M: 10, G: 8, GG: 2 },
-            preco: 89.90
-        },
-        {
-            id: "2",
-            nome: "Short de Muay Thai",
-            quantidade: 18,
-            tamanhos: { P: 3, M: 8, G: 5, GG: 2 },
-            preco: 69.90
-        },
-        {
-            id: "3",
-            nome: "Caneleira",
-            quantidade: 12,
-            tamanhos: { Único: 12 },
-            preco: 45.00
-        },
-        {
-            id: "4",
-            nome: "Protetor Bucal",
-            quantidade: 30,
-            tamanhos: { Único: 30 },
-            preco: 15.00
-        },
-        {
-            id: "5",
-            nome: "Bandagem",
-            quantidade: 22,
-            tamanhos: { Único: 22 },
-            preco: 25.00
+
+    // Função para adicionar produto
+    const handleAdicionarProduto = async (produto: Omit<ItemEstoque, 'id'>) => {
+        try {
+            await estoqueService.addProduto(produto);
+            // Recarregar a lista de produtos
+            const novosProdutos = await estoqueService.getProdutos();
+            setEstoque(novosProdutos);
+        } catch (error) {
+            console.error('Erro ao adicionar produto:', error);
+            throw error;
         }
-    ]);
+    };
+
 
     const [pedidos, setPedidos] = useState<Pedido[]>([
         {
@@ -169,6 +133,12 @@ export const Estoque: React.FC = () => {
                     </TouchableOpacity>
                 </View>
             </View>
+
+             <FormProduto
+                visible={mostrarFormItem}
+                onClose={() => setMostrarFormItem(false)}
+                onSave={handleAdicionarProduto}
+            />
 
             {/* BOTÕES DE AÇÃO */}
             <View style={styles.acoesContainer}>
@@ -425,7 +395,7 @@ const styles = StyleSheet.create({
     },
     conteudo: {
         flex: 1,
-        padding: 16,
+        padding: 4,
     },
     estoqueContainer: {
         gap: 12,
