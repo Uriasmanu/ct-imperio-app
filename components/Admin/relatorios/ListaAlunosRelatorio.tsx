@@ -38,54 +38,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
 
     const [mostrarModalPeriodo, setMostrarModalPeriodo] = useState(false);
-    const [pdfDataInicial, setPdfDataInicial] = useState("");
-    const [pdfDataFinal, setPdfDataFinal] = useState("");
-
-    // FUNÇÃO PARA CALCULAR O PERÍODO DE 10 A 10
-    const calcularPeriodo = () => {
-        const hoje = new Date();
-        const mesAtual = hoje.getMonth();
-        const anoAtual = hoje.getFullYear();
-        
-        let dataInicio, dataFim;
-        
-        if (hoje.getDate() >= 10) {
-            // Se estamos depois do dia 10, período é do dia 10 atual ao dia 10 próximo
-            dataInicio = new Date(anoAtual, mesAtual, 10);
-            dataFim = new Date(anoAtual, mesAtual + 1, 10);
-        } else {
-            // Se estamos antes do dia 10, período é do dia 10 anterior ao dia 10 atual
-            dataInicio = new Date(anoAtual, mesAtual - 1, 10);
-            dataFim = new Date(anoAtual, mesAtual, 10);
-        }
-        
-        return { dataInicio, dataFim };
-    };
-
-    // FUNÇÃO PARA CONTAR FREQUÊNCIAS NO PERÍODO
-    const contarFrequenciasNoPeriodo = (usuario: any) => {
-        const { dataInicio, dataFim } = calcularPeriodo();
-        
-        if (!usuario.frequencias || usuario.frequencias.length === 0) {
-            return 0;
-        }
-        
-        const frequenciasNoPeriodo = usuario.frequencias.filter((freq: any) => {
-            const dataFrequencia = new Date(freq.data);
-            return dataFrequencia >= dataInicio && dataFrequencia <= dataFim;
-        });
-        
-        return frequenciasNoPeriodo.length;
-    };
-
-    // FUNÇÃO PARA FORMATAR O PERÍODO ATUAL
-    const formatarPeriodoAtual = () => {
-        const { dataInicio, dataFim } = calcularPeriodo();
-        return {
-            inicio: dataInicio.toLocaleDateString("pt-BR"),
-            fim: dataFim.toLocaleDateString("pt-BR")
-        };
-    };
 
     // TRANSFORMA TODOS OS USUÁRIOS E TODOS OS FILHOS EM UMA LISTA ÚNICA
     const listaExpandida = useMemo(() => {
@@ -96,7 +48,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 ...u,
                 isFilho: false,
                 paiNome: null,
-                frequenciasNoPeriodo: contarFrequenciasNoPeriodo(u)
             });
 
             if (u.filhos && u.filhos.length > 0) {
@@ -106,7 +57,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                         isFilho: true,
                         paiNome: u.nome,
                         paiId: u.id,
-                        frequenciasNoPeriodo: contarFrequenciasNoPeriodo(f)
                     });
                 });
             }
@@ -202,21 +152,17 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
             itensSelecionados.has(item.id)
         );
 
-        const periodo = formatarPeriodoAtual();
-
         // monta html
         const conteudoHtml = `
         <html>
             <body style="font-family: Arial; padding: 20px;">
                 <h1>Relatório de Alunos</h1>
-                <p>Período: ${periodo.inicio} à ${periodo.fim}</p>
                 <p>Total: ${selecionados.length}</p>
 
                 <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
                     <thead>
                         <tr style="background-color: #f2f2f2;">
                             <th>Nome</th>
-                            <th>Frequências</th>
                             <th>Último Pagamento</th>
                             <th>Modalidades</th>
                         </tr>
@@ -227,7 +173,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                 (s) => `
                             <tr>
                                 <td>${s.nome}</td>
-                                <td style="text-align: center;">${s.frequenciasNoPeriodo}</td>
                                 <td>${s.dataUltimoPagamento
                                     ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
                                     : "Nunca"
@@ -258,8 +203,8 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         }
     };
 
-    // MODAL DE PERÍODO PERSONALIZADO
-    const ModalPeriodo = () => (
+    // MODAL DE CONFIRMAÇÃO
+    const ModalConfirmacao = () => (
         <Modal
             visible={mostrarModalPeriodo}
             transparent
@@ -273,7 +218,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                             <Text style={styles.modalTitle}>Gerar Relatório PDF</Text>
                             
                             <Text style={styles.periodoInfo}>
-                                Período atual: {formatarPeriodoAtual().inicio} à {formatarPeriodoAtual().fim}
+                                Gerar relatório para {itensSelecionados.size} aluno(s) selecionado(s)?
                             </Text>
                             
                             <View style={styles.modalButtons}>
@@ -308,14 +253,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 <View style={styles.sectionTitleContainer}>
                     <Ionicons name="list" size={22} color="#B8860B" />
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
-                </View>
-
-                {/* INFO DO PERÍODO ATUAL */}
-                <View style={styles.periodoContainer}>
-                    <Ionicons name="calendar" size={16} color="#B8860B" />
-                    <Text style={styles.periodoText}>
-                        Período: {formatarPeriodoAtual().inicio} à {formatarPeriodoAtual().fim}
-                    </Text>
                 </View>
 
                 {/* BARRA DE BUSCA - SEMPRE VISÍVEL */}
@@ -559,14 +496,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                             </Text>
                                         )}
                                     </View>
-                                    
-                                    {/* CONTADOR DE FREQUÊNCIAS */}
-                                    <View style={styles.frequenciaBadge}>
-                                        <Ionicons name="calendar" size={14} color="#B8860B" />
-                                        <Text style={styles.frequenciaText}>
-                                            {item.frequenciasNoPeriodo} vezes
-                                        </Text>
-                                    </View>
                                 </View>
 
                                 <View style={styles.cardContent}>
@@ -614,7 +543,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
             </ScrollView>
 
             {/* MODAL DE CONFIRMAÇÃO DO PDF */}
-            <ModalPeriodo />
+            <ModalConfirmacao />
         </View>
     );
 };
@@ -632,18 +561,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "700",
         color: "#B8860B",
-    },
-    periodoContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 16,
-        paddingHorizontal: 4,
-    },
-    periodoText: {
-        color: "#B8860B",
-        fontSize: 14,
-        fontWeight: "500",
     },
     selecaoBar: {
         backgroundColor: "#1a1a1a",
@@ -783,22 +700,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     filhoInfo: { color: "#888", fontSize: 12, marginTop: 2 },
-    frequenciaBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-        backgroundColor: "#2a2510",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: "#B8860B",
-    },
-    frequenciaText: {
-        color: "#B8860B",
-        fontSize: 12,
-        fontWeight: "600",
-    },
     cardContent: { gap: 12 },
     infoItem: {
         flexDirection: "row",
