@@ -1,4 +1,4 @@
-// components/Estoque.tsx
+// components/Estoque.tsx (atualizado)
 import { estoqueService } from "@/services/estoqueService";
 import { ItemEstoque, Pedido } from "@/types/estoque";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,13 +12,16 @@ import {
     View
 } from "react-native";
 import { FormProduto } from "./FormProduto";
+import { ModalVenda } from "./ModalVenda";
 
 export const Estoque: React.FC = () => {
     const [abaAtiva, setAbaAtiva] = useState<"estoque" | "pedidos">("estoque");
     const [mostrarFormItem, setMostrarFormItem] = useState(false);
     const [mostrarFormPedido, setMostrarFormPedido] = useState(false);
+    const [mostrarModalVenda, setMostrarModalVenda] = useState(false);
     const [estoque, setEstoque] = useState<ItemEstoque[]>([]);
     const [produtoEditando, setProdutoEditando] = useState<ItemEstoque | null>(null);
+    const [produtoVendendo, setProdutoVendendo] = useState<ItemEstoque | null>(null);
     const [modoEdicao, setModoEdicao] = useState(false);
 
     // Carregar produtos ao iniciar
@@ -40,7 +43,7 @@ export const Estoque: React.FC = () => {
     const handleAdicionarProduto = async (produto: Omit<ItemEstoque, 'id'>) => {
         try {
             await estoqueService.addProduto(produto);
-            await carregarProdutos(); // Recarregar a lista
+            await carregarProdutos();
         } catch (error) {
             console.error('Erro ao adicionar produto:', error);
             throw error;
@@ -51,9 +54,20 @@ export const Estoque: React.FC = () => {
     const handleAtualizarProduto = async (id: string, produto: Partial<ItemEstoque>) => {
         try {
             await estoqueService.updateProduto(id, produto);
-            await carregarProdutos(); // Recarregar a lista
+            await carregarProdutos();
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
+            throw error;
+        }
+    };
+
+    // Função para processar venda
+    const handleProcessarVenda = async (produtoId: string, tamanho: string, quantidade: number) => {
+        try {
+            await estoqueService.atualizarEstoque(produtoId, tamanho, quantidade, 'remover');
+            await carregarProdutos();
+        } catch (error) {
+            console.error('Erro ao processar venda:', error);
             throw error;
         }
     };
@@ -63,6 +77,18 @@ export const Estoque: React.FC = () => {
         setProdutoEditando(produto);
         setModoEdicao(true);
         setMostrarFormItem(true);
+    };
+
+    // Função para abrir o modal de venda
+    const handleAbrirVenda = (produto: ItemEstoque) => {
+        setProdutoVendendo(produto);
+        setMostrarModalVenda(true);
+    };
+
+    // Função para fechar o modal de venda
+    const handleFecharVenda = () => {
+        setMostrarModalVenda(false);
+        setProdutoVendendo(null);
     };
 
     // Função para abrir o formulário de criação
@@ -231,7 +257,7 @@ export const Estoque: React.FC = () => {
                 </View>
             </View>
 
-            {/* FORMULÁRIO */}
+            {/* FORMULÁRIO DE PRODUTO */}
             <FormProduto
                 visible={mostrarFormItem}
                 onClose={handleFecharFormulario}
@@ -239,6 +265,14 @@ export const Estoque: React.FC = () => {
                 onUpdate={handleAtualizarProduto}
                 produtoEditando={produtoEditando}
                 modoEdicao={modoEdicao}
+            />
+
+            {/* MODAL DE VENDA */}
+            <ModalVenda
+                visible={mostrarModalVenda}
+                produto={produtoVendendo}
+                onClose={handleFecharVenda}
+                onVender={handleProcessarVenda}
             />
 
             {/* BOTÕES DE AÇÃO */}
@@ -329,7 +363,7 @@ export const Estoque: React.FC = () => {
 
                                         <TouchableOpacity
                                             style={styles.botaoVender}
-                                            onPress={() => handleVenderProduto(item)}
+                                            onPress={() => handleAbrirVenda(item)}
                                         >
                                             <Ionicons name="cart" size={16} color="#FFF" />
                                             <Text style={styles.botaoVenderTexto}>Vender</Text>
