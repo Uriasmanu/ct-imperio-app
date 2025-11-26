@@ -527,8 +527,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                 onPress={() => {
                                     if (modoSelecao) {
                                         toggleSelecao(item.id);
-                                    } else {
-                                        onAbrirDetalhes(item);
                                     }
                                 }}
                                 onLongPress={() => handleLongPress(item.id)}
