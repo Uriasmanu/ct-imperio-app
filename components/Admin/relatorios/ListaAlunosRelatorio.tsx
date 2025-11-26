@@ -38,7 +38,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
 
     const [mostrarModalPeriodo, setMostrarModalPeriodo] = useState(false);
-    const [periodoSelecionado, setPeriodoSelecionado] = useState<string>("");
 
     // GERAR OPÇÕES DE PERÍODO (sempre 30 dias, começando do dia 10)
     const opcoesPeriodo = useMemo(() => {
@@ -49,10 +48,9 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         // Gerar períodos do ano atual (de janeiro a dezembro)
         for (let mes = 0; mes < 12; mes++) {
             const dataInicio = new Date(anoAtual, mes, 10);
-            const dataFim = new Date(anoAtual, mes, 9); // Dia 9 do próximo mês
-            dataFim.setMonth(dataFim.getMonth() + 1); // Avança para o próximo mês
+            const dataFim = new Date(anoAtual, mes, 9);
+            dataFim.setMonth(dataFim.getMonth() + 1);
 
-            // Formatar como "10/01 a 09/02"
             const inicioFormatado = dataInicio.toLocaleDateString('pt-BR', {
                 day: '2-digit',
                 month: '2-digit'
@@ -135,7 +133,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         return resultado;
     }, [busca, filtroModalidade, filtroProfessor, listaExpandida]);
 
-    // FORMATADOR DE PAGAMENTO (resumido)
+    // FORMATADOR DE PAGAMENTO
     const formatarUltimoPagamento = (data: string) => {
         if (!data) return "Nunca";
         const d = new Date(data);
@@ -144,22 +142,19 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     };
 
     // FUNÇÃO PARA FILTRAR PRESENÇAS POR PERÍODO
-    // FUNÇÃO PARA FILTRAR PRESENÇAS POR PERÍODO
     const filtrarPresencasPorPeriodo = (presencas: any[], periodo: string): number => {
         if (!periodo) return presencas?.length || 0;
 
         try {
-            // Extrair datas do período selecionado (ex: "10/01 a 09/02")
             const partes = periodo.split(' ');
-            const dataInicioStr = partes[0]; // "10/01"
-            const dataFimStr = partes[2]; // "09/02"
+            const dataInicioStr = partes[0];
+            const dataFimStr = partes[2];
 
             const [diaInicio, mesInicio] = dataInicioStr.split('/').map(Number);
             const [diaFim, mesFim] = dataFimStr.split('/').map(Number);
 
             const anoAtual = new Date().getFullYear();
 
-            // Ajustar o ano para a data fim se necessário (quando vai para o próximo ano)
             let anoFim = anoAtual;
             if (mesFim < mesInicio) {
                 anoFim = anoAtual + 1;
@@ -168,38 +163,16 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
             const dataInicio = new Date(anoAtual, mesInicio - 1, diaInicio);
             const dataFim = new Date(anoFim, mesFim - 1, diaFim);
 
-            console.log('Período selecionado:', {
-                periodo,
-                dataInicio: dataInicio.toISOString(),
-                dataFim: dataFim.toISOString()
-            });
-
-            // Filtrar presenças dentro do período
             const presencasNoPeriodo = presencas?.filter((presenca: any) => {
-                // Verificar se a presença tem formato de objeto ou string
                 const dataPresencaStr = typeof presenca === 'string' ? presenca : presenca.date;
 
                 if (!dataPresencaStr) return false;
 
-                // Converter a data da presença para Date
                 const [anoPres, mesPres, diaPres] = dataPresencaStr.split('-').map(Number);
                 const dataPresenca = new Date(anoPres, mesPres - 1, diaPres);
 
-                // Verificar se está dentro do período (incluindo as datas limites)
-                const dentroDoPeriodo = dataPresenca >= dataInicio && dataPresenca <= dataFim;
-
-                if (dentroDoPeriodo) {
-                    console.log('Presença dentro do período:', {
-                        dataPresenca: dataPresenca.toISOString(),
-                        dataInicio: dataInicio.toISOString(),
-                        dataFim: dataFim.toISOString()
-                    });
-                }
-
-                return dentroDoPeriodo;
+                return dataPresenca >= dataInicio && dataPresenca <= dataFim;
             }) || [];
-
-            console.log('Total de presenças no período:', presencasNoPeriodo.length);
 
             return presencasNoPeriodo.length;
         } catch (error) {
@@ -235,24 +208,22 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         setItensSelecionados(new Set(listaFiltrada.map((item) => item.id)));
     };
 
-    const gerarPdfSelecionados = async () => {
+    const gerarPdfSelecionados = async (periodo: string) => {
         if (itensSelecionados.size === 0) {
             alert("Nenhum aluno selecionado");
             return;
         }
 
-        // pega só os itens selecionados
         const selecionados = listaFiltrada.filter((item) =>
             itensSelecionados.has(item.id)
         );
 
-        // monta html
         const conteudoHtml = `
         <html>
             <body style="font-family: Arial; padding: 20px;">
                 <h1>Relatório de Alunos</h1>
                 <p>Total: ${selecionados.length}</p>
-                ${periodoSelecionado ? `<p>Período: ${periodoSelecionado}</p>` : ''}
+                ${periodo ? `<p>Período: ${periodo}</p>` : ''}
 
                 <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
                     <thead>
@@ -260,28 +231,28 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                             <th>Nome</th>
                             <th>Último Pagamento</th>
                             <th>Modalidades</th>
-                            <th>Presenças${periodoSelecionado ? ' no Período' : ''}</th>
+                            <th>Presenças${periodo ? ' no Período' : ''}</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${selecionados
-                .map(
-                    (s) => `
+                            .map(
+                                (s) => `
                             <tr>
                                 <td>${s.nome}</td>
                                 <td>${s.dataUltimoPagamento
-                            ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
-                            : "Nunca"
-                        }</td>
+                                    ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
+                                    : "Nunca"
+                                }</td>
                                 <td>${s.modalidades?.length > 0
-                            ? s.modalidades.map((m: any) => m.modalidade).join(", ")
-                            : "Nenhuma"
-                        }</td>
-                                <td style="text-align: center;">${filtrarPresencasPorPeriodo(s.Presenca, periodoSelecionado)}</td>
+                                    ? s.modalidades.map((m: any) => m.modalidade).join(", ")
+                                    : "Nenhuma"
+                                }</td>
+                                <td style="text-align: center;">${filtrarPresencasPorPeriodo(s.Presenca, periodo)}</td>
                             </tr>
                         `
-                )
-                .join("")}
+                            )
+                            .join("")}
                     </tbody>
                 </table>
             </body>
@@ -300,81 +271,82 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         }
     };
 
-    // MODAL DE SELEÇÃO DE PERÍODO
-    const ModalSelecaoPeriodo = () => (
-        <Modal
-            visible={mostrarModalPeriodo}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setMostrarModalPeriodo(false)}
-        >
-            <TouchableWithoutFeedback onPress={() => setMostrarModalPeriodo(false)}>
-                <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>Selecionar Período</Text>
+    // MODAL DE SELEÇÃO DE PERÍODO COM ESTADO INTERNO
+    const ModalSelecaoPeriodo = () => {
+        const [periodoSelecionado, setPeriodoSelecionado] = useState<string>("");
 
-                            <Text style={styles.periodoInfo}>
-                                Selecione o período de 30 dias para o relatório:
-                            </Text>
+        return (
+            <Modal
+                visible={mostrarModalPeriodo}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setMostrarModalPeriodo(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setMostrarModalPeriodo(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalContent}>
+                                <Text style={styles.modalTitle}>Selecionar Período</Text>
 
-                            <ScrollView style={styles.listaPeriodos} showsVerticalScrollIndicator={false}>
-                                {opcoesPeriodo.map((periodo, index) => (
+                                <Text style={styles.periodoInfo}>
+                                    Selecione o período de 30 dias para o relatório:
+                                </Text>
+
+                                <ScrollView style={styles.listaPeriodos} showsVerticalScrollIndicator={false}>
+                                    {opcoesPeriodo.map((periodo, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[
+                                                styles.periodoOpcao,
+                                                periodoSelecionado === periodo && styles.periodoOpcaoSelecionada,
+                                            ]}
+                                            onPress={() => setPeriodoSelecionado(periodo)}
+                                        >
+                                            <Ionicons
+                                                name={periodoSelecionado === periodo ? "radio-button-on" : "radio-button-off"}
+                                                size={20}
+                                                color={periodoSelecionado === periodo ? "#B8860B" : "#666"}
+                                            />
+                                            <Text style={[
+                                                styles.periodoTexto,
+                                                periodoSelecionado === periodo && styles.periodoTextoSelecionado,
+                                            ]}>
+                                                {periodo}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+
+                                <View style={styles.modalButtons}>
                                     <TouchableOpacity
-                                        key={index}
-                                        style={[
-                                            styles.periodoOpcao,
-                                            periodoSelecionado === periodo && styles.periodoOpcaoSelecionada,
-                                        ]}
-                                        onPress={() => setPeriodoSelecionado(periodo)}
+                                        style={[styles.modalButton, styles.modalButtonSecondary]}
+                                        onPress={() => setMostrarModalPeriodo(false)}
                                     >
-                                        <Ionicons
-                                            name={periodoSelecionado === periodo ? "radio-button-on" : "radio-button-off"}
-                                            size={20}
-                                            color={periodoSelecionado === periodo ? "#B8860B" : "#666"}
-                                        />
-                                        <Text style={[
-                                            styles.periodoTexto,
-                                            periodoSelecionado === periodo && styles.periodoTextoSelecionado,
-                                        ]}>
-                                            {periodo}
-                                        </Text>
+                                        <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
                                     </TouchableOpacity>
-                                ))}
-                            </ScrollView>
 
-                            <View style={styles.modalButtons}>
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.modalButtonSecondary]}
-                                    onPress={() => {
-                                        setMostrarModalPeriodo(false);
-                                        setPeriodoSelecionado("");
-                                    }}
-                                >
-                                    <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.modalButton, styles.modalButtonPrimary]}
-                                    onPress={() => {
-                                        if (!periodoSelecionado) {
-                                            alert("Por favor, selecione um período");
-                                            return;
-                                        }
-                                        gerarPdfSelecionados();
-                                        setMostrarModalPeriodo(false);
-                                    }}
-                                    disabled={!periodoSelecionado}
-                                >
-                                    <Text style={styles.modalButtonTextPrimary}>Gerar PDF</Text>
-                                </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.modalButtonPrimary]}
+                                        onPress={() => {
+                                            if (!periodoSelecionado) {
+                                                alert("Por favor, selecione um período");
+                                                return;
+                                            }
+                                            gerarPdfSelecionados(periodoSelecionado);
+                                            setMostrarModalPeriodo(false);
+                                        }}
+                                        disabled={!periodoSelecionado}
+                                    >
+                                        <Text style={styles.modalButtonTextPrimary}>Gerar PDF</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -385,7 +357,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
                 </View>
 
-                {/* BARRA DE BUSCA - SEMPRE VISÍVEL */}
+                {/* BARRA DE BUSCA */}
                 <View style={styles.filtrosHeader}>
                     <View style={styles.buscaContainer}>
                         <Ionicons name="search" size={20} color="#666" />
@@ -396,14 +368,9 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                             value={busca}
                             onChangeText={setBusca}
                         />
-
                         {busca.length > 0 && (
                             <TouchableOpacity onPress={() => setBusca("")}>
-                                <Ionicons
-                                    name="close-circle"
-                                    size={20}
-                                    color="#666"
-                                />
+                                <Ionicons name="close-circle" size={20} color="#666" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -412,11 +379,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                         style={styles.filtroButton}
                         onPress={() => setMostrarFiltros(!mostrarFiltros)}
                     >
-                        <Ionicons
-                            name="filter"
-                            size={20}
-                            color="#B8860B"
-                        />
+                        <Ionicons name="filter" size={20} color="#B8860B" />
                         <Text style={styles.filtroButtonText}>Filtros</Text>
                     </TouchableOpacity>
                 </View>
@@ -425,11 +388,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 {modoSelecao && (
                     <View style={styles.selecaoBar}>
                         <View style={styles.selecaoInfo}>
-                            <Ionicons
-                                name="checkmark-circle"
-                                size={24}
-                                color="#B8860B"
-                            />
+                            <Ionicons name="checkmark-circle" size={24} color="#B8860B" />
                             <Text style={styles.selecaoTexto}>
                                 {itensSelecionados.size} selecionado(s)
                             </Text>
@@ -443,10 +402,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
                             <TouchableOpacity
                                 style={styles.selecaoBtn}
-                                onPress={() => {
-                                    setPeriodoSelecionado("");
-                                    setMostrarModalPeriodo(true);
-                                }}
+                                onPress={() => setMostrarModalPeriodo(true)}
                             >
                                 <Ionicons name="document" size={20} color="#B8860B" />
                                 <Text style={styles.selecaoBtnTexto}>PDF</Text>
@@ -465,33 +421,22 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 {/* PAINEL DE FILTROS */}
                 {mostrarFiltros && (
                     <View style={styles.filtrosAvancados}>
-                        {/* MODALIDADES */}
                         <View style={styles.filtroGrupo}>
                             <Text style={styles.filtroLabel}>Modalidade</Text>
                             <View style={styles.filtroBotoes}>
-                                {[
-                                    "todas",
-                                    "Jiu-Jitsu",
-                                    "Muay Thai",
-                                    "Boxe",
-                                    "MMA",
-                                ].map((m) => (
+                                {["todas", "Jiu-Jitsu", "Muay Thai", "Boxe", "MMA"].map((m) => (
                                     <TouchableOpacity
                                         key={m}
                                         style={[
                                             styles.filtroOpcao,
-                                            filtroModalidade === m &&
-                                            styles.filtroOpcaoSelecionada,
+                                            filtroModalidade === m && styles.filtroOpcaoSelecionada,
                                         ]}
-                                        onPress={() =>
-                                            setFiltroModalidade(m)
-                                        }
+                                        onPress={() => setFiltroModalidade(m)}
                                     >
                                         <Text
                                             style={[
                                                 styles.filtroOpcaoTexto,
-                                                filtroModalidade === m &&
-                                                styles.filtroOpcaoTextoSelecionado,
+                                                filtroModalidade === m && styles.filtroOpcaoTextoSelecionado,
                                             ]}
                                         >
                                             {m}
@@ -501,25 +446,20 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                             </View>
                         </View>
 
-                        {/* PROFESSOR */}
                         <View style={styles.filtroGrupo}>
                             <Text style={styles.filtroLabel}>Professor</Text>
                             <View style={styles.filtroBotoes}>
                                 <TouchableOpacity
                                     style={[
                                         styles.filtroOpcao,
-                                        filtroProfessor === "todos" &&
-                                        styles.filtroOpcaoSelecionada,
+                                        filtroProfessor === "todos" && styles.filtroOpcaoSelecionada,
                                     ]}
-                                    onPress={() =>
-                                        setFiltroProfessor("todos")
-                                    }
+                                    onPress={() => setFiltroProfessor("todos")}
                                 >
                                     <Text
                                         style={[
                                             styles.filtroOpcaoTexto,
-                                            filtroProfessor === "todos" &&
-                                            styles.filtroOpcaoTextoSelecionado,
+                                            filtroProfessor === "todos" && styles.filtroOpcaoTextoSelecionado,
                                         ]}
                                     >
                                         Todos
@@ -531,18 +471,14 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                         key={p.id}
                                         style={[
                                             styles.filtroOpcao,
-                                            filtroProfessor === p.id &&
-                                            styles.filtroOpcaoSelecionada,
+                                            filtroProfessor === p.id && styles.filtroOpcaoSelecionada,
                                         ]}
-                                        onPress={() =>
-                                            setFiltroProfessor(p.id)
-                                        }
+                                        onPress={() => setFiltroProfessor(p.id)}
                                     >
                                         <Text
                                             style={[
                                                 styles.filtroOpcaoTexto,
-                                                filtroProfessor === p.id &&
-                                                styles.filtroOpcaoTextoSelecionado,
+                                                filtroProfessor === p.id && styles.filtroOpcaoTextoSelecionado,
                                             ]}
                                         >
                                             {p.nome}
@@ -571,23 +507,13 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
                 {listaFiltrada.length === 0 ? (
                     <View style={styles.nenhumResultado}>
-                        <Ionicons
-                            name="search-outline"
-                            size={56}
-                            color="#666"
-                        />
-                        <Text style={styles.nenhumResultadoTitle}>
-                            Nenhum aluno encontrado
-                        </Text>
-                        <Text style={styles.nenhumResultadoText}>
-                            Ajuste os filtros ou a busca
-                        </Text>
+                        <Ionicons name="search-outline" size={56} color="#666" />
+                        <Text style={styles.nenhumResultadoTitle}>Nenhum aluno encontrado</Text>
+                        <Text style={styles.nenhumResultadoText}>Ajuste os filtros ou a busca</Text>
                     </View>
                 ) : (
                     listaFiltrada.map((item) => {
                         const estaSelecionado = itensSelecionados.has(item.id);
-
-                        // CALCULAR QUANTIDADE DE PRESENÇAS
                         const quantidadePresencas = item.Presenca?.length || 0;
 
                         return (
@@ -605,15 +531,10 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                 onLongPress={() => handleLongPress(item.id)}
                                 delayLongPress={500}
                             >
-                                {/* CHECKBOX DE SELEÇÃO */}
                                 {modoSelecao && (
                                     <View style={styles.checkbox}>
                                         <Ionicons
-                                            name={
-                                                estaSelecionado
-                                                    ? "checkmark-circle"
-                                                    : "ellipse-outline"
-                                            }
+                                            name={estaSelecionado ? "checkmark-circle" : "ellipse-outline"}
                                             size={24}
                                             color={estaSelecionado ? "#B8860B" : "#666"}
                                         />
@@ -622,74 +543,41 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
                                 <View style={styles.cardHeader}>
                                     <View>
-                                        <Text style={styles.alunoNome}>
-                                            {item.nome}
-                                        </Text>
-
+                                        <Text style={styles.alunoNome}>{item.nome}</Text>
                                         {item.isFilho && (
-                                            <Text style={styles.filhoInfo}>
-                                                Filho de {item.paiNome}
-                                            </Text>
+                                            <Text style={styles.filhoInfo}>Filho de {item.paiNome}</Text>
                                         )}
                                     </View>
-
                                 </View>
 
                                 <View style={styles.cardContent}>
                                     <View style={styles.infoItem}>
-                                        <Ionicons
-                                            name="cash"
-                                            size={16}
-                                            color="#B8860B"
-                                        />
-                                        <Text style={styles.infoLabel}>
-                                            Último pagamento:
-                                        </Text>
+                                        <Ionicons name="cash" size={16} color="#B8860B" />
+                                        <Text style={styles.infoLabel}>Último pagamento:</Text>
                                         <Text style={styles.infoValue}>
-                                            {formatarUltimoPagamento(
-                                                item.dataUltimoPagamento
-                                            )}
+                                            {formatarUltimoPagamento(item.dataUltimoPagamento)}
                                         </Text>
                                     </View>
 
                                     <View style={styles.infoItem}>
-                                        <Ionicons
-                                            name="fitness"
-                                            size={16}
-                                            color="#B8860B"
-                                        />
-                                        <Text style={styles.infoLabel}>
-                                            Modalidades:
-                                        </Text>
-
+                                        <Ionicons name="fitness" size={16} color="#B8860B" />
+                                        <Text style={styles.infoLabel}>Modalidades:</Text>
                                         <Text style={styles.infoValue}>
                                             {item.modalidades?.length > 0
-                                                ? item.modalidades
-                                                    .map((m: any) => m.modalidade)
-                                                    .join(", ")
+                                                ? item.modalidades.map((m: any) => m.modalidade).join(", ")
                                                 : "Nenhuma"}
                                         </Text>
                                     </View>
 
-                                    {/* BADGE COM QUANTIDADE DE PRESENÇAS */}
                                     <View style={styles.infoItem}>
-                                        <Ionicons
-                                            name="calendar"
-                                            size={16}
-                                            color="#B8860B"
-                                        />
-                                        <Text style={styles.infoLabel}>
-                                            Presenças:
-                                        </Text>
-                                        <Text style={styles.infoValue}>
-                                            {quantidadePresencas}
-                                        </Text>
+                                        <Ionicons name="calendar" size={16} color="#B8860B" />
+                                        <Text style={styles.infoLabel}>Presenças:</Text>
+                                        <Text style={styles.infoValue}>{quantidadePresencas}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
                         );
                     })
-
                 )}
 
                 <View style={{ height: 30 }} />
@@ -700,6 +588,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         </View>
     );
 };
+
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
