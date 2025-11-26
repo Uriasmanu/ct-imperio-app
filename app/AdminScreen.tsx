@@ -15,6 +15,7 @@ import { AcessoNegado } from "@/components/Admin/AcessoNegado";
 import { AvisosManager } from "@/components/Admin/AvisosManager";
 import { DetalhesAlunoModal } from '@/components/Admin/DetalhesAlunoModal';
 import { Estatisticas } from "@/components/Admin/Estatisticas";
+import { Estoque } from '@/components/Admin/estoque/estoque';
 import { Filtros } from "@/components/Admin/Filtros";
 import { ListaAlunos } from '@/components/Admin/ListaAlunos';
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
@@ -331,7 +332,7 @@ export default function AdminScreen() {
       case 'estoque':
         return (
           <View style={styles.secaoContent}>
-            <AvisosManager isVisible={secaoAtiva === 'estoque'} />
+            <Estoque/>
           </View>
         );
 
