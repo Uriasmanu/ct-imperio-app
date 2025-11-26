@@ -38,7 +38,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const interval = setInterval(() => {
       recarregarUsuario();
-    }, 30000); // 30 segundos
+    }, 3000000); // 30 segundos
 
     return () => clearInterval(interval);
   }, [usuario]);

@@ -109,10 +109,10 @@ export default function AdminScreen() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && !authLoading) {
       carregarUsuarios();
     }
-  }, [isAdmin]);
+  }, [isAdmin, authLoading]);
 
   const usuariosFiltrados = usuarios.filter(usuario => {
     if (filtros.busca &&
@@ -382,10 +382,10 @@ export default function AdminScreen() {
                 </View>
               )}
             </View>
-            
+
             <Text style={styles.cardTitle}>{card.title}</Text>
             <Text style={styles.cardDescription}>{card.description}</Text>
-            
+
             <View style={styles.cardArrow}>
               <Ionicons name="chevron-forward" size={20} color={card.color} />
             </View>
