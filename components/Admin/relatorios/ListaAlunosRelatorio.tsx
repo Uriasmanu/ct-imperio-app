@@ -154,42 +154,44 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
         // monta html
         const conteudoHtml = `
-        <html>
-            <body style="font-family: Arial; padding: 20px;">
-                <h1>Relatório de Alunos</h1>
-                <p>Total: ${selecionados.length}</p>
+    <html>
+        <body style="font-family: Arial; padding: 20px;">
+            <h1>Relatório de Alunos</h1>
+            <p>Total: ${selecionados.length}</p>
 
-                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th>Nome</th>
-                            <th>Último Pagamento</th>
-                            <th>Modalidades</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${selecionados
+            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th>Nome</th>
+                        <th>Último Pagamento</th>
+                        <th>Modalidades</th>
+                        <th>Presenças</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${selecionados
                 .map(
                     (s) => `
-                            <tr>
-                                <td>${s.nome}</td>
-                                <td>${s.dataUltimoPagamento
+                        <tr>
+                            <td>${s.nome}</td>
+                            <td>${s.dataUltimoPagamento
                             ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
                             : "Nunca"
                         }</td>
-                                <td>${s.modalidades?.length > 0
+                            <td>${s.modalidades?.length > 0
                             ? s.modalidades.map((m: any) => m.modalidade).join(", ")
                             : "Nenhuma"
                         }</td>
-                            </tr>
-                        `
+                            <td style="text-align: center;">${s.Presenca?.length || 0}</td>
+                        </tr>
+                    `
                 )
                 .join("")}
-                    </tbody>
-                </table>
-            </body>
-        </html>
-    `;
+                </tbody>
+            </table>
+        </body>
+    </html>
+`;
 
         try {
             const { uri } = await Print.printToFileAsync({
@@ -500,13 +502,6 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                         )}
                                     </View>
 
-                                    {/* BADGE COM QUANTIDADE DE PRESENÇAS */}
-                                    <View style={styles.presencaBadge}>
-                                        <Ionicons name="calendar" size={14} color="#FFF" />
-                                        <Text style={styles.presencaText}>
-                                            {quantidadePresencas}
-                                        </Text>
-                                    </View>
                                 </View>
 
                                 <View style={styles.cardContent}>
@@ -544,11 +539,26 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                                 : "Nenhuma"}
                                         </Text>
                                     </View>
+
+                                    {/* BADGE COM QUANTIDADE DE PRESENÇAS */}
+                                    <View style={styles.infoItem}>
+                                        <Ionicons
+                                            name="calendar"
+                                            size={16}
+                                            color="#B8860B"
+                                        />
+                                        <Text style={styles.infoLabel}>
+                                            Presenças no periodo:
+                                        </Text>
+                                        <Text style={styles.infoValue}>
+                                            {quantidadePresencas}
+                                        </Text>
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                         );
                     })
-                    
+
                 )}
 
                 <View style={{ height: 30 }} />
