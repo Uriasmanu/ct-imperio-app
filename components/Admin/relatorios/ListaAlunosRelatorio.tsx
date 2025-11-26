@@ -1,5 +1,7 @@
 import { UsuarioCompleto, professores } from "@/types/admin";
 import { Ionicons } from "@expo/vector-icons";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import React, { useMemo, useState } from "react";
 import {
     RefreshControl,
@@ -28,7 +30,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [filtroModalidade, setFiltroModalidade] = useState("todas");
     const [filtroProfessor, setFiltroProfessor] = useState("todos");
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
-    
+
     // ESTADO PARA SELEÇÃO MÚLTIPLA
     const [modoSelecao, setModoSelecao] = useState(false);
     const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
@@ -136,6 +138,61 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     };
 
 
+
+    const gerarPdfSelecionados = async () => {
+        if (itensSelecionados.size === 0) {
+            alert("Nenhum aluno selecionado");
+            return;
+        }
+
+        // pega só os itens selecionados
+        const selecionados = listaFiltrada.filter((item) =>
+            itensSelecionados.has(item.id)
+        );
+
+        // monta html
+        const conteudoHtml = `
+        <html>
+            <body style="font-family: Arial; padding: 20px;">
+                <h1>Relatório de Alunos</h1>
+                <p>Total: ${selecionados.length}</p>
+
+                <ul>
+                    ${selecionados
+                .map(
+                    (s) => `
+                        <li style="margin-bottom: 12px;">
+                            <strong>Nome:</strong> ${s.nome} <br/>
+                            <strong>Último Pagamento:</strong> ${s.dataUltimoPagamento
+                            ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
+                            : "Nunca"
+                        } <br/>
+                            <strong>Modalidades:</strong> ${s.modalidades?.length > 0
+                            ? s.modalidades.map((m: any) => m.modalidade).join(", ")
+                            : "Nenhuma"
+                        }
+                        </li>
+                    `
+                )
+                .join("")}
+                </ul>
+            </body>
+        </html>
+    `;
+
+        try {
+            const { uri } = await Print.printToFileAsync({
+                html: conteudoHtml,
+            });
+
+            await Sharing.shareAsync(uri);
+        } catch (e) {
+            console.log(e);
+            alert("Erro ao gerar PDF");
+        }
+    };
+
+
     return (
         <View style={styles.container}>
             {/* TÍTULO E BUSCA */}
@@ -160,34 +217,24 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                         </View>
 
                         <View style={styles.selecaoAcoes}>
-                            <TouchableOpacity
-                                style={styles.selecaoBtn}
-                                onPress={selecionarTodos}
-                            >
-                                <Ionicons
-                                    name="checkbox"
-                                    size={20}
-                                    color="#B8860B"
-                                />
-                                <Text style={styles.selecaoBtnTexto}>
-                                    Todos
-                                </Text>
+                            <TouchableOpacity style={styles.selecaoBtn} onPress={selecionarTodos}>
+                                <Ionicons name="checkbox" size={20} color="#B8860B" />
+                                <Text style={styles.selecaoBtnTexto}>Todos</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.selecaoBtn}
-                                onPress={cancelarSelecao}
-                            >
-                                <Ionicons
-                                    name="close"
-                                    size={20}
-                                    color="#FF6B6B"
-                                />
+                            <TouchableOpacity style={styles.selecaoBtn} onPress={gerarPdfSelecionados}>
+                                <Ionicons name="document" size={20} color="#B8860B" />
+                                <Text style={styles.selecaoBtnTexto}>PDF</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.selecaoBtn} onPress={cancelarSelecao}>
+                                <Ionicons name="close" size={20} color="#FF6B6B" />
                                 <Text style={[styles.selecaoBtnTexto, { color: "#FF6B6B" }]}>
                                     Cancelar
                                 </Text>
                             </TouchableOpacity>
                         </View>
+
                     </View>
                 ) : (
                     <>
