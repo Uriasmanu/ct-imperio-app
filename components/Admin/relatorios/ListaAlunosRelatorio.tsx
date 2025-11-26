@@ -4,12 +4,14 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import React, { useMemo, useState } from "react";
 import {
+    Modal,
     RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from "react-native";
 
@@ -35,6 +37,56 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [modoSelecao, setModoSelecao] = useState(false);
     const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
 
+    const [mostrarModalPeriodo, setMostrarModalPeriodo] = useState(false);
+    const [pdfDataInicial, setPdfDataInicial] = useState("");
+    const [pdfDataFinal, setPdfDataFinal] = useState("");
+
+    // FUNÇÃO PARA CALCULAR O PERÍODO DE 10 A 10
+    const calcularPeriodo = () => {
+        const hoje = new Date();
+        const mesAtual = hoje.getMonth();
+        const anoAtual = hoje.getFullYear();
+        
+        let dataInicio, dataFim;
+        
+        if (hoje.getDate() >= 10) {
+            // Se estamos depois do dia 10, período é do dia 10 atual ao dia 10 próximo
+            dataInicio = new Date(anoAtual, mesAtual, 10);
+            dataFim = new Date(anoAtual, mesAtual + 1, 10);
+        } else {
+            // Se estamos antes do dia 10, período é do dia 10 anterior ao dia 10 atual
+            dataInicio = new Date(anoAtual, mesAtual - 1, 10);
+            dataFim = new Date(anoAtual, mesAtual, 10);
+        }
+        
+        return { dataInicio, dataFim };
+    };
+
+    // FUNÇÃO PARA CONTAR FREQUÊNCIAS NO PERÍODO
+    const contarFrequenciasNoPeriodo = (usuario: any) => {
+        const { dataInicio, dataFim } = calcularPeriodo();
+        
+        if (!usuario.frequencias || usuario.frequencias.length === 0) {
+            return 0;
+        }
+        
+        const frequenciasNoPeriodo = usuario.frequencias.filter((freq: any) => {
+            const dataFrequencia = new Date(freq.data);
+            return dataFrequencia >= dataInicio && dataFrequencia <= dataFim;
+        });
+        
+        return frequenciasNoPeriodo.length;
+    };
+
+    // FUNÇÃO PARA FORMATAR O PERÍODO ATUAL
+    const formatarPeriodoAtual = () => {
+        const { dataInicio, dataFim } = calcularPeriodo();
+        return {
+            inicio: dataInicio.toLocaleDateString("pt-BR"),
+            fim: dataFim.toLocaleDateString("pt-BR")
+        };
+    };
+
     // TRANSFORMA TODOS OS USUÁRIOS E TODOS OS FILHOS EM UMA LISTA ÚNICA
     const listaExpandida = useMemo(() => {
         const itens: any[] = [];
@@ -44,6 +96,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 ...u,
                 isFilho: false,
                 paiNome: null,
+                frequenciasNoPeriodo: contarFrequenciasNoPeriodo(u)
             });
 
             if (u.filhos && u.filhos.length > 0) {
@@ -53,6 +106,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                         isFilho: true,
                         paiNome: u.nome,
                         paiId: u.id,
+                        frequenciasNoPeriodo: contarFrequenciasNoPeriodo(f)
                     });
                 });
             }
@@ -148,32 +202,46 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
             itensSelecionados.has(item.id)
         );
 
+        const periodo = formatarPeriodoAtual();
+
         // monta html
         const conteudoHtml = `
         <html>
             <body style="font-family: Arial; padding: 20px;">
                 <h1>Relatório de Alunos</h1>
+                <p>Período: ${periodo.inicio} à ${periodo.fim}</p>
                 <p>Total: ${selecionados.length}</p>
 
-                <ul>
-                    ${selecionados
-                .map(
-                    (s) => `
-                        <li style="margin-bottom: 12px;">
-                            <strong>Nome:</strong> ${s.nome} <br/>
-                            <strong>Último Pagamento:</strong> ${s.dataUltimoPagamento
-                            ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
-                            : "Nunca"
-                        } <br/>
-                            <strong>Modalidades:</strong> ${s.modalidades?.length > 0
-                            ? s.modalidades.map((m: any) => m.modalidade).join(", ")
-                            : "Nenhuma"
-                        }
-                        </li>
-                    `
-                )
-                .join("")}
-                </ul>
+                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>Nome</th>
+                            <th>Frequências</th>
+                            <th>Último Pagamento</th>
+                            <th>Modalidades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${selecionados
+                            .map(
+                                (s) => `
+                            <tr>
+                                <td>${s.nome}</td>
+                                <td style="text-align: center;">${s.frequenciasNoPeriodo}</td>
+                                <td>${s.dataUltimoPagamento
+                                    ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
+                                    : "Nunca"
+                                }</td>
+                                <td>${s.modalidades?.length > 0
+                                    ? s.modalidades.map((m: any) => m.modalidade).join(", ")
+                                    : "Nenhuma"
+                                }</td>
+                            </tr>
+                        `
+                            )
+                            .join("")}
+                    </tbody>
+                </table>
             </body>
         </html>
     `;
@@ -190,6 +258,49 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         }
     };
 
+    // MODAL DE PERÍODO PERSONALIZADO
+    const ModalPeriodo = () => (
+        <Modal
+            visible={mostrarModalPeriodo}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setMostrarModalPeriodo(false)}
+        >
+            <TouchableWithoutFeedback onPress={() => setMostrarModalPeriodo(false)}>
+                <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Gerar Relatório PDF</Text>
+                            
+                            <Text style={styles.periodoInfo}>
+                                Período atual: {formatarPeriodoAtual().inicio} à {formatarPeriodoAtual().fim}
+                            </Text>
+                            
+                            <View style={styles.modalButtons}>
+                                <TouchableOpacity 
+                                    style={[styles.modalButton, styles.modalButtonSecondary]}
+                                    onPress={() => setMostrarModalPeriodo(false)}
+                                >
+                                    <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    style={[styles.modalButton, styles.modalButtonPrimary]}
+                                    onPress={() => {
+                                        gerarPdfSelecionados();
+                                        setMostrarModalPeriodo(false);
+                                    }}
+                                >
+                                    <Text style={styles.modalButtonTextPrimary}>Gerar PDF</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
+        </Modal>
+    );
+
     return (
         <View style={styles.container}>
             {/* TÍTULO E BUSCA */}
@@ -197,6 +308,14 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 <View style={styles.sectionTitleContainer}>
                     <Ionicons name="list" size={22} color="#B8860B" />
                     <Text style={styles.sectionTitle}>Lista de Alunos</Text>
+                </View>
+
+                {/* INFO DO PERÍODO ATUAL */}
+                <View style={styles.periodoContainer}>
+                    <Ionicons name="calendar" size={16} color="#B8860B" />
+                    <Text style={styles.periodoText}>
+                        Período: {formatarPeriodoAtual().inicio} à {formatarPeriodoAtual().fim}
+                    </Text>
                 </View>
 
                 {/* BARRA DE BUSCA - SEMPRE VISÍVEL */}
@@ -255,7 +374,10 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                 <Text style={styles.selecaoBtnTexto}>Todos</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.selecaoBtn} onPress={gerarPdfSelecionados}>
+                            <TouchableOpacity
+                                style={styles.selecaoBtn}
+                                onPress={() => setMostrarModalPeriodo(true)}
+                            >
                                 <Ionicons name="document" size={20} color="#B8860B" />
                                 <Text style={styles.selecaoBtnTexto}>PDF</Text>
                             </TouchableOpacity>
@@ -439,6 +561,14 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                             </Text>
                                         )}
                                     </View>
+                                    
+                                    {/* CONTADOR DE FREQUÊNCIAS */}
+                                    <View style={styles.frequenciaBadge}>
+                                        <Ionicons name="calendar" size={14} color="#B8860B" />
+                                        <Text style={styles.frequenciaText}>
+                                            {item.frequenciasNoPeriodo} vezes
+                                        </Text>
+                                    </View>
                                 </View>
 
                                 <View style={styles.cardContent}>
@@ -484,6 +614,9 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            {/* MODAL DE CONFIRMAÇÃO DO PDF */}
+            <ModalPeriodo />
         </View>
     );
 };
@@ -495,12 +628,24 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        marginBottom: 16,
+        marginBottom: 8,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: "700",
         color: "#B8860B",
+    },
+    periodoContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 16,
+        paddingHorizontal: 4,
+    },
+    periodoText: {
+        color: "#B8860B",
+        fontSize: 14,
+        fontWeight: "500",
     },
     selecaoBar: {
         backgroundColor: "#1a1a1a",
@@ -630,14 +775,32 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
+        alignItems: "flex-start",
         marginBottom: 12,
     },
     alunoNome: {
         fontSize: 18,
         fontWeight: "bold",
         color: "#FFF",
+        flex: 1,
     },
     filhoInfo: { color: "#888", fontSize: 12, marginTop: 2 },
+    frequenciaBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#2a2510",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: "#B8860B",
+    },
+    frequenciaText: {
+        color: "#B8860B",
+        fontSize: 12,
+        fontWeight: "600",
+    },
     cardContent: { gap: 12 },
     infoItem: {
         flexDirection: "row",
@@ -671,5 +834,64 @@ const styles = StyleSheet.create({
         color: "#888",
         fontSize: 14,
         marginTop: 4,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: "#1a1a1a",
+        padding: 24,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#B8860B",
+        width: "100%",
+        maxWidth: 400,
+    },
+    modalTitle: {
+        color: "#FFF",
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 16,
+        textAlign: "center",
+    },
+    periodoInfo: {
+        color: "#B8860B",
+        fontSize: 14,
+        textAlign: "center",
+        marginBottom: 20,
+        fontWeight: "500",
+    },
+    modalButtons: {
+        flexDirection: "row",
+        gap: 12,
+        justifyContent: "center",
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    modalButtonPrimary: {
+        backgroundColor: "#B8860B",
+    },
+    modalButtonSecondary: {
+        backgroundColor: "#333",
+        borderWidth: 1,
+        borderColor: "#666",
+    },
+    modalButtonTextPrimary: {
+        color: "#000",
+        fontWeight: "bold",
+        fontSize: 14,
+    },
+    modalButtonTextSecondary: {
+        color: "#FFF",
+        fontWeight: "bold",
+        fontSize: 14,
     },
 });
