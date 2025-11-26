@@ -38,6 +38,35 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
     const [itensSelecionados, setItensSelecionados] = useState<Set<string>>(new Set());
 
     const [mostrarModalPeriodo, setMostrarModalPeriodo] = useState(false);
+    const [periodoSelecionado, setPeriodoSelecionado] = useState<string>("");
+
+    // GERAR OPÇÕES DE PERÍODO (sempre 30 dias, começando do dia 10)
+    const opcoesPeriodo = useMemo(() => {
+        const opcoes: string[] = [];
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+
+        // Gerar períodos do ano atual (de janeiro a dezembro)
+        for (let mes = 0; mes < 12; mes++) {
+            const dataInicio = new Date(anoAtual, mes, 10);
+            const dataFim = new Date(anoAtual, mes, 9); // Dia 9 do próximo mês
+            dataFim.setMonth(dataFim.getMonth() + 1); // Avança para o próximo mês
+
+            // Formatar como "10/01 a 09/02"
+            const inicioFormatado = dataInicio.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            });
+            const fimFormatado = dataFim.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            });
+
+            opcoes.push(`${inicioFormatado} a ${fimFormatado}`);
+        }
+
+        return opcoes;
+    }, []);
 
     // TRANSFORMA TODOS OS USUÁRIOS E TODOS OS FILHOS EM UMA LISTA ÚNICA
     const listaExpandida = useMemo(() => {
@@ -114,6 +143,71 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         return d.toLocaleDateString("pt-BR");
     };
 
+    // FUNÇÃO PARA FILTRAR PRESENÇAS POR PERÍODO
+    // FUNÇÃO PARA FILTRAR PRESENÇAS POR PERÍODO
+    const filtrarPresencasPorPeriodo = (presencas: any[], periodo: string): number => {
+        if (!periodo) return presencas?.length || 0;
+
+        try {
+            // Extrair datas do período selecionado (ex: "10/01 a 09/02")
+            const partes = periodo.split(' ');
+            const dataInicioStr = partes[0]; // "10/01"
+            const dataFimStr = partes[2]; // "09/02"
+
+            const [diaInicio, mesInicio] = dataInicioStr.split('/').map(Number);
+            const [diaFim, mesFim] = dataFimStr.split('/').map(Number);
+
+            const anoAtual = new Date().getFullYear();
+
+            // Ajustar o ano para a data fim se necessário (quando vai para o próximo ano)
+            let anoFim = anoAtual;
+            if (mesFim < mesInicio) {
+                anoFim = anoAtual + 1;
+            }
+
+            const dataInicio = new Date(anoAtual, mesInicio - 1, diaInicio);
+            const dataFim = new Date(anoFim, mesFim - 1, diaFim);
+
+            console.log('Período selecionado:', {
+                periodo,
+                dataInicio: dataInicio.toISOString(),
+                dataFim: dataFim.toISOString()
+            });
+
+            // Filtrar presenças dentro do período
+            const presencasNoPeriodo = presencas?.filter((presenca: any) => {
+                // Verificar se a presença tem formato de objeto ou string
+                const dataPresencaStr = typeof presenca === 'string' ? presenca : presenca.date;
+
+                if (!dataPresencaStr) return false;
+
+                // Converter a data da presença para Date
+                const [anoPres, mesPres, diaPres] = dataPresencaStr.split('-').map(Number);
+                const dataPresenca = new Date(anoPres, mesPres - 1, diaPres);
+
+                // Verificar se está dentro do período (incluindo as datas limites)
+                const dentroDoPeriodo = dataPresenca >= dataInicio && dataPresenca <= dataFim;
+
+                if (dentroDoPeriodo) {
+                    console.log('Presença dentro do período:', {
+                        dataPresenca: dataPresenca.toISOString(),
+                        dataInicio: dataInicio.toISOString(),
+                        dataFim: dataFim.toISOString()
+                    });
+                }
+
+                return dentroDoPeriodo;
+            }) || [];
+
+            console.log('Total de presenças no período:', presencasNoPeriodo.length);
+
+            return presencasNoPeriodo.length;
+        } catch (error) {
+            console.error('Erro ao filtrar presenças por período:', error);
+            return presencas?.length || 0;
+        }
+    };
+
     // FUNÇÕES DE SELEÇÃO
     const handleLongPress = (itemId: string) => {
         setModoSelecao(true);
@@ -154,44 +248,45 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
         // monta html
         const conteudoHtml = `
-    <html>
-        <body style="font-family: Arial; padding: 20px;">
-            <h1>Relatório de Alunos</h1>
-            <p>Total: ${selecionados.length}</p>
+        <html>
+            <body style="font-family: Arial; padding: 20px;">
+                <h1>Relatório de Alunos</h1>
+                <p>Total: ${selecionados.length}</p>
+                ${periodoSelecionado ? `<p>Período: ${periodoSelecionado}</p>` : ''}
 
-            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-                <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th>Nome</th>
-                        <th>Último Pagamento</th>
-                        <th>Modalidades</th>
-                        <th>Presenças</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${selecionados
+                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>Nome</th>
+                            <th>Último Pagamento</th>
+                            <th>Modalidades</th>
+                            <th>Presenças${periodoSelecionado ? ' no Período' : ''}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${selecionados
                 .map(
                     (s) => `
-                        <tr>
-                            <td>${s.nome}</td>
-                            <td>${s.dataUltimoPagamento
+                            <tr>
+                                <td>${s.nome}</td>
+                                <td>${s.dataUltimoPagamento
                             ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
                             : "Nunca"
                         }</td>
-                            <td>${s.modalidades?.length > 0
+                                <td>${s.modalidades?.length > 0
                             ? s.modalidades.map((m: any) => m.modalidade).join(", ")
                             : "Nenhuma"
                         }</td>
-                            <td style="text-align: center;">${s.Presenca?.length || 0}</td>
-                        </tr>
-                    `
+                                <td style="text-align: center;">${filtrarPresencasPorPeriodo(s.Presenca, periodoSelecionado)}</td>
+                            </tr>
+                        `
                 )
                 .join("")}
-                </tbody>
-            </table>
-        </body>
-    </html>
-`;
+                    </tbody>
+                </table>
+            </body>
+        </html>
+    `;
 
         try {
             const { uri } = await Print.printToFileAsync({
@@ -205,8 +300,8 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
         }
     };
 
-    // MODAL DE CONFIRMAÇÃO
-    const ModalConfirmacao = () => (
+    // MODAL DE SELEÇÃO DE PERÍODO
+    const ModalSelecaoPeriodo = () => (
         <Modal
             visible={mostrarModalPeriodo}
             transparent
@@ -217,16 +312,44 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 <View style={styles.modalOverlay}>
                     <TouchableWithoutFeedback>
                         <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>Gerar Relatório PDF</Text>
+                            <Text style={styles.modalTitle}>Selecionar Período</Text>
 
                             <Text style={styles.periodoInfo}>
-                                Gerar relatório para {itensSelecionados.size} aluno(s) selecionado(s)?
+                                Selecione o período de 30 dias para o relatório:
                             </Text>
+
+                            <ScrollView style={styles.listaPeriodos} showsVerticalScrollIndicator={false}>
+                                {opcoesPeriodo.map((periodo, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.periodoOpcao,
+                                            periodoSelecionado === periodo && styles.periodoOpcaoSelecionada,
+                                        ]}
+                                        onPress={() => setPeriodoSelecionado(periodo)}
+                                    >
+                                        <Ionicons
+                                            name={periodoSelecionado === periodo ? "radio-button-on" : "radio-button-off"}
+                                            size={20}
+                                            color={periodoSelecionado === periodo ? "#B8860B" : "#666"}
+                                        />
+                                        <Text style={[
+                                            styles.periodoTexto,
+                                            periodoSelecionado === periodo && styles.periodoTextoSelecionado,
+                                        ]}>
+                                            {periodo}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
 
                             <View style={styles.modalButtons}>
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.modalButtonSecondary]}
-                                    onPress={() => setMostrarModalPeriodo(false)}
+                                    onPress={() => {
+                                        setMostrarModalPeriodo(false);
+                                        setPeriodoSelecionado("");
+                                    }}
                                 >
                                     <Text style={styles.modalButtonTextSecondary}>Cancelar</Text>
                                 </TouchableOpacity>
@@ -234,9 +357,14 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.modalButtonPrimary]}
                                     onPress={() => {
+                                        if (!periodoSelecionado) {
+                                            alert("Por favor, selecione um período");
+                                            return;
+                                        }
                                         gerarPdfSelecionados();
                                         setMostrarModalPeriodo(false);
                                     }}
+                                    disabled={!periodoSelecionado}
                                 >
                                     <Text style={styles.modalButtonTextPrimary}>Gerar PDF</Text>
                                 </TouchableOpacity>
@@ -315,7 +443,10 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
 
                             <TouchableOpacity
                                 style={styles.selecaoBtn}
-                                onPress={() => setMostrarModalPeriodo(true)}
+                                onPress={() => {
+                                    setPeriodoSelecionado("");
+                                    setMostrarModalPeriodo(true);
+                                }}
                             >
                                 <Ionicons name="document" size={20} color="#B8860B" />
                                 <Text style={styles.selecaoBtnTexto}>PDF</Text>
@@ -548,7 +679,7 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                                             color="#B8860B"
                                         />
                                         <Text style={styles.infoLabel}>
-                                            Presenças no periodo:
+                                            Presenças:
                                         </Text>
                                         <Text style={styles.infoValue}>
                                             {quantidadePresencas}
@@ -564,8 +695,8 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 <View style={{ height: 30 }} />
             </ScrollView>
 
-            {/* MODAL DE CONFIRMAÇÃO DO PDF */}
-            <ModalConfirmacao />
+            {/* MODAL DE SELEÇÃO DE PERÍODO */}
+            <ModalSelecaoPeriodo />
         </View>
     );
 };
@@ -771,6 +902,7 @@ const styles = StyleSheet.create({
         borderColor: "#B8860B",
         width: "100%",
         maxWidth: 400,
+        maxHeight: '80%',
     },
     modalTitle: {
         color: "#FFF",
@@ -785,6 +917,31 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginBottom: 20,
         fontWeight: "500",
+    },
+    listaPeriodos: {
+        maxHeight: 200,
+        marginBottom: 20,
+    },
+    periodoOpcao: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: "#333",
+    },
+    periodoOpcaoSelecionada: {
+        backgroundColor: "#2a2510",
+    },
+    periodoTexto: {
+        color: "#FFF",
+        fontSize: 14,
+        flex: 1,
+    },
+    periodoTextoSelecionado: {
+        color: "#B8860B",
+        fontWeight: "bold",
     },
     modalButtons: {
         flexDirection: "row",
@@ -814,19 +971,5 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontWeight: "bold",
         fontSize: 14,
-    },
-    presencaBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#B8860B',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
-    },
-    presencaText: {
-        color: '#000',
-        fontSize: 12,
-        fontWeight: 'bold',
     },
 });
