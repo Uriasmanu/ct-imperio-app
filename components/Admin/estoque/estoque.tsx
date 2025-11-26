@@ -1,8 +1,10 @@
+// components/Estoque.tsx
 import { estoqueService } from "@/services/estoqueService";
 import { ItemEstoque, Pedido } from "@/types/estoque";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,27 +13,114 @@ import {
 } from "react-native";
 import { FormProduto } from "./FormProduto";
 
-
 export const Estoque: React.FC = () => {
     const [abaAtiva, setAbaAtiva] = useState<"estoque" | "pedidos">("estoque");
     const [mostrarFormItem, setMostrarFormItem] = useState(false);
     const [mostrarFormPedido, setMostrarFormPedido] = useState(false);
     const [estoque, setEstoque] = useState<ItemEstoque[]>([]);
+    const [produtoEditando, setProdutoEditando] = useState<ItemEstoque | null>(null);
+    const [modoEdicao, setModoEdicao] = useState(false);
 
+    // Carregar produtos ao iniciar
+    useEffect(() => {
+        carregarProdutos();
+    }, []);
+
+    const carregarProdutos = async () => {
+        try {
+            const produtos = await estoqueService.getProdutos();
+            setEstoque(produtos);
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+            Alert.alert('Erro', 'Não foi possível carregar os produtos');
+        }
+    };
 
     // Função para adicionar produto
     const handleAdicionarProduto = async (produto: Omit<ItemEstoque, 'id'>) => {
         try {
             await estoqueService.addProduto(produto);
-            // Recarregar a lista de produtos
-            const novosProdutos = await estoqueService.getProdutos();
-            setEstoque(novosProdutos);
+            await carregarProdutos(); // Recarregar a lista
         } catch (error) {
             console.error('Erro ao adicionar produto:', error);
             throw error;
         }
     };
 
+    // Função para atualizar produto
+    const handleAtualizarProduto = async (id: string, produto: Partial<ItemEstoque>) => {
+        try {
+            await estoqueService.updateProduto(id, produto);
+            await carregarProdutos(); // Recarregar a lista
+        } catch (error) {
+            console.error('Erro ao atualizar produto:', error);
+            throw error;
+        }
+    };
+
+    // Função para abrir o formulário de edição
+    const handleEditarProduto = (produto: ItemEstoque) => {
+        setProdutoEditando(produto);
+        setModoEdicao(true);
+        setMostrarFormItem(true);
+    };
+
+    // Função para abrir o formulário de criação
+    const handleNovoProduto = () => {
+        setProdutoEditando(null);
+        setModoEdicao(false);
+        setMostrarFormItem(true);
+    };
+
+    // Função para fechar o formulário
+    const handleFecharFormulario = () => {
+        setMostrarFormItem(false);
+        setProdutoEditando(null);
+        setModoEdicao(false);
+    };
+
+    // Função para deletar produto
+    const handleDeletarProduto = async (produto: ItemEstoque) => {
+        Alert.alert(
+            'Confirmar Exclusão',
+            `Tem certeza que deseja excluir "${produto.nome}"?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                    text: 'Excluir', 
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await estoqueService.deleteProduto(produto.id);
+                            await carregarProdutos();
+                            Alert.alert('Sucesso', 'Produto excluído com sucesso!');
+                        } catch (error) {
+                            console.error('Erro ao excluir produto:', error);
+                            Alert.alert('Erro', 'Não foi possível excluir o produto');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    // Função para vender produto
+    const handleVenderProduto = (produto: ItemEstoque) => {
+        Alert.alert(
+            'Vender Produto',
+            `Registrar venda de ${produto.nome}?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                    text: 'Vender', 
+                    onPress: () => {
+                        // Aqui você pode implementar a lógica de venda
+                        Alert.alert('Venda', 'Funcionalidade de venda em desenvolvimento');
+                    }
+                }
+            ]
+        );
+    };
 
     const [pedidos, setPedidos] = useState<Pedido[]>([
         {
@@ -79,6 +168,14 @@ export const Estoque: React.FC = () => {
     const obterNomeItem = (itemId: string): string => {
         const item = estoque.find(i => i.id === itemId);
         return item?.nome || "Item não encontrado";
+    };
+
+    // Função para marcar pedido como pago
+    const handleMarcarPago = (pedidoId: string) => {
+        setPedidos(pedidos.map(pedido => 
+            pedido.id === pedidoId ? { ...pedido, pago: true } : pedido
+        ));
+        Alert.alert('Sucesso', 'Pedido marcado como pago!');
     };
 
     return (
@@ -134,10 +231,14 @@ export const Estoque: React.FC = () => {
                 </View>
             </View>
 
-             <FormProduto
+            {/* FORMULÁRIO */}
+            <FormProduto
                 visible={mostrarFormItem}
-                onClose={() => setMostrarFormItem(false)}
+                onClose={handleFecharFormulario}
                 onSave={handleAdicionarProduto}
+                onUpdate={handleAtualizarProduto}
+                produtoEditando={produtoEditando}
+                modoEdicao={modoEdicao}
             />
 
             {/* BOTÕES DE AÇÃO */}
@@ -145,7 +246,7 @@ export const Estoque: React.FC = () => {
                 {abaAtiva === "estoque" ? (
                     <TouchableOpacity
                         style={styles.botaoAdicionar}
-                        onPress={() => setMostrarFormItem(true)}
+                        onPress={handleNovoProduto}
                     >
                         <Ionicons name="add" size={20} color="#000" />
                         <Text style={styles.botaoAdicionarTexto}>Novo Item</Text>
@@ -166,54 +267,85 @@ export const Estoque: React.FC = () => {
                 {abaAtiva === "estoque" ? (
                     // ABA DE ESTOQUE
                     <View style={styles.estoqueContainer}>
-                        {estoque.map((item) => (
-                            <View key={item.id} style={styles.itemCard}>
-                                <View style={styles.itemHeader}>
-                                    <Text style={styles.itemNome}>{item.nome}</Text>
-                                    <View style={styles.itemPrecoContainer}>
-                                        <Text style={styles.itemPreco}>
-                                            R$ {item.preco.toFixed(2)}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.itemInfo}>
-                                    <View style={styles.quantidadeContainer}>
-                                        <Ionicons name="pricetag" size={16} color="#B8860B" />
-                                        <Text style={styles.quantidadeTexto}>
-                                            Estoque: {item.quantidade} unidades
-                                        </Text>
-                                    </View>
-
-                                    {Object.keys(item.tamanhos).length > 0 && (
-                                        <View style={styles.tamanhosContainer}>
-                                            <Text style={styles.tamanhosTitulo}>Tamanhos:</Text>
-                                            <View style={styles.tamanhosLista}>
-                                                {Object.entries(item.tamanhos).map(([tamanho, qtd]) => (
-                                                    <View key={tamanho} style={styles.tamanhoItem}>
-                                                        <Text style={styles.tamanhoTexto}>
-                                                            {tamanho}: {qtd}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </View>
-                                    )}
-                                </View>
-
-                                <View style={styles.itemAcoes}>
-                                    <TouchableOpacity style={styles.botaoEditar}>
-                                        <Ionicons name="create" size={16} color="#B8860B" />
-                                        <Text style={styles.botaoEditarTexto}>Editar</Text>
-                                    </TouchableOpacity>
-                                    
-                                    <TouchableOpacity style={styles.botaoVender}>
-                                        <Ionicons name="cart" size={16} color="#FFF" />
-                                        <Text style={styles.botaoVenderTexto}>Vender</Text>
-                                    </TouchableOpacity>
-                                </View>
+                        {estoque.length === 0 ? (
+                            <View style={styles.listaVazia}>
+                                <Ionicons name="cube-outline" size={48} color="#666" />
+                                <Text style={styles.listaVaziaTexto}>
+                                    Nenhum produto cadastrado
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.botaoAdicionarPrimeiro}
+                                    onPress={handleNovoProduto}
+                                >
+                                    <Text style={styles.botaoAdicionarPrimeiroTexto}>
+                                        Adicionar Primeiro Produto
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
-                        ))}
+                        ) : (
+                            estoque.map((item) => (
+                                <View key={item.id} style={styles.itemCard}>
+                                    <View style={styles.itemHeader}>
+                                        <Text style={styles.itemNome}>{item.nome}</Text>
+                                        <View style={styles.itemPrecoContainer}>
+                                            <Text style={styles.itemPreco}>
+                                                R$ {item.preco.toFixed(2)}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.itemInfo}>
+                                        <View style={styles.quantidadeContainer}>
+                                            <Ionicons name="pricetag" size={16} color="#B8860B" />
+                                            <Text style={styles.quantidadeTexto}>
+                                                Estoque: {item.quantidade} unidades
+                                            </Text>
+                                        </View>
+
+                                        {Object.keys(item.tamanhos).length > 0 && (
+                                            <View style={styles.tamanhosContainer}>
+                                                <Text style={styles.tamanhosTitulo}>Tamanhos:</Text>
+                                                <View style={styles.tamanhosLista}>
+                                                    {Object.entries(item.tamanhos).map(([tamanho, qtd]) => (
+                                                        <View key={tamanho} style={styles.tamanhoItem}>
+                                                            <Text style={styles.tamanhoTexto}>
+                                                                {tamanho}: {qtd}
+                                                            </Text>
+                                                        </View>
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    <View style={styles.itemAcoes}>
+                                        <TouchableOpacity
+                                            style={styles.botaoEditar}
+                                            onPress={() => handleEditarProduto(item)}
+                                        >
+                                            <Ionicons name="create" size={16} color="#B8860B" />
+                                            <Text style={styles.botaoEditarTexto}>Editar</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.botaoVender}
+                                            onPress={() => handleVenderProduto(item)}
+                                        >
+                                            <Ionicons name="cart" size={16} color="#FFF" />
+                                            <Text style={styles.botaoVenderTexto}>Vender</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.botaoDeletar}
+                                            onPress={() => handleDeletarProduto(item)}
+                                        >
+                                            <Ionicons name="trash" size={16} color="#FFF" />
+                                            <Text style={styles.botaoDeletarTexto}>Excluir</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ))
+                        )}
                     </View>
                 ) : (
                     // ABA DE PEDIDOS
@@ -269,7 +401,10 @@ export const Estoque: React.FC = () => {
                                     </Text>
                                     <View style={styles.pedidoAcoes}>
                                         {!pedido.pago && (
-                                            <TouchableOpacity style={styles.botaoMarcarPago}>
+                                            <TouchableOpacity 
+                                                style={styles.botaoMarcarPago}
+                                                onPress={() => handleMarcarPago(pedido.id)}
+                                            >
                                                 <Ionicons name="checkmark" size={16} color="#FFF" />
                                                 <Text style={styles.botaoMarcarPagoTexto}>Marcar Pago</Text>
                                             </TouchableOpacity>
@@ -285,24 +420,6 @@ export const Estoque: React.FC = () => {
                     </View>
                 )}
             </ScrollView>
-
-            {/* MODAL PARA NOVO ITEM (placeholder) */}
-            {mostrarFormItem && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Adicionar Novo Item</Text>
-                        <Text style={styles.modalText}>
-                            Formulário para adicionar novo item ao estoque
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.botaoFecharModal}
-                            onPress={() => setMostrarFormItem(false)}
-                        >
-                            <Text style={styles.botaoFecharModalTexto}>Fechar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
 
             {/* MODAL PARA NOVO PEDIDO (placeholder) */}
             {mostrarFormPedido && (
@@ -399,6 +516,30 @@ const styles = StyleSheet.create({
     },
     estoqueContainer: {
         gap: 12,
+        padding: 8,
+    },
+    listaVazia: {
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 40,
+    },
+    listaVaziaTexto: {
+        color: "#666",
+        fontSize: 16,
+        marginTop: 12,
+        textAlign: "center",
+    },
+    botaoAdicionarPrimeiro: {
+        backgroundColor: "#B8860B",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 16,
+    },
+    botaoAdicionarPrimeiroTexto: {
+        color: "#000",
+        fontWeight: "bold",
+        fontSize: 14,
     },
     itemCard: {
         backgroundColor: "#1a1a1a",
@@ -504,8 +645,24 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
     },
+    botaoDeletar: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: "#EF4444",
+        borderRadius: 6,
+        flex: 1,
+    },
+    botaoDeletarTexto: {
+        color: "#FFF",
+        fontSize: 12,
+        fontWeight: "600",
+    },
     pedidosContainer: {
         gap: 12,
+        padding: 8,
     },
     pedidoCard: {
         backgroundColor: "#1a1a1a",

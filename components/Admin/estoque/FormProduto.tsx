@@ -1,7 +1,7 @@
 // components/FormProduto.tsx
 import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -17,12 +17,18 @@ interface FormProdutoProps {
   visible: boolean;
   onClose: () => void;
   onSave: (produto: Omit<ItemEstoque, 'id'>) => Promise<void>;
+  onUpdate?: (id: string, produto: Partial<ItemEstoque>) => Promise<void>; // Nova prop para edição
+  produtoEditando?: ItemEstoque | null; // Produto sendo editado
+  modoEdicao?: boolean; // Indica se está no modo edição
 }
 
 export const FormProduto: React.FC<FormProdutoProps> = ({
   visible,
   onClose,
-  onSave
+  onSave,
+  onUpdate,
+  produtoEditando,
+  modoEdicao = false
 }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,6 +42,35 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
     { tamanho: 'GG', quantidade: '0' }
   ]);
   const [novoTamanho, setNovoTamanho] = useState('');
+
+  // Preencher formulário quando estiver editando
+  useEffect(() => {
+    if (modoEdicao && produtoEditando) {
+      setFormData({
+        nome: produtoEditando.nome,
+        preco: produtoEditando.preco.toString(),
+      });
+
+      // Converter os tamanhos do produto para o formato do formulário
+      const tamanhosFormatados = Object.entries(produtoEditando.tamanhos).map(
+        ([tamanho, quantidade]) => ({
+          tamanho,
+          quantidade: quantidade.toString()
+        })
+      );
+
+      // Se não houver tamanhos, usar os padrões
+      setTamanhos(tamanhosFormatados.length > 0 ? tamanhosFormatados : [
+        { tamanho: 'P', quantidade: '0' },
+        { tamanho: 'M', quantidade: '0' },
+        { tamanho: 'G', quantidade: '0' },
+        { tamanho: 'GG', quantidade: '0' }
+      ]);
+    } else {
+      // Resetar formulário quando não estiver editando
+      resetForm();
+    }
+  }, [modoEdicao, produtoEditando, visible]);
 
   // Funções para gerenciar tamanhos
   const updateTamanhoQuantidade = (index: number, campo: 'tamanho' | 'quantidade', valor: string) => {
@@ -106,7 +141,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
       return;
     }
 
-    const produto: Omit<ItemEstoque, 'id'> = {
+    const produtoData = {
       nome: formData.nome.trim(),
       preco: parseFloat(formData.preco),
       tamanhos: tamanhosFormatados,
@@ -115,12 +150,21 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
 
     try {
       setLoading(true);
-      await onSave(produto);
-      Alert.alert('Sucesso', 'Produto adicionado com sucesso!');
+      
+      if (modoEdicao && produtoEditando && onUpdate) {
+        // Modo edição
+        await onUpdate(produtoEditando.id, produtoData);
+        Alert.alert('Sucesso', 'Produto atualizado com sucesso!');
+      } else {
+        // Modo criação
+        await onSave(produtoData);
+        Alert.alert('Sucesso', 'Produto adicionado com sucesso!');
+      }
+      
       resetForm();
       onClose();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível adicionar o produto');
+      Alert.alert('Erro', `Não foi possível ${modoEdicao ? 'atualizar' : 'adicionar'} o produto`);
     } finally {
       setLoading(false);
     }
@@ -140,6 +184,11 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
     setNovoTamanho('');
   };
 
+  const tituloModal = modoEdicao ? 'Editar Produto' : 'Adicionar Novo Item';
+  const textoBotaoSalvar = loading 
+    ? (modoEdicao ? 'Atualizando...' : 'Salvando...')
+    : (modoEdicao ? 'Atualizar' : 'Salvar');
+
   return (
     <Modal
       visible={visible}
@@ -150,7 +199,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Adicionar Novo Item</Text>
+            <Text style={styles.modalTitle}>{tituloModal}</Text>
             <TouchableOpacity onPress={onClose} style={styles.botaoFechar}>
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
@@ -253,14 +302,8 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
               onPress={handleSave}
               disabled={loading}
             >
-              {loading ? (
-                <Text style={styles.botaoSalvarTexto}>Salvando...</Text>
-              ) : (
-                <>
-                  <Ionicons name="save" size={18} color="#000" />
-                  <Text style={styles.botaoSalvarTexto}>Salvar</Text>
-                </>
-              )}
+              <Ionicons name="save" size={18} color="#000" />
+              <Text style={styles.botaoSalvarTexto}>{textoBotaoSalvar}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -268,6 +311,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
     </Modal>
   );
 };
+
 
 const styles = StyleSheet.create({
   modalOverlay: {
