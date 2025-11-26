@@ -19,6 +19,7 @@ import { Filtros } from "@/components/Admin/Filtros";
 import { ListaAlunos } from '@/components/Admin/ListaAlunos';
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
 import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirmar";
+import { ListaAlunosRelatorio } from '@/components/Admin/relatorios/ListaAlunosRelatorio';
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -318,7 +319,12 @@ export default function AdminScreen() {
       case 'relatorios':
         return (
           <View style={styles.secaoContent}>
-            <AvisosManager isVisible={secaoAtiva === 'relatorios'} />
+            <ListaAlunosRelatorio
+              usuarios={usuarios}
+              onAbrirDetalhes={handleAbrirDetalhesAluno}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
           </View>
         );
 
@@ -373,7 +379,7 @@ export default function AdminScreen() {
         description: 'Análise de presença e dados',
         color: '#8B5CF6'
       },
-            {
+      {
         key: 'estoque' as AdminSection,
         title: 'Estoque',
         icon: 'cube',
