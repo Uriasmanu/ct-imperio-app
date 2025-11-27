@@ -393,7 +393,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
               onPress: () => {
                 setModalDeleteVisible(false);
                 onClose();
-                onUsuarioDeletado?.(); 
+                onUsuarioDeletado?.();
               }
             }
           ]
@@ -489,7 +489,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
   const carregarEstadosPresenca = async () => {
     if (!usuario) return;
-    
+
     const novosEstados: { [key: string]: PresencaState } = {};
 
     // Verificar presença do usuário principal
@@ -602,7 +602,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
   // Componente para renderizar campo de informação editável
   const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
-    <View style={styles.infoRow} key={key}>
+    <View style={styles.infoFieldContainer} key={key}>
       <Text style={styles.infoLabel}>{label}:</Text>
       {editable && editando ? (
         <TextInput
@@ -614,6 +614,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             }
           }}
           placeholderTextColor="#666"
+          placeholder={`Digite ${label.toLowerCase()}...`}
         />
       ) : (
         <Text style={styles.infoValue}>{value || "Não informado"}</Text>
@@ -842,11 +843,11 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações Pessoais</Text>
             <View style={styles.infoCard}>
-              {renderInfoField("Nome", usuarioEditado.nome, true, "nome")}
-              {renderInfoField("Email", usuarioEditado.email, true, "email")}
-              {renderInfoField("Telefone", usuarioEditado.telefone, true, "telefone")}
+              {renderInfoField("Nome", usuarioEditado.nome || "", true, "nome")}
+              {renderInfoField("Email", usuarioEditado.email || "", true, "email")}
+              {renderInfoField("Telefone", usuarioEditado.telefone || "", true, "telefone")}
               {renderInfoField("Observação", usuarioEditado.observacao || "", true, "observacao")}
-              <View style={styles.infoRow}>
+              <View style={styles.infoFieldContainer}>
                 <Text style={styles.infoLabel}>Data de Registro:</Text>
                 <Text style={styles.infoValue}>
                   {formatarData(usuarioEditado.dataDeRegistro)}
@@ -1119,29 +1120,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  infoLabel: {
-    fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '600',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#FFF',
-    fontWeight: '500',
-    flex: 1,
-    textAlign: 'right',
-  },
-  input: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 8,
-    color: '#FFF',
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#333',
-    flex: 1,
-    textAlign: 'right',
-  },
+
   modalidadesEditContainer: {
     marginBottom: 16,
   },
@@ -1629,4 +1608,37 @@ const styles = StyleSheet.create({
     color: '#B8860B',
     fontWeight: '500',
   },
+   infoFieldContainer: {
+    marginBottom: 16,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '600',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#FFF',
+    fontWeight: '500',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  input: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    minHeight: 44,
+  },
+
 });
