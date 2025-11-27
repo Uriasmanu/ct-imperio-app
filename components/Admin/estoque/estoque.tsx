@@ -1,5 +1,6 @@
-// components/Estoque.tsx (atualizado)
+// components/Estoque.tsx (atualizado completo)
 import { estoqueService } from "@/services/estoqueService";
+import { pedidoService } from "@/services/PedidoService";
 import { ItemEstoque, Pedido } from "@/types/estoque";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
@@ -12,22 +13,32 @@ import {
     View
 } from "react-native";
 import { FormProduto } from "./FormProduto";
+import { ModalPedido } from "./ModalPedido";
 import { ModalVenda } from "./ModalVenda";
 
 export const Estoque: React.FC = () => {
     const [abaAtiva, setAbaAtiva] = useState<"estoque" | "pedidos">("estoque");
     const [mostrarFormItem, setMostrarFormItem] = useState(false);
-    const [mostrarFormPedido, setMostrarFormPedido] = useState(false);
     const [mostrarModalVenda, setMostrarModalVenda] = useState(false);
     const [estoque, setEstoque] = useState<ItemEstoque[]>([]);
     const [produtoEditando, setProdutoEditando] = useState<ItemEstoque | null>(null);
     const [produtoVendendo, setProdutoVendendo] = useState<ItemEstoque | null>(null);
     const [modoEdicao, setModoEdicao] = useState(false);
 
+    const [mostrarModalPedido, setMostrarModalPedido] = useState(false);
+    const [pedidos, setPedidos] = useState<Pedido[]>([]);
+
     // Carregar produtos ao iniciar
     useEffect(() => {
         carregarProdutos();
     }, []);
+
+    // Carregar pedidos quando a aba estiver ativa
+    useEffect(() => {
+        if (abaAtiva === 'pedidos') {
+            carregarPedidos();
+        }
+    }, [abaAtiva]);
 
     const carregarProdutos = async () => {
         try {
@@ -37,6 +48,66 @@ export const Estoque: React.FC = () => {
             console.error('Erro ao carregar produtos:', error);
             Alert.alert('Erro', 'Não foi possível carregar os produtos');
         }
+    };
+
+    const carregarPedidos = async () => {
+        try {
+            const pedidosData = await pedidoService.getPedidos();
+            setPedidos(pedidosData);
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+            Alert.alert('Erro', 'Não foi possível carregar os pedidos');
+        }
+    };
+
+    // Função para criar novo pedido
+    const handleCriarPedido = async (pedido: Omit<Pedido, 'id'>) => {
+        try {
+            await pedidoService.criarPedido(pedido);
+            await carregarPedidos();
+            setMostrarModalPedido(false);
+            Alert.alert('Sucesso', 'Pedido criado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao criar pedido:', error);
+            Alert.alert('Erro', 'Não foi possível criar o pedido');
+        }
+    };
+
+    // Função para marcar pedido como pago
+    const handleMarcarPago = async (pedidoId: string) => {
+        try {
+            await pedidoService.marcarComoPago(pedidoId);
+            await carregarPedidos();
+            Alert.alert('Sucesso', 'Pedido marcado como pago!');
+        } catch (error) {
+            console.error('Erro ao marcar pedido como pago:', error);
+            Alert.alert('Erro', 'Não foi possível marcar o pedido como pago');
+        }
+    };
+
+    // Função para deletar pedido
+    const handleDeletarPedido = async (pedido: Pedido) => {
+        Alert.alert(
+            'Confirmar Exclusão',
+            `Tem certeza que deseja excluir o pedido de ${pedido.pessoa}?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await pedidoService.deletarPedido(pedido.id);
+                            await carregarPedidos();
+                            Alert.alert('Sucesso', 'Pedido excluído com sucesso!');
+                        } catch (error) {
+                            console.error('Erro ao excluir pedido:', error);
+                            Alert.alert('Erro', 'Não foi possível excluir o pedido');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     // Função para adicionar produto
@@ -112,8 +183,8 @@ export const Estoque: React.FC = () => {
             `Tem certeza que deseja excluir "${produto.nome}"?`,
             [
                 { text: 'Cancelar', style: 'cancel' },
-                { 
-                    text: 'Excluir', 
+                {
+                    text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -130,78 +201,23 @@ export const Estoque: React.FC = () => {
         );
     };
 
-    // Função para vender produto
-    const handleVenderProduto = (produto: ItemEstoque) => {
-        Alert.alert(
-            'Vender Produto',
-            `Registrar venda de ${produto.nome}?`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { 
-                    text: 'Vender', 
-                    onPress: () => {
-                        // Aqui você pode implementar a lógica de venda
-                        Alert.alert('Venda', 'Funcionalidade de venda em desenvolvimento');
-                    }
-                }
-            ]
-        );
-    };
-
-    const [pedidos, setPedidos] = useState<Pedido[]>([
-        {
-            id: "1",
-            pessoa: "João Silva",
-            itens: [
-                { itemId: "1", quantidade: 1, tamanho: "M" },
-                { itemId: "3", quantidade: 1 }
-            ],
-            data: "15/12/2024",
-            pago: true,
-            total: 134.90
-        },
-        {
-            id: "2",
-            pessoa: "Maria Santos",
-            itens: [
-                { itemId: "2", quantidade: 1, tamanho: "P" },
-                { itemId: "4", quantidade: 2 }
-            ],
-            data: "16/12/2024",
-            pago: false,
-            total: 99.90
-        },
-        {
-            id: "3",
-            pessoa: "Pedro Costa",
-            itens: [
-                { itemId: "1", quantidade: 1, tamanho: "G" },
-                { itemId: "5", quantidade: 3 }
-            ],
-            data: "17/12/2024",
-            pago: true,
-            total: 164.90
-        }
-    ]);
-
     const calcularTotalPedido = (pedido: Pedido): number => {
-        return pedido.itens.reduce((total, itemPedido) => {
-            const item = estoque.find(i => i.id === itemPedido.itemId);
-            return total + (item ? item.preco * itemPedido.quantidade : 0);
-        }, 0);
+        return pedido.total || pedido.itens.reduce((total, item) => total + item.subtotal, 0);
     };
 
     const obterNomeItem = (itemId: string): string => {
-        const item = estoque.find(i => i.id === itemId);
-        return item?.nome || "Item não encontrado";
-    };
-
-    // Função para marcar pedido como pago
-    const handleMarcarPago = (pedidoId: string) => {
-        setPedidos(pedidos.map(pedido => 
-            pedido.id === pedidoId ? { ...pedido, pago: true } : pedido
-        ));
-        Alert.alert('Sucesso', 'Pedido marcado como pago!');
+        // Primeiro tenta encontrar o nome nos itens do pedido
+        const pedidoComItem = pedidos.find(pedido => 
+            pedido.itens.some(item => item.itemId === itemId)
+        );
+        if (pedidoComItem) {
+            const item = pedidoComItem.itens.find(item => item.itemId === itemId);
+            if (item) return item.nome;
+        }
+        
+        // Se não encontrar, busca no estoque
+        const itemEstoque = estoque.find(i => i.id === itemId);
+        return itemEstoque?.nome || "Item não encontrado";
     };
 
     return (
@@ -275,6 +291,14 @@ export const Estoque: React.FC = () => {
                 onVender={handleProcessarVenda}
             />
 
+            {/* MODAL DE PEDIDO */}
+            <ModalPedido
+                visible={mostrarModalPedido}
+                onClose={() => setMostrarModalPedido(false)}
+                onSalvarPedido={handleCriarPedido}
+                produtos={estoque}
+            />
+
             {/* BOTÕES DE AÇÃO */}
             <View style={styles.acoesContainer}>
                 {abaAtiva === "estoque" ? (
@@ -288,7 +312,7 @@ export const Estoque: React.FC = () => {
                 ) : (
                     <TouchableOpacity
                         style={styles.botaoAdicionar}
-                        onPress={() => setMostrarFormPedido(true)}
+                        onPress={() => setMostrarModalPedido(true)}
                     >
                         <Ionicons name="add" size={20} color="#000" />
                         <Text style={styles.botaoAdicionarTexto}>Novo Pedido</Text>
@@ -384,94 +408,99 @@ export const Estoque: React.FC = () => {
                 ) : (
                     // ABA DE PEDIDOS
                     <View style={styles.pedidosContainer}>
-                        {pedidos.map((pedido) => (
-                            <View key={pedido.id} style={styles.pedidoCard}>
-                                <View style={styles.pedidoHeader}>
-                                    <View>
-                                        <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
-                                        <Text style={styles.pedidoData}>{pedido.data}</Text>
-                                    </View>
-                                    <View style={[
-                                        styles.statusPedido,
-                                        pedido.pago ? styles.statusPago : styles.statusPendente
-                                    ]}>
-                                        <Ionicons
-                                            name={pedido.pago ? "checkmark-circle" : "time"}
-                                            size={16}
-                                            color={pedido.pago ? "#22C55E" : "#EF4444"}
-                                        />
-                                        <Text style={[
-                                            styles.statusTexto,
-                                            { color: pedido.pago ? "#22C55E" : "#EF4444" }
-                                        ]}>
-                                            {pedido.pago ? "Pago" : "Pendente"}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.pedidoItens}>
-                                    {pedido.itens.map((itemPedido, index) => (
-                                        <View key={index} style={styles.pedidoItem}>
-                                            <Text style={styles.pedidoItemNome}>
-                                                {obterNomeItem(itemPedido.itemId)}
-                                            </Text>
-                                            <View style={styles.pedidoItemDetalhes}>
-                                                <Text style={styles.pedidoItemQuantidade}>
-                                                    {itemPedido.quantidade}x
-                                                </Text>
-                                                {itemPedido.tamanho && (
-                                                    <Text style={styles.pedidoItemTamanho}>
-                                                        Tamanho: {itemPedido.tamanho}
-                                                    </Text>
-                                                )}
-                                            </View>
-                                        </View>
-                                    ))}
-                                </View>
-
-                                <View style={styles.pedidoFooter}>
-                                    <Text style={styles.pedidoTotal}>
-                                        Total: R$ {calcularTotalPedido(pedido).toFixed(2)}
+                        {pedidos.length === 0 ? (
+                            <View style={styles.listaVazia}>
+                                <Ionicons name="list-outline" size={48} color="#666" />
+                                <Text style={styles.listaVaziaTexto}>
+                                    Nenhum pedido cadastrado
+                                </Text>
+                                <TouchableOpacity
+                                    style={styles.botaoAdicionarPrimeiro}
+                                    onPress={() => setMostrarModalPedido(true)}
+                                >
+                                    <Text style={styles.botaoAdicionarPrimeiroTexto}>
+                                        Criar Primeiro Pedido
                                     </Text>
-                                    <View style={styles.pedidoAcoes}>
-                                        {!pedido.pago && (
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            pedidos.map((pedido) => (
+                                <View key={pedido.id} style={styles.pedidoCard}>
+                                    <View style={styles.pedidoHeader}>
+                                        <View>
+                                            <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
+                                            <Text style={styles.pedidoData}>{pedido.data}</Text>
+                                        </View>
+                                        <View style={[
+                                            styles.statusPedido,
+                                            pedido.pago ? styles.statusPago : styles.statusPendente
+                                        ]}>
+                                            <Ionicons
+                                                name={pedido.pago ? "checkmark-circle" : "time"}
+                                                size={16}
+                                                color={pedido.pago ? "#22C55E" : "#EF4444"}
+                                            />
+                                            <Text style={[
+                                                styles.statusTexto,
+                                                { color: pedido.pago ? "#22C55E" : "#EF4444" }
+                                            ]}>
+                                                {pedido.pago ? "Pago" : "Pendente"}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.pedidoItens}>
+                                        {pedido.itens.map((itemPedido, index) => (
+                                            <View key={index} style={styles.pedidoItem}>
+                                                <Text style={styles.pedidoItemNome}>
+                                                    {itemPedido.nome || obterNomeItem(itemPedido.itemId)}
+                                                </Text>
+                                                <View style={styles.pedidoItemDetalhes}>
+                                                    <Text style={styles.pedidoItemQuantidade}>
+                                                        {itemPedido.quantidade}x
+                                                    </Text>
+                                                    {itemPedido.tamanho && (
+                                                        <Text style={styles.pedidoItemTamanho}>
+                                                            Tamanho: {itemPedido.tamanho}
+                                                        </Text>
+                                                    )}
+                                                    <Text style={styles.pedidoItemPreco}>
+                                                        R$ {itemPedido.subtotal.toFixed(2)}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <View style={styles.pedidoFooter}>
+                                        <Text style={styles.pedidoTotal}>
+                                            Total: R$ {calcularTotalPedido(pedido).toFixed(2)}
+                                        </Text>
+                                        <View style={styles.pedidoAcoes}>
+                                            {!pedido.pago && (
+                                                <TouchableOpacity
+                                                    style={styles.botaoMarcarPago}
+                                                    onPress={() => handleMarcarPago(pedido.id)}
+                                                >
+                                                    <Ionicons name="checkmark" size={16} color="#FFF" />
+                                                    <Text style={styles.botaoMarcarPagoTexto}>Marcar Pago</Text>
+                                                </TouchableOpacity>
+                                            )}
                                             <TouchableOpacity 
-                                                style={styles.botaoMarcarPago}
-                                                onPress={() => handleMarcarPago(pedido.id)}
+                                                style={styles.botaoDetalhes}
+                                                onPress={() => handleDeletarPedido(pedido)}
                                             >
-                                                <Ionicons name="checkmark" size={16} color="#FFF" />
-                                                <Text style={styles.botaoMarcarPagoTexto}>Marcar Pago</Text>
+                                                <Ionicons name="trash" size={16} color="#EF4444" />
+                                                <Text style={styles.botaoDetalhesTexto}>Excluir</Text>
                                             </TouchableOpacity>
-                                        )}
-                                        <TouchableOpacity style={styles.botaoDetalhes}>
-                                            <Ionicons name="eye" size={16} color="#B8860B" />
-                                            <Text style={styles.botaoDetalhesTexto}>Detalhes</Text>
-                                        </TouchableOpacity>
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                        ))}
+                            ))
+                        )}
                     </View>
                 )}
             </ScrollView>
-
-            {/* MODAL PARA NOVO PEDIDO (placeholder) */}
-            {mostrarFormPedido && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Novo Pedido</Text>
-                        <Text style={styles.modalText}>
-                            Formulário para criar novo pedido
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.botaoFecharModal}
-                            onPress={() => setMostrarFormPedido(false)}
-                        >
-                            <Text style={styles.botaoFecharModalTexto}>Fechar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
         </View>
     );
 };
@@ -768,6 +797,11 @@ const styles = StyleSheet.create({
         color: "#888",
         fontSize: 12,
     },
+    pedidoItemPreco: {
+        color: "#22C55E",
+        fontSize: 12,
+        fontWeight: "600",
+    },
     pedidoFooter: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -807,56 +841,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         backgroundColor: "transparent",
         borderWidth: 1,
-        borderColor: "#B8860B",
+        borderColor: "#EF4444",
         borderRadius: 6,
     },
     botaoDetalhesTexto: {
-        color: "#B8860B",
+        color: "#EF4444",
         fontSize: 12,
         fontWeight: "600",
-    },
-    modalOverlay: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-    },
-    modalContent: {
-        backgroundColor: "#1a1a1a",
-        padding: 24,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#B8860B",
-        width: "100%",
-        maxWidth: 400,
-    },
-    modalTitle: {
-        color: "#FFF",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 16,
-        textAlign: "center",
-    },
-    modalText: {
-        color: "#B8860B",
-        fontSize: 14,
-        textAlign: "center",
-        marginBottom: 20,
-    },
-    botaoFecharModal: {
-        backgroundColor: "#B8860B",
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    botaoFecharModalTexto: {
-        color: "#000",
-        fontWeight: "bold",
-        fontSize: 14,
     },
 });
