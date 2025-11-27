@@ -214,47 +214,145 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
             return;
         }
 
-        const selecionados = listaFiltrada.filter((item) =>
-            itensSelecionados.has(item.id)
-        );
+        // CORREÇÃO: Buscar em ambas as listas para garantir que encontramos todos
+        const selecionados: any[] = [];
+
+        // Primeiro, buscar na lista filtrada (que está sendo exibida)
+        listaFiltrada.forEach(item => {
+            if (itensSelecionados.has(item.id)) {
+                selecionados.push(item);
+            }
+        });
+
+        // Se não encontrou todos, buscar na lista expandida também
+        if (selecionados.length !== itensSelecionados.size) {
+            listaExpandida.forEach(item => {
+                if (itensSelecionados.has(item.id) && !selecionados.find(s => s.id === item.id)) {
+                    selecionados.push(item);
+                }
+            });
+        }
+
+        if (selecionados.length === 0) {
+            alert("Erro: Nenhum aluno correspondente encontrado.");
+            return;
+        }
+
+        if (selecionados.length !== itensSelecionados.size) {
+            console.warn(`Aviso: Esperados ${itensSelecionados.size} itens, mas encontrados ${selecionados.length}`);
+        }
+
+        // Gerar as linhas da tabela
+        const linhasTabela = selecionados.map((s) => {
+            const modalidadesTexto = s.modalidades?.length > 0
+                ? s.modalidades.map((m: any) => m.modalidade).join(", ")
+                : "Nenhuma";
+
+            const dataPagamento = s.dataUltimoPagamento
+                ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
+                : "Nunca";
+
+            const presencas = filtrarPresencasPorPeriodo(s.Presenca || [], periodo);
+
+            // Adicionar indicação se é filho
+            const nomeCompleto = s.isFilho ? `${s.nome} (filho de ${s.paiNome})` : s.nome;
+
+            return `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;">${nomeCompleto}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${dataPagamento}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${modalidadesTexto}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${presencas}</td>
+            </tr>
+        `;
+        }).join("");
 
         const conteudoHtml = `
+        <!DOCTYPE html>
         <html>
-            <body style="font-family: Arial; padding: 20px;">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        color: #333;
+                    }
+                    h1 {
+                        color: #B8860B;
+                        text-align: center;
+                        margin-bottom: 10px;
+                    }
+                    .info {
+                        text-align: center;
+                        margin: 10px 0;
+                        color: #666;
+                        background-color: #f9f9f9;
+                        padding: 10px;
+                        border-radius: 5px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                        font-size: 12px;
+                    }
+                    th {
+                        background-color: #B8860B;
+                        color: white;
+                        padding: 12px;
+                        text-align: left;
+                        border: 1px solid #ddd;
+                        font-weight: bold;
+                    }
+                    td {
+                        padding: 8px;
+                        border: 1px solid #ddd;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #f2f2f2;
+                    }
+                    .total {
+                        margin-top: 15px;
+                        font-weight: bold;
+                        text-align: center;
+                        padding: 10px;
+                        background-color: #f0f0f0;
+                        border-radius: 5px;
+                    }
+                </style>
+            </head>
+            <body>
                 <h1>Relatório de Alunos</h1>
-                <p>Total: ${selecionados.length}</p>
-                ${periodo ? `<p>Período: ${periodo}</p>` : ''}
-
-                <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                <div class="info">
+                    <strong>Total de alunos no relatório:</strong> ${selecionados.length}
+                </div>
+                ${periodo ? `
+                    <div class="info">
+                        <strong>Período analisado:</strong> ${periodo}
+                    </div>
+                ` : ''}
+                <div class="info">
+                    <strong>Data de geração:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+                </div>
+                
+                <table>
                     <thead>
-                        <tr style="background-color: #f2f2f2;">
+                        <tr>
                             <th>Nome</th>
                             <th>Último Pagamento</th>
                             <th>Modalidades</th>
-                            <th>Presenças${periodo ? ' no Período' : ''}</th>
+                            <th style="text-align: center;">Presenças${periodo ? ' no Período' : ''}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${selecionados
-                            .map(
-                                (s) => `
-                            <tr>
-                                <td>${s.nome}</td>
-                                <td>${s.dataUltimoPagamento
-                                    ? new Date(s.dataUltimoPagamento).toLocaleDateString("pt-BR")
-                                    : "Nunca"
-                                }</td>
-                                <td>${s.modalidades?.length > 0
-                                    ? s.modalidades.map((m: any) => m.modalidade).join(", ")
-                                    : "Nenhuma"
-                                }</td>
-                                <td style="text-align: center;">${filtrarPresencasPorPeriodo(s.Presenca, periodo)}</td>
-                            </tr>
-                        `
-                            )
-                            .join("")}
+                        ${linhasTabela}
                     </tbody>
                 </table>
+                
+                <div class="total">
+                    Total de registros no relatório: ${selecionados.length}
+                </div>
             </body>
         </html>
     `;
@@ -264,10 +362,16 @@ export const ListaAlunosRelatorio: React.FC<ListaAlunosRelatorioProps> = ({
                 html: conteudoHtml,
             });
 
-            await Sharing.shareAsync(uri);
+            await Sharing.shareAsync(uri, {
+                mimeType: 'application/pdf',
+                dialogTitle: `Relatório de Alunos - ${selecionados.length} alunos`,
+            });
+
+            console.log("PDF gerado com sucesso!");
+
         } catch (e) {
-            console.log(e);
-            alert("Erro ao gerar PDF");
+            console.error("Erro ao gerar PDF:", e);
+            alert("Erro ao gerar PDF. Verifique o console para mais detalhes.");
         }
     };
 
