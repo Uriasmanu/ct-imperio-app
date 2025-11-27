@@ -9,13 +9,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 // Hook de pagamento administrativo
+import { MultiModalidadeSelector } from '@/components/perfil/MultiModalidadeSelector';
+import { ProfessorSelector } from '@/components/perfil/ProfessorSelector';
+import { db } from '@/config/firebaseConfig';
 import { useDeletarUsuario } from '@/hooks/useDeletarUsuario';
 import { usePagamentoAdmin } from '@/hooks/usePagamentoAdmin';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface DetalhesAlunoModalProps {
   visible: boolean;
@@ -23,6 +28,7 @@ interface DetalhesAlunoModalProps {
   onClose: () => void;
   onPagamentoAtualizado?: () => void;
   onUsuarioDeletado?: () => void;
+  onUsuarioAtualizado?: () => void; // Nova prop para notificar atualizações
 }
 
 interface PresencaState {
@@ -359,10 +365,14 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   onClose,
   onPagamentoAtualizado,
   onUsuarioDeletado,
+  onUsuarioAtualizado,
 }) => {
   const [marcandoPresenca, setMarcandoPresenca] = useState<string | null>(null);
   const [presencaStates, setPresencaStates] = useState<{ [key: string]: PresencaState }>({});
   const [modalDeleteVisible, setModalDeleteVisible] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [usuarioEditado, setUsuarioEditado] = useState<UsuarioCompleto | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
   const { deletando, deletarUsuario } = useDeletarUsuario();
 
@@ -427,23 +437,69 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     onPagamentoAtualizado?.();
   };
 
+  // Inicializar dados editáveis quando o usuário ou modal mudar
   useEffect(() => {
     if (visible && usuario) {
+      setUsuarioEditado(usuario);
+      setEditando(false);
       carregarEstadosPresenca();
     }
   }, [visible, usuario]);
 
+  // Função para salvar as alterações do usuário
+  const handleSalvarAlteracoes = async () => {
+    if (!usuarioEditado?.id) {
+      Alert.alert("Erro", "Usuário não encontrado.");
+      return;
+    }
+
+    if (!usuarioEditado.modalidades || usuarioEditado.modalidades.length === 0) {
+      Alert.alert("Campo obrigatório", "Selecione pelo menos uma modalidade antes de salvar.");
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      const userRef = doc(db, "usuarios", usuarioEditado.id);
+      await updateDoc(userRef, {
+        nome: usuarioEditado.nome ?? "",
+        email: usuarioEditado.email ?? "",
+        telefone: usuarioEditado.telefone ?? "",
+        observacao: usuarioEditado.observacao ?? "",
+        modalidades: usuarioEditado.modalidades ?? [],
+        professores: usuarioEditado.professores ?? [],
+      });
+
+      Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
+      setEditando(false);
+      onUsuarioAtualizado?.(); // Notificar que o usuário foi atualizado
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível salvar as alterações.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // Função para cancelar edição
+  const handleCancelarEdicao = () => {
+    setUsuarioEditado(usuario);
+    setEditando(false);
+  };
+
   const carregarEstadosPresenca = async () => {
+    if (!usuario) return;
+    
     const novosEstados: { [key: string]: PresencaState } = {};
 
     // Verificar presença do usuário principal
-    const estadoUsuario = await checkPresencaToday(usuario!.id, false);
-    novosEstados[usuario!.id] = estadoUsuario;
+    const estadoUsuario = await checkPresencaToday(usuario.id, false);
+    novosEstados[usuario.id] = estadoUsuario;
 
     // Verificar presença dos filhos
-    if (usuario!.filhos) {
-      for (const filho of usuario!.filhos) {
-        const estadoFilho = await checkPresencaToday(usuario!.id, true, filho.id);
+    if (usuario.filhos) {
+      for (const filho of usuario.filhos) {
+        const estadoFilho = await checkPresencaToday(usuario.id, true, filho.id);
         novosEstados[filho.id] = estadoFilho;
       }
     }
@@ -544,11 +600,124 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     return '#ef4444';
   };
 
+  // Componente para renderizar campo de informação editável
+  const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
+    <View style={styles.infoRow} key={key}>
+      <Text style={styles.infoLabel}>{label}:</Text>
+      {editable && editando ? (
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={(text) => {
+            if (usuarioEditado && key) {
+              setUsuarioEditado({ ...usuarioEditado, [key]: text });
+            }
+          }}
+          placeholderTextColor="#666"
+        />
+      ) : (
+        <Text style={styles.infoValue}>{value || "Não informado"}</Text>
+      )}
+    </View>
+  );
+
+  // Função para renderizar modalidades em modo de edição
+  const renderModalidadesEditaveis = () => {
+    if (!usuarioEditado) return null;
+
+    return editando ? (
+      <View style={styles.modalidadesEditContainer}>
+        <Text style={styles.infoLabel}>Modalidades:</Text>
+        <MultiModalidadeSelector
+          modalidades={usuarioEditado.modalidades || []}
+          onModalidadesChange={(modalidades) => {
+            setUsuarioEditado({ ...usuarioEditado, modalidades });
+          }}
+        />
+      </View>
+    ) : (
+      renderModalidadesUsuario()
+    );
+  };
+
+  // Função para renderizar professores em modo de edição
+  const renderProfessoresEditaveis = () => {
+    if (!usuarioEditado) return null;
+
+    return editando ? (
+      <View style={styles.professoresEditContainer}>
+        <Text style={styles.infoLabel}>Professores:</Text>
+        <ProfessorSelector
+          professoresSelecionados={usuarioEditado.professores || []}
+          onProfessoresChange={(professoresIds) => {
+            setUsuarioEditado({ ...usuarioEditado, professores: professoresIds });
+          }}
+        />
+      </View>
+    ) : (
+      renderProfessoresUsuario()
+    );
+  };
+
+  // Função para renderizar modalidades do usuário (modo visualização)
+  const renderModalidadesUsuario = () => {
+    if (!usuarioEditado?.modalidades || usuarioEditado.modalidades.length === 0) {
+      return <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>;
+    }
+
+    return (
+      <View style={styles.modalidadesList}>
+        {usuarioEditado.modalidades.map((modalidade, index) => (
+          <View key={index} style={styles.modalidadeCard}>
+            <View style={styles.modalidadeHeader}>
+              <Text style={styles.modalidadeNome}>{modalidade.modalidade}</Text>
+              <Text style={[
+                styles.modalidadeStatus,
+                { color: modalidade.ativo ? '#22c55e' : '#ef4444' }
+              ]}>
+                {modalidade.ativo ? '✅ Ativo' : '⏸️ Inativo'}
+              </Text>
+            </View>
+            <Text style={styles.modalidadeGraduacao}>
+              {formatarGraduacao(modalidade.graduacao, modalidade.modalidade)}
+            </Text>
+            <Text style={styles.modalidadeData}>
+              Desde: {formatarData(modalidade.dataInicio)}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  // Função para renderizar professores do usuário (modo visualização)
+  const renderProfessoresUsuario = () => {
+    if (!usuarioEditado?.professores || usuarioEditado.professores.length === 0) {
+      return <Text style={styles.infoValue}>Nenhum professor associado</Text>;
+    }
+
+    return (
+      <View style={styles.professoresList}>
+        {obterProfessoresCompletos(usuarioEditado.professores).map((professor) => (
+          <View key={professor.id} style={styles.professorItem}>
+            <View style={styles.professorInfo}>
+              <Ionicons name="person-circle-outline" size={20} color="#B8860B" />
+              <View style={styles.professorDetails}>
+                <Text style={styles.professorNome}>{professor.nome}</Text>
+                <Text style={styles.professorEmail}>{professor.email}</Text>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   const semestreInfo = getSemestreInfo();
 
-  if (!usuario) return null;
+  if (!usuario || !usuarioEditado) return null;
 
-  const presencaUsuario = obterArrayPresenca(usuario);
+  const presencaUsuario = obterArrayPresenca(usuarioEditado);
   const frequenciaUsuario = calcularFrequencia(presencaUsuario);
 
   return (
@@ -559,24 +728,55 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Header */}
+        {/* Header Atualizado com Botão de Edição */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
             <Ionicons name="arrow-back" size={24} color="#B8860B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detalhes do Aluno</Text>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={confirmarDelecao}
-              disabled={deletando}
-            >
-              <Ionicons
-                name="trash-outline"
-                size={24}
-                color={deletando ? "#666" : "#ef4444"}
-              />
-            </TouchableOpacity>
+            {!editando ? (
+              <>
+                <TouchableOpacity
+                  style={styles.editHeaderButton}
+                  onPress={() => setEditando(true)}
+                >
+                  <Ionicons name="create-outline" size={20} color="#B8860B" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={confirmarDelecao}
+                  disabled={deletando}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={deletando ? "#666" : "#ef4444"}
+                  />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.editModeActions}>
+                <TouchableOpacity
+                  style={styles.cancelEditButton}
+                  onPress={handleCancelarEdicao}
+                  disabled={salvando}
+                >
+                  <Ionicons name="close" size={20} color="#ef4444" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.saveEditButton}
+                  onPress={handleSalvarAlteracoes}
+                  disabled={salvando}
+                >
+                  {salvando ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <Ionicons name="checkmark" size={20} color="#22c55e" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
 
@@ -638,26 +838,18 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
         </Modal>
 
         <ScrollView style={styles.content}>
-          {/* Informações Básicas */}
+          {/* Informações Básicas - Agora Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações Pessoais</Text>
             <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Nome:</Text>
-                <Text style={styles.infoValue}>{usuario.nome}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Email:</Text>
-                <Text style={styles.infoValue}>{usuario.email}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Telefone:</Text>
-                <Text style={styles.infoValue}>{usuario.telefone || 'Não informado'}</Text>
-              </View>
+              {renderInfoField("Nome", usuarioEditado.nome, true, "nome")}
+              {renderInfoField("Email", usuarioEditado.email, true, "email")}
+              {renderInfoField("Telefone", usuarioEditado.telefone, true, "telefone")}
+              {renderInfoField("Observação", usuarioEditado.observacao || "", true, "observacao")}
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Data de Registro:</Text>
                 <Text style={styles.infoValue}>
-                  {formatarData(usuario.dataDeRegistro)}
+                  {formatarData(usuarioEditado.dataDeRegistro)}
                 </Text>
               </View>
             </View>
@@ -669,78 +861,42 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             <View style={styles.pagamentoSectionCard}>
               <View style={styles.pagamentoInfoHeader}>
                 <Ionicons
-                  name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
+                  name={usuarioEditado.pagamento ? "checkmark-circle" : "alert-circle"}
                   size={24}
-                  color={usuario.pagamento ? "#22c55e" : "#ef4444"}
+                  color={usuarioEditado.pagamento ? "#22c55e" : "#ef4444"}
                 />
                 <View style={styles.pagamentoInfoText}>
                   <Text style={styles.pagamentoStatus}>
-                    {usuario.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
+                    {usuarioEditado.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
                   </Text>
                   <Text style={styles.pagamentoData}>
-                    Dia de pagamento: {usuario.dataPagamento ?
-                      new Date(usuario.dataPagamento).getDate() : '-'} de cada mês
+                    Dia de pagamento: {usuarioEditado.dataPagamento ?
+                      new Date(usuarioEditado.dataPagamento).getDate() : '-'} de cada mês
                   </Text>
                 </View>
               </View>
 
               <GerenciarPagamentoAdmin
-                item={usuario}
+                item={usuarioEditado}
                 tipo="usuario"
                 onPagamentoAtualizado={handlePagamentoAtualizado}
               />
             </View>
           </View>
 
-          {/* Modalidades */}
+          {/* Modalidades - Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Modalidades</Text>
-            <View style={styles.modalidadesList}>
-              {usuario.modalidades?.map((modalidade, index) => (
-                <View key={index} style={styles.modalidadeCard}>
-                  <View style={styles.modalidadeHeader}>
-                    <Text style={styles.modalidadeNome}>
-                      {modalidade.modalidade}
-                    </Text>
-                    <Text style={[
-                      styles.modalidadeStatus,
-                      { color: modalidade.ativo ? '#22c55e' : '#ef4444' }
-                    ]}>
-                      {modalidade.ativo ? '✅ Ativo' : '⏸️ Inativo'}
-                    </Text>
-                  </View>
-                  <Text style={styles.modalidadeGraduacao}>
-                    {formatarGraduacao(modalidade.graduacao, modalidade.modalidade)}
-                  </Text>
-                  <Text style={styles.modalidadeData}>
-                    Desde: {formatarData(modalidade.dataInicio)}
-                  </Text>
-                </View>
-              ))}
+            <View style={styles.infoCard}>
+              {renderModalidadesEditaveis()}
             </View>
           </View>
 
-          {/* Professores do Usuário */}
+          {/* Professores - Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Professores</Text>
-            <View style={styles.professoresCard}>
-              {usuario.professores && usuario.professores.length > 0 ? (
-                <View style={styles.professoresList}>
-                  {obterProfessoresCompletos(usuario.professores).map((professor) => (
-                    <View key={professor.id} style={styles.professorItem}>
-                      <View style={styles.professorInfo}>
-                        <Ionicons name="person-circle-outline" size={20} color="#B8860B" />
-                        <View style={styles.professorDetails}>
-                          <Text style={styles.professorNome}>{professor.nome}</Text>
-                          <Text style={styles.professorEmail}>{professor.email}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.semProfessoresText}>Nenhum professor associado</Text>
-              )}
+            <View style={styles.infoCard}>
+              {renderProfessoresEditaveis()}
             </View>
           </View>
 
@@ -770,16 +926,16 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           </View>
 
           {/* Marcar Presença do Usuário */}
-          {usuario.modalidades?.some(m => m.ativo) && (
+          {usuarioEditado.modalidades?.some(m => m.ativo) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Marcar Presença</Text>
               <View style={styles.presencaCard}>
                 <View>
-                  <Text style={styles.presencaNome}>{usuario.nome}</Text>
+                  <Text style={styles.presencaNome}>{usuarioEditado.nome}</Text>
                 </View>
                 <BotaoMarcarPresencaUsuario
-                  usuario={usuario}
-                  estadoUsuario={presencaStates[usuario.id] || { hasPresenca: false, isConfirmed: false }}
+                  usuario={usuarioEditado}
+                  estadoUsuario={presencaStates[usuarioEditado.id] || { hasPresenca: false, isConfirmed: false }}
                   loading={loading}
                   marcandoPresenca={marcandoPresenca}
                   onMarcarPresenca={handleMarcarPresenca}
@@ -789,12 +945,12 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           )}
 
           {/* Filhos */}
-          {usuario.filhos && usuario.filhos.length > 0 && (
+          {usuarioEditado.filhos && usuarioEditado.filhos.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Alunos Dependentes</Text>
               <View style={styles.filhosList}>
-                {usuario.filhos.map((filho, index) => {
-                  const presencaFilho = obterArrayPresenca(usuario, filho);
+                {usuarioEditado.filhos.map((filho, index) => {
+                  const presencaFilho = obterArrayPresenca(usuarioEditado, filho);
                   const frequenciaFilho = calcularFrequencia(presencaFilho);
 
                   return (
@@ -811,7 +967,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         <GerenciarPagamentoAdmin
                           item={filho}
                           tipo="filho"
-                          usuarioId={usuario.id}
+                          usuarioId={usuarioEditado.id}
                           onPagamentoAtualizado={handlePagamentoAtualizado}
                         />
                       </View>
@@ -867,7 +1023,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                       <View style={styles.filhoPresencaSection}>
                         <BotaoMarcarPresencaFilho
                           filho={filho}
-                          usuario={usuario}
+                          usuario={usuarioEditado}
                           estadoFilho={presencaStates[filho.id] || { hasPresenca: false, isConfirmed: false }}
                           loading={loading}
                           marcandoPresenca={marcandoPresenca}
@@ -909,6 +1065,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editHeaderButton: {
+    padding: 8,
+  },
+  editModeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cancelEditButton: {
+    padding: 8,
+  },
+  saveEditButton: {
+    padding: 8,
+  },
+  deleteButton: {
+    padding: 8,
   },
   placeholder: {
     width: 40,
@@ -952,6 +1130,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     textAlign: 'right',
+  },
+  input: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 8,
+    color: '#FFF',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#333',
+    flex: 1,
+    textAlign: 'right',
+  },
+  modalidadesEditContainer: {
+    marginBottom: 16,
+  },
+  professoresEditContainer: {
+    marginBottom: 16,
   },
   pagamentoSectionCard: {
     backgroundColor: '#1a1a1a',
@@ -1320,13 +1515,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "600",
     fontSize: 16,
-  },
-  headerActions: {
-    width: 40,
-    alignItems: 'flex-end',
-  },
-  deleteButton: {
-    padding: 8,
   },
   deleteContent: {
     padding: 20,
