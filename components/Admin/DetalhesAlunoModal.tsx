@@ -1036,6 +1036,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+    paddingBottom: 35
   },
   header: {
     flexDirection: 'row',
@@ -1282,6 +1283,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     alignItems: 'center',
     gap: 12,
+    marginBottom: 20
   },
   presencaNome: {
     fontSize: 16,
@@ -1292,6 +1294,7 @@ const styles = StyleSheet.create({
   presencaContainer: {
     alignItems: 'center',
     gap: 8,
+    
   },
   presencaButton: {
     paddingVertical: 12,
