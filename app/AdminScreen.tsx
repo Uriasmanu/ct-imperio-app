@@ -42,7 +42,7 @@ export default function AdminScreen() {
     modalidade: "todas",
     professor: "todos"
   });
-  const [secaoAtiva, setSecaoAtiva] = useState<AdminSection>('presencas');
+  const [secaoAtiva, setSecaoAtiva] = useState<AdminSection | null>(null);
 
   // Use o hook para presenças administrativas
   const {
