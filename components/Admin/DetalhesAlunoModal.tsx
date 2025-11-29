@@ -28,7 +28,7 @@ interface DetalhesAlunoModalProps {
   onClose: () => void;
   onPagamentoAtualizado?: () => void;
   onUsuarioDeletado?: () => void;
-  onUsuarioAtualizado?: () => void; // Nova prop para notificar atualizações
+  onUsuarioAtualizado?: () => void;
 }
 
 interface PresencaState {
@@ -133,7 +133,6 @@ const GerenciarPagamentoAdmin: React.FC<{
   return (
     <>
       <View style={styles.pagamentoContainer}>
-        {/* Status do Pagamento - Sempre clicável para o admin */}
         <TouchableOpacity
           style={[
             styles.statusContainer,
@@ -210,7 +209,6 @@ const GerenciarPagamentoAdmin: React.FC<{
                 <Text style={styles.cancelButtonText}>Fechar</Text>
               </TouchableOpacity>
 
-              {/* BOTÕES DO ADMIN: Confirmar ou Reverter pagamento */}
               {!item.pagamento ? (
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
@@ -359,6 +357,154 @@ const BotaoMarcarPresencaFilho: React.FC<{
   );
 };
 
+// Componente Modal para Editar Filho
+const ModalEditarFilho: React.FC<{
+  visible: boolean;
+  filho: any;
+  onClose: () => void;
+  onSalvar: (filhoData: any) => void;
+  salvando: boolean;
+}> = ({ visible, filho, onClose, onSalvar, salvando }) => {
+  const [dadosFilho, setDadosFilho] = useState({
+    nome: '',
+    idade: '',
+    observacao: '',
+    modalidades: [] as any[],
+    professores: [] as string[],
+  });
+
+  useEffect(() => {
+    if (filho) {
+      setDadosFilho({
+        nome: filho.nome || '',
+        idade: filho.idade?.toString() || '',
+        observacao: filho.observacao || '',
+        modalidades: filho.modalidades || [],
+        professores: filho.professores || [],
+      });
+    }
+  }, [filho]);
+
+  const handleSalvar = () => {
+    if (!dadosFilho.nome.trim()) {
+      Alert.alert('Erro', 'O nome do aluno é obrigatório.');
+      return;
+    }
+
+    if (!dadosFilho.modalidades || dadosFilho.modalidades.length === 0) {
+      Alert.alert('Erro', 'Selecione pelo menos uma modalidade.');
+      return;
+    }
+
+    onSalvar({
+      ...dadosFilho,
+      idade: dadosFilho.idade ? parseInt(dadosFilho.idade) : undefined,
+    });
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Editar Aluno Dependente</Text>
+            <TouchableOpacity onPress={onClose} disabled={salvando}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalScrollContent}>
+            <View style={styles.modalBody}>
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Nome *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={dadosFilho.nome}
+                  onChangeText={(text) => setDadosFilho(prev => ({ ...prev, nome: text }))}
+                  placeholder="Nome do aluno"
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Idade</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={dadosFilho.idade}
+                  onChangeText={(text) => setDadosFilho(prev => ({ ...prev, idade: text }))}
+                  placeholder="Idade em anos"
+                  placeholderTextColor="#666"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Observação</Text>
+                <TextInput
+                  style={[styles.modalInput, styles.textArea]}
+                  value={dadosFilho.observacao}
+                  onChangeText={(text) => setDadosFilho(prev => ({ ...prev, observacao: text }))}
+                  placeholder="Observações adicionais"
+                  placeholderTextColor="#666"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Modalidades *</Text>
+                <MultiModalidadeSelector
+                  modalidades={dadosFilho.modalidades}
+                  onModalidadesChange={(modalidades) =>
+                    setDadosFilho(prev => ({ ...prev, modalidades }))
+                  }
+                />
+              </View>
+
+              <View style={styles.modalField}>
+                <Text style={styles.modalLabel}>Professores</Text>
+                <ProfessorSelector
+                  professoresSelecionados={dadosFilho.professores}
+                  onProfessoresChange={(professoresIds) =>
+                    setDadosFilho(prev => ({ ...prev, professores: professoresIds }))
+                  }
+                />
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onClose}
+              disabled={salvando}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.confirmButton]}
+              onPress={handleSalvar}
+              disabled={salvando}
+            >
+              {salvando ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Salvar Alterações</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   visible,
   usuario,
@@ -374,9 +520,12 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
   const [usuarioEditado, setUsuarioEditado] = useState<UsuarioCompleto | null>(null);
   const [salvando, setSalvando] = useState(false);
 
+  const [modalFilhoVisible, setModalFilhoVisible] = useState(false);
+  const [filhoEditando, setFilhoEditando] = useState<any>(null);
+  const [salvandoFilho, setSalvandoFilho] = useState(false);
+
   const { deletando, deletarUsuario } = useDeletarUsuario();
 
-  // Função para deletar usuário
   const handleDeletarUsuario = async () => {
     if (!usuario) return;
 
@@ -437,7 +586,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     onPagamentoAtualizado?.();
   };
 
-  // Inicializar dados editáveis quando o usuário ou modal mudar
   useEffect(() => {
     if (visible && usuario) {
       setUsuarioEditado(usuario);
@@ -446,7 +594,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   }, [visible, usuario]);
 
-  // Função para salvar as alterações do usuário
   const handleSalvarAlteracoes = async () => {
     if (!usuarioEditado?.id) {
       Alert.alert("Erro", "Usuário não encontrado.");
@@ -472,7 +619,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
       setEditando(false);
-      onUsuarioAtualizado?.(); // Notificar que o usuário foi atualizado
+      onUsuarioAtualizado?.();
     } catch (error) {
       console.error(error);
       Alert.alert("Erro", "Não foi possível salvar as alterações.");
@@ -481,10 +628,50 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   };
 
-  // Função para cancelar edição
   const handleCancelarEdicao = () => {
     setUsuarioEditado(usuario);
     setEditando(false);
+  };
+
+  const handleEditarFilho = (filho: any) => {
+    setFilhoEditando(filho);
+    setModalFilhoVisible(true);
+  };
+
+  const handleSalvarEdicaoFilho = async (filhoData: any) => {
+    if (!usuarioEditado || !filhoEditando) return;
+
+    setSalvandoFilho(true);
+    try {
+      const userRef = doc(db, "usuarios", usuarioEditado.id);
+      const filhosAtualizados = usuarioEditado.filhos?.map(filho =>
+        filho.id === filhoEditando.id ? { ...filho, ...filhoData } : filho
+      );
+
+      await updateDoc(userRef, {
+        filhos: filhosAtualizados
+      });
+
+      setUsuarioEditado(prev => prev ? {
+        ...prev,
+        filhos: filhosAtualizados
+      } : null);
+
+      Alert.alert("Sucesso", "Aluno dependente atualizado com sucesso!");
+      setModalFilhoVisible(false);
+      setFilhoEditando(null);
+      onUsuarioAtualizado?.();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível atualizar o aluno dependente.");
+    } finally {
+      setSalvandoFilho(false);
+    }
+  };
+
+  const handleCancelarEdicaoFilho = () => {
+    setModalFilhoVisible(false);
+    setFilhoEditando(null);
   };
 
   const carregarEstadosPresenca = async () => {
@@ -492,11 +679,9 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
     const novosEstados: { [key: string]: PresencaState } = {};
 
-    // Verificar presença do usuário principal
     const estadoUsuario = await checkPresencaToday(usuario.id, false);
     novosEstados[usuario.id] = estadoUsuario;
 
-    // Verificar presença dos filhos
     if (usuario.filhos) {
       for (const filho of usuario.filhos) {
         const estadoFilho = await checkPresencaToday(usuario.id, true, filho.id);
@@ -589,7 +774,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     return '#ef4444';
   };
 
-  // Componente para renderizar campo de informação editável
   const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
     <View style={styles.infoFieldContainer} key={key}>
       <Text style={styles.infoLabel}>{label}:</Text>
@@ -611,13 +795,12 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     </View>
   );
 
-  // Função para renderizar modalidades em modo de edição
   const renderModalidadesEditaveis = () => {
     if (!usuarioEditado) return null;
 
     return editando ? (
       <View style={styles.modalidadesEditContainer}>
-        <Text style={styles.infoLabel}>Modalidades:</Text>
+
         <MultiModalidadeSelector
           modalidades={usuarioEditado.modalidades || []}
           onModalidadesChange={(modalidades) => {
@@ -630,7 +813,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     );
   };
 
-  // Função para renderizar professores em modo de edição
   const renderProfessoresEditaveis = () => {
     if (!usuarioEditado) return null;
 
@@ -649,7 +831,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     );
   };
 
-  // Função para renderizar modalidades do usuário (modo visualização)
   const renderModalidadesUsuario = () => {
     if (!usuarioEditado?.modalidades || usuarioEditado.modalidades.length === 0) {
       return <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>;
@@ -680,7 +861,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     );
   };
 
-  // Função para renderizar professores do usuário (modo visualização)
   const renderProfessoresUsuario = () => {
     if (!usuarioEditado?.professores || usuarioEditado.professores.length === 0) {
       return <Text style={styles.infoValue}>Nenhum professor associado</Text>;
@@ -718,7 +898,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Header Atualizado com Botão de Edição */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
             <Ionicons name="arrow-back" size={24} color="#B8860B" />
@@ -770,7 +949,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           </View>
         </View>
 
-        {/* Modal de Confirmação de Deleção */}
         <Modal
           visible={modalDeleteVisible}
           animationType="fade"
@@ -828,7 +1006,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
         </Modal>
 
         <ScrollView style={styles.content}>
-          {/* Informações Básicas - Agora Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações Pessoais</Text>
             <View style={styles.infoCard}>
@@ -845,7 +1022,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
-          {/* Status do Pagamento */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Status do Pagamento</Text>
             <View style={styles.pagamentoSectionCard}>
@@ -874,7 +1050,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
-          {/* Modalidades - Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Modalidades</Text>
             <View style={styles.infoCard}>
@@ -882,7 +1057,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
-          {/* Professores - Editáveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Professores</Text>
             <View style={styles.infoCard}>
@@ -890,7 +1064,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
-          {/* Frequência do Usuário */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Frequência - {semestreInfo.nome}</Text>
             <View style={styles.frequenciaCard}>
@@ -915,7 +1088,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           </View>
 
-          {/* Marcar Presença do Usuário */}
           {usuarioEditado.modalidades?.some(m => m.ativo) && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Marcar Presença</Text>
@@ -934,7 +1106,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           )}
 
-          {/* Filhos */}
           {usuarioEditado.filhos && usuarioEditado.filhos.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Alunos Dependentes</Text>
@@ -946,13 +1117,20 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                   return (
                     <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
                       <View style={styles.filhoHeader}>
-                        <Text style={styles.filhoNome}>{filho.nome}</Text>
-                        {filho.idade && (
-                          <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
-                        )}
+                        <View style={styles.filhoInfo}>
+                          <Text style={styles.filhoNome}>{filho.nome}</Text>
+                          {filho.idade && (
+                            <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
+                          )}
+                        </View>
+                        <TouchableOpacity
+                          style={styles.editarFilhoButton}
+                          onPress={() => handleEditarFilho(filho)}
+                        >
+                          <Ionicons name="create-outline" size={18} color="#B8860B" />
+                        </TouchableOpacity>
                       </View>
 
-                      {/* Pagamento do Filho */}
                       <View style={styles.filhoPagamentoSection}>
                         <GerenciarPagamentoAdmin
                           item={filho}
@@ -962,7 +1140,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         />
                       </View>
 
-                      {/* Modalidades do Filho */}
                       {filho.modalidades && filho.modalidades.length > 0 && (
                         <View style={styles.filhoModalidades}>
                           {filho.modalidades.map((modalidade, idx) => (
@@ -978,7 +1155,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         </View>
                       )}
 
-                      {/* Professores do Filho */}
                       {filho.professores && filho.professores.length > 0 && (
                         <View style={styles.filhoProfessoresSection}>
                           <Text style={styles.filhoSectionLabel}>Professores:</Text>
@@ -994,7 +1170,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         </View>
                       )}
 
-                      {/* Frequência do Filho */}
                       <View style={styles.filhoFrequencia}>
                         <View style={styles.frequenciaRow}>
                           <Text style={styles.frequenciaLabel}>
@@ -1009,7 +1184,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                         </View>
                       </View>
 
-                      {/* Marcar Presença do Filho */}
                       <View style={styles.filhoPresencaSection}>
                         <BotaoMarcarPresencaFilho
                           filho={filho}
@@ -1027,6 +1201,15 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
             </View>
           )}
         </ScrollView>
+
+        {/* Modal de Edição de Filho */}
+        <ModalEditarFilho
+          visible={modalFilhoVisible}
+          filho={filhoEditando}
+          onClose={handleCancelarEdicaoFilho}
+          onSalvar={handleSalvarEdicaoFilho}
+          salvando={salvandoFilho}
+        />
       </View>
     </Modal>
   );
@@ -1036,7 +1219,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    paddingBottom: 35
   },
   header: {
     flexDirection: 'row',
@@ -1104,13 +1286,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  infoFieldContainer: {
+    marginBottom: 16,
   },
-
+  infoLabel: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '600',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#FFF',
+    fontWeight: '500',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  input: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    minHeight: 44,
+  },
   modalidadesEditContainer: {
     marginBottom: 16,
   },
@@ -1222,8 +1429,11 @@ const styles = StyleSheet.create({
   filhoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
+  },
+  filhoInfo: {
+    flex: 1,
   },
   filhoNome: {
     fontSize: 16,
@@ -1234,6 +1444,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#B8860B',
     fontWeight: '500',
+  },
+  editarFilhoButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   filhoPagamentoSection: {
     marginBottom: 12,
@@ -1283,7 +1497,6 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 20
   },
   presencaNome: {
     fontSize: 16,
@@ -1294,7 +1507,6 @@ const styles = StyleSheet.create({
   presencaContainer: {
     alignItems: 'center',
     gap: 8,
-    
   },
   presencaButton: {
     paddingVertical: 12,
@@ -1402,6 +1614,37 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFF",
   },
+  modalScrollContent: {
+    flex: 1,
+  },
+  modalBody: {
+    padding: 20,
+    gap: 16,
+  },
+  modalField: {
+    gap: 8,
+  },
+  modalLabel: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalInput: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+    minHeight: 44,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
   pagamentoInfo: {
     backgroundColor: "#2a2a2a",
     padding: 16,
@@ -1445,7 +1688,6 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'center',
   },
-
   modalActions: {
     flexDirection: "row",
     gap: 12,
@@ -1523,7 +1765,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-
   professoresCard: {
     backgroundColor: '#1a1a1a',
     padding: 16,
@@ -1600,37 +1841,4 @@ const styles = StyleSheet.create({
     color: '#B8860B',
     fontWeight: '500',
   },
-   infoFieldContainer: {
-    marginBottom: 16,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '600',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#FFF',
-    fontWeight: '500',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  input: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 12,
-    color: '#FFF',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#B8860B',
-    minHeight: 44,
-  },
-
 });

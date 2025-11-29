@@ -46,7 +46,6 @@ export const MultiModalidadeSelector: React.FC<MultiModalidadeSelectorProps> = (
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Modalidades Praticadas</Text>
       
       <View style={styles.modalidadesGrid}>
         {todasModalidades.map((modalidade) => {
