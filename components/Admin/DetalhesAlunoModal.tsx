@@ -600,11 +600,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       return;
     }
 
-    if (!usuarioEditado.modalidades || usuarioEditado.modalidades.length === 0) {
-      Alert.alert("Campo obrigatório", "Selecione pelo menos uma modalidade antes de salvar.");
-      return;
-    }
-
     setSalvando(true);
     try {
       const userRef = doc(db, "usuarios", usuarioEditado.id);
