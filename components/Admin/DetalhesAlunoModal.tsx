@@ -538,17 +538,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     }
   };
 
-  const obterNomesProfessores = (professorIds: string[] | undefined): string[] => {
-    if (!professorIds || professorIds.length === 0) return [];
-
-    return professorIds
-      .map(id => {
-        const professor = professores.find(p => p.id === id);
-        return professor ? professor.nome : null;
-      })
-      .filter((nome): nome is string => nome !== null);
-  };
-
   const obterProfessoresCompletos = (professorIds: string[] | undefined) => {
     if (!professorIds || professorIds.length === 0) return [];
 

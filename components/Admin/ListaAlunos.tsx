@@ -134,13 +134,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         return professor ? professor.nome : 'Professor não encontrado';
     };
 
-    // Função auxiliar para obter professor de uma modalidade
-    const obterProfessorModalidade = (modalidade: any): string | undefined => {
-        if (!modalidade) return undefined;
-
-        // Tentar diferentes nomes de propriedade possíveis
-        return modalidade.professor || modalidade.professorId || modalidade.instrutor;
-    };
 
     // Filtrar usuários com validações - VERSÃO COMPLETA COM FILHOS
     const usuariosFiltrados = usuarios.filter(usuario => {
