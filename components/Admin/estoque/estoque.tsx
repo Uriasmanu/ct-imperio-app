@@ -441,90 +441,87 @@ export const Estoque: React.FC = () => {
                         ) : (
                             pedidos.map((pedido) => (
                                 <View key={pedido.id} style={styles.pedidoCard}>
+                                    {/* Cabeçalho */}
                                     <View style={styles.pedidoHeader}>
                                         <View>
                                             <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
-                                            <Text style={styles.pedidoData}>{pedido.data}</Text>
+                                            <Text style={styles.pedidoData}>
+                                                <Ionicons name="calendar-outline" size={12} /> {pedido.data}
+                                            </Text>
                                         </View>
                                         <View style={[
-                                            styles.statusPedido,
-                                            pedido.pago ? styles.statusPago : styles.statusPendente
+                                            styles.statusBadge,
+                                            pedido.pago ? styles.statusBadgePago : styles.statusBadgePendente
                                         ]}>
                                             <Ionicons
-                                                name={pedido.pago ? "checkmark-circle" : "time"}
-                                                size={16}
+                                                name={pedido.pago ? "checkmark-circle" : "alert-circle"}
+                                                size={14}
                                                 color={pedido.pago ? "#22C55E" : "#EF4444"}
                                             />
                                             <Text style={[
                                                 styles.statusTexto,
                                                 { color: pedido.pago ? "#22C55E" : "#EF4444" }
                                             ]}>
-                                                {pedido.pago ? "Pago" : "Pendente"}
+                                                {pedido.pago ? "Recebido" : "Pendente"}
                                             </Text>
                                         </View>
                                     </View>
 
+                                    {/* Lista de Itens */}
                                     <View style={styles.pedidoItens}>
                                         {pedido.itens.map((itemPedido, index) => (
                                             <View key={index} style={styles.pedidoItem}>
-                                                <Text style={styles.pedidoItemNome}>
-                                                    {itemPedido.nome || obterNomeItem(itemPedido.itemId)}
-                                                </Text>
-                                                <View style={styles.pedidoItemDetalhes}>
-                                                    <Text style={styles.pedidoItemQuantidade}>
-                                                        {itemPedido.quantidade}x
-                                                    </Text>
-                                                    {itemPedido.tamanho && (
-                                                        <Text style={styles.pedidoItemTamanho}>
-                                                            Tamanho: {itemPedido.tamanho}
-                                                        </Text>
-                                                    )}
-                                                    <Text style={styles.pedidoItemPreco}>
-                                                        R$ {itemPedido.subtotal.toFixed(2)}
-                                                    </Text>
+                                                <View style={styles.pedidoItemBadge}>
+                                                    <Text style={styles.pedidoItemQuantidade}>{itemPedido.quantidade}x</Text>
                                                 </View>
+                                                <Text style={styles.pedidoItemNome} numberOfLines={1}>
+                                                    {itemPedido.nome || obterNomeItem(itemPedido.itemId)}
+                                                    {itemPedido.tamanho ? ` (${itemPedido.tamanho})` : ''}
+                                                </Text>
+                                                <Text style={styles.pedidoItemPreco}>
+                                                    R$ {itemPedido.subtotal.toFixed(2)}
+                                                </Text>
                                             </View>
                                         ))}
                                     </View>
 
+                                    {/* Rodapé e Ações */}
                                     <View style={styles.pedidoFooter}>
-                                        <Text style={styles.pedidoTotal}>
-                                            Total: R$ {calcularTotalPedido(pedido).toFixed(2)}
-                                        </Text>
-                                        <View style={styles.pedidoAcoes}>
+                                        <View style={styles.pedidoTotalContainer}>
+                                            <Text style={styles.totalLabel}>Total do Pedido</Text>
+                                            <Text style={styles.pedidoTotal}>
+                                                R$ {calcularTotalPedido(pedido).toFixed(2)}
+                                            </Text>
+                                        </View>
 
-                                            {/* BOTÃO EDITAR */}
+                                        <View style={styles.pedidoAcoes}>
+                                            {!pedido.pago && (
+                                                <TouchableOpacity
+                                                    style={[styles.botaoAcaoIcone, styles.botaoAcaoPagar]}
+                                                    onPress={() => handleMarcarPago(pedido.id)}
+                                                >
+                                                    <Ionicons name="cash-outline" size={20} color="#FFF" />
+                                                </TouchableOpacity>
+                                            )}
+
                                             <TouchableOpacity
-                                                style={styles.botaoEditar}
+                                                style={styles.botaoAcaoIcone}
                                                 onPress={() => {
                                                     setPedidoEditando(pedido);
                                                     setMostrarModalPedido(true);
                                                 }}
                                             >
-                                                <Ionicons name="create" size={16} color="#B8860B" />
-                                                <Text style={styles.botaoEditarTexto}>Editar</Text>
+                                                <Ionicons name="create-outline" size={20} color="#B8860B" />
                                             </TouchableOpacity>
 
-                                            {!pedido.pago && (
-                                                <TouchableOpacity
-                                                    style={styles.botaoMarcarPago}
-                                                    onPress={() => handleMarcarPago(pedido.id)}
-                                                >
-                                                    <Ionicons name="checkmark" size={16} color="#FFF" />
-                                                    <Text style={styles.botaoMarcarPagoTexto}>Marcar Pago</Text>
-                                                </TouchableOpacity>
-                                            )}
-
                                             <TouchableOpacity
-                                                style={styles.botaoDetalhes}
+                                                style={styles.botaoAcaoIcone}
                                                 onPress={() => handleDeletarPedido(pedido)}
                                             >
-                                                <Ionicons name="trash" size={16} color="#EF4444" />
-                                                <Text style={styles.botaoDetalhesTexto}>Excluir</Text>
+                                                <Ionicons name="trash-outline" size={20} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
-
                                 </View>
                             ))
                         )}
@@ -753,33 +750,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
     },
-    pedidosContainer: {
-        gap: 12,
-        padding: 8,
-    },
-    pedidoCard: {
-        backgroundColor: "#1a1a1a",
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#333",
-    },
-    pedidoHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 12,
-    },
-    pedidoPessoa: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#FFF",
-    },
-    pedidoData: {
-        fontSize: 12,
-        color: "#888",
-        marginTop: 2,
-    },
+
     statusPedido: {
         flexDirection: "row",
         alignItems: "center",
@@ -794,60 +765,14 @@ const styles = StyleSheet.create({
     statusPendente: {
         backgroundColor: "rgba(239, 68, 68, 0.1)",
     },
-    statusTexto: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    pedidoItens: {
-        gap: 8,
-        marginBottom: 12,
-    },
-    pedidoItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 4,
-    },
-    pedidoItemNome: {
-        color: "#FFF",
-        fontSize: 14,
-        flex: 1,
-    },
     pedidoItemDetalhes: {
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
     },
-    pedidoItemQuantidade: {
-        color: "#B8860B",
-        fontSize: 12,
-        fontWeight: "600",
-    },
     pedidoItemTamanho: {
         color: "#888",
         fontSize: 12,
-    },
-    pedidoItemPreco: {
-        color: "#22C55E",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    pedidoFooter: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderTopWidth: 1,
-        borderTopColor: "#333",
-        paddingTop: 12,
-    },
-    pedidoTotal: {
-        color: "#FFF",
-        fontSize: 14,
-        fontWeight: "bold",
-    },
-    pedidoAcoes: {
-        flexDirection: "row",
-        gap: 8,
     },
     botaoMarcarPago: {
         flexDirection: "row",
@@ -879,4 +804,129 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
     },
+    pedidosContainer: {
+        padding: 12,
+        gap: 16,
+    },
+    pedidoCard: {
+        backgroundColor: "#1a1a1a",
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#333",
+        // Sombra leve para profundidade no iOS
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5, // Sombra no Android
+    },
+    pedidoHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        borderBottomWidth: 1,
+        borderBottomColor: "#333",
+        paddingBottom: 12,
+        marginBottom: 12,
+    },
+    pedidoPessoa: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: "#FFF",
+        textTransform: 'capitalize',
+    },
+    pedidoData: {
+        fontSize: 12,
+        color: "#888",
+        marginTop: 2,
+    },
+    statusBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 20,
+        gap: 4,
+    },
+    statusBadgePago: {
+        backgroundColor: "rgba(34, 197, 94, 0.15)",
+    },
+    statusBadgePendente: {
+        backgroundColor: "rgba(239, 68, 68, 0.15)",
+    },
+    statusTexto: {
+        fontSize: 11,
+        fontWeight: "bold",
+        textTransform: "uppercase",
+    },
+    pedidoItens: {
+        gap: 10,
+        marginBottom: 16,
+    },
+    pedidoItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: "#262626",
+        padding: 10,
+        borderRadius: 8,
+    },
+    pedidoItemNome: {
+        color: "#DDD",
+        fontSize: 14,
+        fontWeight: "500",
+        flex: 1,
+    },
+    pedidoItemBadge: {
+        backgroundColor: "#333",
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    pedidoItemQuantidade: {
+        color: "#B8860B",
+        fontSize: 12,
+        fontWeight: "bold",
+    },
+    pedidoItemPreco: {
+        color: "#22C55E",
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    pedidoFooter: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 4,
+    },
+    pedidoTotalContainer: {
+        flex: 1,
+    },
+    totalLabel: {
+        color: "#888",
+        fontSize: 10,
+        textTransform: "uppercase",
+    },
+    pedidoTotal: {
+        color: "#FFF",
+        fontSize: 20,
+        fontWeight: "900",
+    },
+    pedidoAcoes: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    botaoAcaoIcone: {
+        padding: 10,
+        borderRadius: 10,
+        backgroundColor: "#262626",
+        borderWidth: 1,
+        borderColor: "#444",
+    },
+    botaoAcaoPagar: {
+        backgroundColor: "#22C55E",
+        borderColor: "#22C55E",
+    }
 });
