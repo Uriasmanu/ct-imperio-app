@@ -1,122 +1,237 @@
 // components/ModalPedido.tsx
 import { ItemEstoque, ItemPedido, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface ModalPedidoProps {
   visible: boolean;
   onClose: () => void;
   onSalvarPedido: (pedido: Omit<Pedido, 'id'>) => void;
+  onAtualizarPedido?: (id: string, pedido: Partial<Pedido>) => void;
   produtos: ItemEstoque[];
+  pedidoEditando?: Pedido | null;
 }
 
 export const ModalPedido: React.FC<ModalPedidoProps> = ({
   visible,
   onClose,
   onSalvarPedido,
+  onAtualizarPedido,
+  pedidoEditando,
   produtos
 }) => {
   const [nomePessoa, setNomePessoa] = useState('');
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [observacoes, setObservacoes] = useState('');
+  const [pago, setPago] = useState(false);
+
+  useEffect(() => {
+    if (pedidoEditando) {
+      setNomePessoa(pedidoEditando.pessoa);
+      setItensPedido(pedidoEditando.itens);
+      setObservacoes(pedidoEditando.observacoes || '');
+      setPago(pedidoEditando.pago || false);
+    } else {
+      // Limpar formulário quando não estiver editando
+      setNomePessoa('');
+      setItensPedido([]);
+      setObservacoes('');
+      setPago(false);
+    }
+  }, [pedidoEditando, visible]);
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
   };
 
   const adicionarItem = (produto: ItemEstoque) => {
-    // Verificar se há estoque disponível
-    if (produto.quantidade === 0) {
-      Alert.alert('Estoque Insuficiente', 'Este produto está sem estoque.');
-      return;
-    }
-
-    const itemExistente = itensPedido.find(item => 
-      item.itemId === produto.id && item.tamanho === undefined
-    );
-
-    if (itemExistente) {
-      // Verificar se há estoque suficiente para adicionar mais uma unidade
-      const quantidadeTotal = itemExistente.quantidade + 1;
-      if (quantidadeTotal > produto.quantidade) {
-        Alert.alert('Estoque Insuficiente', `Só há ${produto.quantidade} unidades disponíveis.`);
+    // Para edição: calcular estoque considerando itens já no pedido
+    if (pedidoEditando) {
+      const itemExistenteNoPedido = itensPedido.find(item => 
+        item.itemId === produto.id && !item.tamanho
+      );
+      const quantidadeNoPedido = itemExistenteNoPedido ? itemExistenteNoPedido.quantidade : 0;
+      
+      // Estoque disponível = estoque atual + quantidade já no pedido
+      const estoqueDisponivel = produto.quantidade + quantidadeNoPedido;
+      
+      if (estoqueDisponivel === 0) {
+        Alert.alert('Estoque Insuficiente', 'Este produto está sem estoque.');
         return;
       }
 
-      const novosItens = itensPedido.map(item =>
+      const itemExistente = itensPedido.find(item => 
         item.itemId === produto.id && item.tamanho === undefined
-          ? {
-              ...item,
-              quantidade: quantidadeTotal,
-              subtotal: quantidadeTotal * item.precoUnitario
-            }
-          : item
       );
-      setItensPedido(novosItens);
+
+      if (itemExistente) {
+        const quantidadeTotal = itemExistente.quantidade + 1;
+        if (quantidadeTotal > estoqueDisponivel) {
+          Alert.alert('Estoque Insuficiente', `Só há ${estoqueDisponivel} unidades disponíveis.`);
+          return;
+        }
+
+        const novosItens = itensPedido.map(item =>
+          item.itemId === produto.id && item.tamanho === undefined
+            ? {
+                ...item,
+                quantidade: quantidadeTotal,
+                subtotal: quantidadeTotal * item.precoUnitario
+              }
+            : item
+        );
+        setItensPedido(novosItens);
+      } else {
+        const novoItem: ItemPedido = {
+          itemId: produto.id,
+          nome: produto.nome,
+          quantidade: 1,
+          precoUnitario: produto.preco,
+          subtotal: produto.preco
+        };
+        setItensPedido([...itensPedido, novoItem]);
+      }
     } else {
-      // Adicionar novo item
-      const novoItem: ItemPedido = {
-        itemId: produto.id,
-        nome: produto.nome,
-        quantidade: 1,
-        precoUnitario: produto.preco,
-        subtotal: produto.preco
-      };
-      setItensPedido([...itensPedido, novoItem]);
+      // Para novo pedido: lógica normal
+      if (produto.quantidade === 0) {
+        Alert.alert('Estoque Insuficiente', 'Este produto está sem estoque.');
+        return;
+      }
+
+      const itemExistente = itensPedido.find(item =>
+        item.itemId === produto.id && item.tamanho === undefined
+      );
+
+      if (itemExistente) {
+        const quantidadeTotal = itemExistente.quantidade + 1;
+        if (quantidadeTotal > produto.quantidade) {
+          Alert.alert('Estoque Insuficiente', `Só há ${produto.quantidade} unidades disponíveis.`);
+          return;
+        }
+
+        const novosItens = itensPedido.map(item =>
+          item.itemId === produto.id && item.tamanho === undefined
+            ? {
+                ...item,
+                quantidade: quantidadeTotal,
+                subtotal: quantidadeTotal * item.precoUnitario
+              }
+            : item
+        );
+        setItensPedido(novosItens);
+      } else {
+        const novoItem: ItemPedido = {
+          itemId: produto.id,
+          nome: produto.nome,
+          quantidade: 1,
+          precoUnitario: produto.preco,
+          subtotal: produto.preco
+        };
+        setItensPedido([...itensPedido, novoItem]);
+      }
     }
   };
 
   const adicionarItemComTamanho = (produto: ItemEstoque, tamanho: string) => {
     const estoqueTamanho = produto.tamanhos[tamanho] || 0;
     
-    if (estoqueTamanho === 0) {
-      Alert.alert('Estoque Insuficiente', `Não há estoque disponível para o tamanho ${tamanho}.`);
-      return;
-    }
-
-    const itemExistente = itensPedido.find(item => 
-      item.itemId === produto.id && item.tamanho === tamanho
-    );
-
-    if (itemExistente) {
-      const quantidadeTotal = itemExistente.quantidade + 1;
-      if (quantidadeTotal > estoqueTamanho) {
-        Alert.alert('Estoque Insuficiente', `Só há ${estoqueTamanho} unidades disponíveis no tamanho ${tamanho}.`);
+    // Para edição: ajustar cálculo de estoque
+    if (pedidoEditando) {
+      const itemExistenteNoPedido = itensPedido.find(item => 
+        item.itemId === produto.id && item.tamanho === tamanho
+      );
+      const quantidadeNoPedido = itemExistenteNoPedido ? itemExistenteNoPedido.quantidade : 0;
+      
+      const estoqueDisponivel = estoqueTamanho + quantidadeNoPedido;
+      
+      if (estoqueDisponivel === 0) {
+        Alert.alert('Estoque Insuficiente', `Não há estoque disponível para o tamanho ${tamanho}.`);
         return;
       }
 
-      const novosItens = itensPedido.map(item =>
+      const itemExistente = itensPedido.find(item =>
         item.itemId === produto.id && item.tamanho === tamanho
-          ? {
-              ...item,
-              quantidade: quantidadeTotal,
-              subtotal: quantidadeTotal * item.precoUnitario
-            }
-          : item
       );
-      setItensPedido(novosItens);
+
+      if (itemExistente) {
+        const quantidadeTotal = itemExistente.quantidade + 1;
+        if (quantidadeTotal > estoqueDisponivel) {
+          Alert.alert('Estoque Insuficiente', `Só há ${estoqueDisponivel} unidades disponíveis no tamanho ${tamanho}.`);
+          return;
+        }
+
+        const novosItens = itensPedido.map(item =>
+          item.itemId === produto.id && item.tamanho === tamanho
+            ? {
+                ...item,
+                quantidade: quantidadeTotal,
+                subtotal: quantidadeTotal * item.precoUnitario
+              }
+            : item
+        );
+        setItensPedido(novosItens);
+      } else {
+        const novoItem: ItemPedido = {
+          itemId: produto.id,
+          nome: produto.nome,
+          quantidade: 1,
+          tamanho: tamanho,
+          precoUnitario: produto.preco,
+          subtotal: produto.preco
+        };
+        setItensPedido([...itensPedido, novoItem]);
+      }
     } else {
-      const novoItem: ItemPedido = {
-        itemId: produto.id,
-        nome: produto.nome,
-        quantidade: 1,
-        tamanho: tamanho,
-        precoUnitario: produto.preco,
-        subtotal: produto.preco
-      };
-      setItensPedido([...itensPedido, novoItem]);
+      // Para novo pedido: lógica normal
+      if (estoqueTamanho === 0) {
+        Alert.alert('Estoque Insuficiente', `Não há estoque disponível para o tamanho ${tamanho}.`);
+        return;
+      }
+
+      const itemExistente = itensPedido.find(item =>
+        item.itemId === produto.id && item.tamanho === tamanho
+      );
+
+      if (itemExistente) {
+        const quantidadeTotal = itemExistente.quantidade + 1;
+        if (quantidadeTotal > estoqueTamanho) {
+          Alert.alert('Estoque Insuficiente', `Só há ${estoqueTamanho} unidades disponíveis no tamanho ${tamanho}.`);
+          return;
+        }
+
+        const novosItens = itensPedido.map(item =>
+          item.itemId === produto.id && item.tamanho === tamanho
+            ? {
+                ...item,
+                quantidade: quantidadeTotal,
+                subtotal: quantidadeTotal * item.precoUnitario
+              }
+            : item
+        );
+        setItensPedido(novosItens);
+      } else {
+        const novoItem: ItemPedido = {
+          itemId: produto.id,
+          nome: produto.nome,
+          quantidade: 1,
+          tamanho: tamanho,
+          precoUnitario: produto.preco,
+          subtotal: produto.preco
+        };
+        setItensPedido([...itensPedido, novoItem]);
+      }
     }
   };
 
@@ -133,13 +248,26 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
 
     const item = itensPedido[index];
     const produto = produtos.find(p => p.id === item.itemId);
-    
+
     if (!produto) return;
 
     // Verificar limite de estoque
     let estoqueDisponivel = produto.quantidade;
     if (item.tamanho) {
       estoqueDisponivel = produto.tamanhos[item.tamanho] || 0;
+    }
+
+    // Para edição: ajustar cálculo considerando itens já no pedido
+    if (pedidoEditando) {
+      const outrosItensMesmoProduto = itensPedido.filter((itemFiltro, i) => 
+        i !== index && itemFiltro.itemId === item.itemId && itemFiltro.tamanho === item.tamanho
+      );
+      
+      const quantidadeOutrosItens = outrosItensMesmoProduto.reduce((total, itemFiltro) => 
+        total + itemFiltro.quantidade, 0
+      );
+
+      estoqueDisponivel += quantidadeOutrosItens;
     }
 
     if (novaQuantidade > estoqueDisponivel) {
@@ -159,7 +287,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     setItensPedido(novosItens);
   };
 
-  const handleSalvarPedido = () => {
+  const handleSalvar = () => {
     if (!nomePessoa.trim()) {
       Alert.alert('Erro', 'Por favor, informe o nome da pessoa');
       return;
@@ -170,35 +298,50 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       return;
     }
 
-    const pedido: Omit<Pedido, 'id'> = {
-      pessoa: nomePessoa.trim(),
-      itens: itensPedido,
-      data: new Date().toLocaleDateString('pt-BR'),
-      dataTimestamp: new Date(),
-      pago: false,
-      total: calcularTotal(),
-      observacoes: observacoes.trim()
-    };
+    if (pedidoEditando && onAtualizarPedido) {
+      // Editar pedido existente
+      const pedidoAtualizado: Partial<Pedido> = {
+        pessoa: nomePessoa.trim(),
+        itens: itensPedido,
+        total: calcularTotal(),
+        observacoes: observacoes.trim(),
+        pago: pago,
+        updatedAt: new Date()
+      };
 
-    onSalvarPedido(pedido);
-    limparFormulario();
+      onAtualizarPedido(pedidoEditando.id, pedidoAtualizado);
+    } else {
+      // Criar novo pedido
+      const pedido: Omit<Pedido, 'id'> = {
+        pessoa: nomePessoa.trim(),
+        itens: itensPedido,
+        data: new Date().toLocaleDateString('pt-BR'),
+        dataTimestamp: new Date(),
+        pago: false,
+        total: calcularTotal(),
+        observacoes: observacoes.trim()
+      };
+
+      onSalvarPedido(pedido);
+    }
   };
 
   const limparFormulario = () => {
     setNomePessoa('');
     setItensPedido([]);
     setObservacoes('');
+    setPago(false);
   };
 
   const handleFechar = () => {
-    if (itensPedido.length > 0) {
+    if (itensPedido.length > 0 || nomePessoa.trim() || observacoes.trim()) {
       Alert.alert(
         'Atenção',
-        'Tem certeza que deseja fechar? Os itens adicionados serão perdidos.',
+        'Tem certeza que deseja fechar? As alterações serão perdidas.',
         [
           { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Fechar', 
+          {
+            text: 'Fechar',
             style: 'destructive',
             onPress: () => {
               limparFormulario();
@@ -220,13 +363,15 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleFechar}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Novo Pedido</Text>
+          <Text style={styles.title}>
+            {pedidoEditando ? 'Editar Pedido' : 'Novo Pedido'}
+          </Text>
           <TouchableOpacity onPress={handleFechar} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
@@ -252,6 +397,33 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               multiline
               numberOfLines={3}
             />
+            
+            {pedidoEditando && (
+              <TouchableOpacity
+                style={[
+                  styles.statusButton,
+                  pago ? styles.statusPago : styles.statusPendente
+                ]}
+                onPress={() => setPago(!pago)}
+              >
+                <Ionicons
+                  name={pago ? "checkmark-circle" : "time"}
+                  size={20}
+                  color={pago ? "#22C55E" : "#EF4444"}
+                />
+                <Text style={[
+                  styles.statusButtonText,
+                  { color: pago ? "#22C55E" : "#EF4444" }
+                ]}>
+                  {pago ? "Pedido Pago" : "Pedido Pendente"}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={pago ? "#22C55E" : "#EF4444"}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Itens do Pedido */}
@@ -322,7 +494,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                     Estoque: {produto.quantidade} unidades
                   </Text>
                 </View>
-                
+
                 <View style={styles.produtoActions}>
                   {Object.keys(produto.tamanhos).length > 0 ? (
                     <View style={styles.tamanhosContainer}>
@@ -354,10 +526,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                       ]}
                       disabled={produto.quantidade === 0}
                     >
-                      <Ionicons 
-                        name="add" 
-                        size={16} 
-                        color={produto.quantidade === 0 ? "#666" : "#FFF"} 
+                      <Ionicons
+                        name="add"
+                        size={16}
+                        color={produto.quantidade === 0 ? "#666" : "#FFF"}
                       />
                       <Text style={[
                         styles.addButtonText,
@@ -380,11 +552,12 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               styles.saveButton,
               (itensPedido.length === 0 || !nomePessoa.trim()) && styles.saveButtonDisabled
             ]}
-            onPress={handleSalvarPedido}
+            onPress={handleSalvar}
             disabled={itensPedido.length === 0 || !nomePessoa.trim()}
           >
-            <Ionicons name="checkmark" size={20} color="#000" />
-            <Text style={styles.saveButtonText}>Criar Pedido</Text>
+            <Text style={styles.saveButtonText}>
+              {pedidoEditando ? "Salvar Alterações" : "Criar Pedido"}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -450,6 +623,31 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
     textAlignVertical: 'top',
+  },
+  statusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  statusPago: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: '#22C55E',
+  },
+  statusPendente: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: '#EF4444',
+  },
+  statusButtonText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '600',
   },
   itemCard: {
     backgroundColor: '#1a1a1a',

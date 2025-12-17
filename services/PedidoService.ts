@@ -2,15 +2,15 @@
 import { db } from "@/config/firebaseConfig";
 import { Pedido } from "@/types/estoque";
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getDocs,
-    orderBy,
-    query,
-    updateDoc,
-    where
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  where
 } from "firebase/firestore";
 
 export const pedidoService = {
@@ -35,7 +35,7 @@ export const pedidoService = {
       const pedidosRef = collection(db, "pedidos");
       const q = query(pedidosRef, orderBy("dataTimestamp", "desc"));
       const querySnapshot = await getDocs(q);
-      
+
       const pedidos: Pedido[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -50,7 +50,7 @@ export const pedidoService = {
           observacoes: data.observacoes || ''
         } as Pedido);
       });
-      
+
       return pedidos;
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
@@ -63,12 +63,12 @@ export const pedidoService = {
     try {
       const pedidosRef = collection(db, "pedidos");
       const q = query(
-        pedidosRef, 
+        pedidosRef,
         where("pago", "==", pago),
         orderBy("dataTimestamp", "desc")
       );
       const querySnapshot = await getDocs(q);
-      
+
       const pedidos: Pedido[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -83,7 +83,7 @@ export const pedidoService = {
           observacoes: data.observacoes || ''
         } as Pedido);
       });
-      
+
       return pedidos;
     } catch (error) {
       console.error('Erro ao buscar pedidos por status:', error);
@@ -132,7 +132,7 @@ export const pedidoService = {
       const { getDoc } = await import('firebase/firestore');
       const pedidoRef = doc(db, "pedidos", id);
       const pedidoSnap = await getDoc(pedidoRef);
-      
+
       if (pedidoSnap.exists()) {
         const data = pedidoSnap.data();
         return {

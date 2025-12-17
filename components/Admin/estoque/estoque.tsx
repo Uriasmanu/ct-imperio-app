@@ -27,6 +27,7 @@ export const Estoque: React.FC = () => {
 
     const [mostrarModalPedido, setMostrarModalPedido] = useState(false);
     const [pedidos, setPedidos] = useState<Pedido[]>([]);
+    const [pedidoEditando, setPedidoEditando] = useState<Pedido | null>(null);
 
     // Carregar produtos ao iniciar
     useEffect(() => {
@@ -176,6 +177,18 @@ export const Estoque: React.FC = () => {
         setModoEdicao(false);
     };
 
+    const handleAtualizarPedido = async (id: string, pedido: Partial<Pedido>) => {
+        try {
+            await pedidoService.atualizarPedido(id, pedido);
+            await carregarPedidos();
+            setPedidoEditando(null);
+            setMostrarModalPedido(false);
+            Alert.alert('Sucesso', 'Pedido atualizado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao atualizar pedido:', error);
+        }
+    };
+
     // Função para deletar produto
     const handleDeletarProduto = async (produto: ItemEstoque) => {
         Alert.alert(
@@ -207,14 +220,13 @@ export const Estoque: React.FC = () => {
 
     const obterNomeItem = (itemId: string): string => {
         // Primeiro tenta encontrar o nome nos itens do pedido
-        const pedidoComItem = pedidos.find(pedido => 
+        const pedidoComItem = pedidos.find(pedido =>
             pedido.itens.some(item => item.itemId === itemId)
         );
         if (pedidoComItem) {
             const item = pedidoComItem.itens.find(item => item.itemId === itemId);
             if (item) return item.nome;
         }
-        
         // Se não encontrar, busca no estoque
         const itemEstoque = estoque.find(i => i.id === itemId);
         return itemEstoque?.nome || "Item não encontrado";
@@ -296,8 +308,11 @@ export const Estoque: React.FC = () => {
                 visible={mostrarModalPedido}
                 onClose={() => setMostrarModalPedido(false)}
                 onSalvarPedido={handleCriarPedido}
+                onAtualizarPedido={handleAtualizarPedido}
+                pedidoEditando={pedidoEditando}
                 produtos={estoque}
             />
+
 
             {/* BOTÕES DE AÇÃO */}
             <View style={styles.acoesContainer}>
@@ -477,6 +492,19 @@ export const Estoque: React.FC = () => {
                                             Total: R$ {calcularTotalPedido(pedido).toFixed(2)}
                                         </Text>
                                         <View style={styles.pedidoAcoes}>
+
+                                            {/* BOTÃO EDITAR */}
+                                            <TouchableOpacity
+                                                style={styles.botaoEditar}
+                                                onPress={() => {
+                                                    setPedidoEditando(pedido);
+                                                    setMostrarModalPedido(true);
+                                                }}
+                                            >
+                                                <Ionicons name="create" size={16} color="#B8860B" />
+                                                <Text style={styles.botaoEditarTexto}>Editar</Text>
+                                            </TouchableOpacity>
+
                                             {!pedido.pago && (
                                                 <TouchableOpacity
                                                     style={styles.botaoMarcarPago}
@@ -486,7 +514,8 @@ export const Estoque: React.FC = () => {
                                                     <Text style={styles.botaoMarcarPagoTexto}>Marcar Pago</Text>
                                                 </TouchableOpacity>
                                             )}
-                                            <TouchableOpacity 
+
+                                            <TouchableOpacity
                                                 style={styles.botaoDetalhes}
                                                 onPress={() => handleDeletarPedido(pedido)}
                                             >
@@ -495,6 +524,7 @@ export const Estoque: React.FC = () => {
                                             </TouchableOpacity>
                                         </View>
                                     </View>
+
                                 </View>
                             ))
                         )}
