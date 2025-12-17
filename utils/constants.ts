@@ -59,7 +59,7 @@ export const faqItems: FAQItem[] = [
   {
     question: "Qual é o custo e quais são os planos disponíveis?",
     answer:
-      "Os valores variam conforme a quantidade de aulas por semana: 1x — R$80, 2x — R$90, 3x — R$100, 4x — R$120, 5x — R$140. O plano Passe Free permite treinar em qualquer horário e modalidade por R$170.",
+      "Os valores variam conforme a quantidade de aulas por semana: 1x — R$90, 2x — R$100, 3x — R$110, 4x — R$130, 5x — R$150. O plano Passe Free permite treinar em qualquer horário e modalidade por R$190.",
   },
   {
     question: "Vocês oferecem horários flexíveis?",
