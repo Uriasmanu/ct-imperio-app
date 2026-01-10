@@ -1,9 +1,10 @@
 // screens/ProdutosScreen.tsx
 
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
+import { estoqueService } from '@/services/estoqueService';
 import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Image,
     Modal,
@@ -33,34 +34,6 @@ interface Pedido {
     status: 'pendente' | 'reservado' | 'entregue';
 }
 
-// DADOS PRE-ESCRITOS DOS PRODUTOS
-const produtosPredefinidos: ItemEstoque[] = [
-    {
-        id: '1',
-        nome: 'Camisa Oficial',
-        preco: 89.9,
-        imagem: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
-        quantidade: 45,
-        tamanhos: {
-            P: 10,
-            M: 15,
-            G: 12,
-            GG: 8
-        }
-    },
-    {
-        id: '2',
-        nome: 'Short de Treino',
-        preco: 69.9,
-        imagem: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
-        quantidade: 32,
-        tamanhos: {
-            P: 8,
-            M: 12,
-            G: 12
-        }
-    }
-];
 
 // DADOS DE EXEMPLO PARA MEUS PEDIDOS
 const pedidosExemplo: Pedido[] = [
@@ -403,45 +376,63 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
 export default function ProdutosScreen() {
     const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
     const [busca, setBusca] = useState('');
-    const [produtosFiltrados, setProdutosFiltrados] = useState<ItemEstoque[]>(produtosPredefinidos);
+    const [produtos, setProdutos] = useState<ItemEstoque[]>([]);
+    const [produtosFiltrados, setProdutosFiltrados] = useState<ItemEstoque[]>([]);
+    const [loading, setLoading] = useState(true);
     const [modalCarrinhoVisible, setModalCarrinhoVisible] = useState(false);
     const [modalTamanhoVisible, setModalTamanhoVisible] = useState(false);
     const [produtoSelecionado, setProdutoSelecionado] = useState<ItemEstoque | null>(null);
-    const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([
-        {
-            produto: produtosPredefinidos[0],
-            quantidade: 2,
-            tamanhoSelecionado: 'M',
-            corSelecionada: 'Preto',
-            subtotal: 179.80
-        },
-        {
-            produto: produtosPredefinidos[1],
-            quantidade: 1,
-            tamanhoSelecionado: 'G',
-            subtotal: 69.90
-        }
-    ]);
+    const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([]);
     const [observacoes, setObservacoes] = useState('');
+
+    useEffect(() => {
+        const carregarProdutos = async () => {
+            try {
+                const dados = await estoqueService.getProdutos();
+                setProdutos(dados);
+                setProdutosFiltrados(dados);
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        carregarProdutos();
+    }, []);
+
+    useEffect(() => {
+        const unsubscribe = estoqueService.listenProdutos((dados) => {
+            setProdutos(dados);
+            setProdutosFiltrados(dados);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+
 
     const filtrarProdutos = (texto: string) => {
         setBusca(texto);
 
         if (texto.trim() === '') {
-            setProdutosFiltrados(produtosPredefinidos);
+            setProdutosFiltrados(produtos);
         } else {
             const textoLower = texto.toLowerCase();
-            const filtrados = produtosPredefinidos.filter(produto =>
+            const filtrados = produtos.filter(produto =>
                 produto.nome.toLowerCase().includes(textoLower)
             );
             setProdutosFiltrados(filtrados);
         }
     };
 
+
     const limparBusca = () => {
         setBusca('');
-        setProdutosFiltrados(produtosPredefinidos);
+        setProdutosFiltrados(produtos);
     };
+
 
     const adicionarAoCarrinho = (produto: ItemEstoque) => {
         setProdutoSelecionado(produto);
