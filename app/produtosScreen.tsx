@@ -13,6 +13,24 @@ import {
     View
 } from "react-native";
 
+// TIPOS PARA PEDIDOS
+interface Pedido {
+  id: string;
+  pessoa: string;
+  itens: {
+    nome: string;
+    quantidade: number;
+    tamanho?: string;
+    precoUnitario: number;
+    subtotal: number;
+  }[];
+  data: string;
+  pago: boolean;
+  total: number;
+  observacoes?: string;
+  status: 'pendente' | 'reservado' | 'cancelado' | 'entregue';
+}
+
 // DADOS PRE-ESCRITOS DOS PRODUTOS
 const produtosPredefinidos: Produto[] = [
     {
@@ -86,6 +104,48 @@ const produtosPredefinidos: Produto[] = [
         cores: ['Cinza', 'Preto'],
         tamanhos: ['P', 'M', 'G'],
         estoque: 22
+    }
+];
+
+// DADOS DE EXEMPLO PARA MEUS PEDIDOS
+const pedidosExemplo: Pedido[] = [
+    {
+        id: '001',
+        pessoa: 'João Silva',
+        itens: [
+            { nome: 'Camisa Oficial', quantidade: 1, tamanho: 'M', precoUnitario: 89.90, subtotal: 89.90 },
+            { nome: 'Short de Treino', quantidade: 2, tamanho: 'G', precoUnitario: 69.90, subtotal: 139.80 }
+        ],
+        data: '15/12/2023',
+        pago: true,
+        total: 229.70,
+        observacoes: 'Retirar na academia',
+        status: 'entregue'
+    },
+    {
+        id: '002',
+        pessoa: 'João Silva',
+        itens: [
+            { nome: 'Luva de Academia', quantidade: 1, precoUnitario: 49.90, subtotal: 49.90 }
+        ],
+        data: '18/12/2023',
+        pago: false,
+        total: 49.90,
+        observacoes: '',
+        status: 'pendente'
+    },
+    {
+        id: '003',
+        pessoa: 'João Silva',
+        itens: [
+            { nome: 'Camisa Dry Fit', quantidade: 1, tamanho: 'G', precoUnitario: 99.90, subtotal: 99.90 },
+            { nome: 'Short Compressão', quantidade: 1, tamanho: 'M', precoUnitario: 119.90, subtotal: 119.90 }
+        ],
+        data: '20/12/2023',
+        pago: true,
+        total: 219.80,
+        observacoes: 'Cor preferida: Preto',
+        status: 'reservado'
     }
 ];
 
@@ -183,8 +243,129 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
     );
 }
 
+// COMPONENTE DE CARD DE PEDIDO
+interface PedidoCardProps {
+    pedido: Pedido;
+    onPress?: () => void;
+}
+
+function PedidoCard({ pedido, onPress }: PedidoCardProps) {
+    // Função para obter cor do status
+    const getStatusColor = (status: Pedido['status']) => {
+        switch (status) {
+            case 'pendente': return '#F59E0B'; // Amarelo
+            case 'reservado': return '#3B82F6'; // Verde
+            case 'entregue': return '#10B981'; // Azul
+            case 'cancelado': return '#EF4444'; // Vermelho
+            default: return '#888';
+        }
+    };
+
+    // Função para obter ícone do status
+    const getStatusIcon = (status: Pedido['status']) => {
+        switch (status) {
+            case 'pendente': return 'time-outline';
+            case 'reservado': return 'checkmark-circle-outline';
+            case 'entregue': return 'cube-outline';
+            case 'cancelado': return 'close-circle-outline';
+            default: return 'help-circle-outline';
+        }
+    };
+
+    // Função para obter texto do status
+    const getStatusText = (status: Pedido['status']) => {
+        switch (status) {
+            case 'pendente': return 'Pendente';
+            case 'reservado': return 'Reservado';
+            case 'entregue': return 'Entregue';
+            case 'cancelado': return 'Cancelado';
+            default: return 'Desconhecido';
+        }
+    };
+
+    return (
+        <TouchableOpacity style={styles.pedidoCard} onPress={onPress} activeOpacity={0.7}>
+            {/* HEADER DO PEDIDO */}
+            <View style={styles.pedidoHeader}>
+                <View style={styles.pedidoInfo}>
+                    <Text style={styles.pedidoId}>Pedido #{pedido.id}</Text>
+                    <Text style={styles.pedidoData}>{pedido.data}</Text>
+                </View>
+                
+                <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: getStatusColor(pedido.status) + '20', borderColor: getStatusColor(pedido.status) }
+                ]}>
+                    <Ionicons 
+                        name={getStatusIcon(pedido.status) as any} 
+                        size={14} 
+                        color={getStatusColor(pedido.status)} 
+                    />
+                    <Text style={[styles.statusText, { color: getStatusColor(pedido.status) }]}>
+                        {getStatusText(pedido.status)}
+                    </Text>
+                </View>
+            </View>
+
+            {/* LISTA DE ITENS */}
+            <View style={styles.pedidoItensContainer}>
+                {pedido.itens.slice(0, 2).map((item, index) => (
+                    <View key={index} style={styles.pedidoItem}>
+                        <Text style={styles.pedidoItemNome} numberOfLines={1}>
+                            {item.quantidade}x {item.nome}
+                        </Text>
+                        <Text style={styles.pedidoItemSubtotal}>
+                            R$ {item.subtotal.toFixed(2)}
+                        </Text>
+                    </View>
+                ))}
+                
+                {pedido.itens.length > 2 && (
+                    <Text style={styles.pedidoMaisItens}>
+                        +{pedido.itens.length - 2} iten(s)
+                    </Text>
+                )}
+            </View>
+
+            {/* RESUMO DO PEDIDO */}
+            <View style={styles.pedidoResumo}>
+                <View style={styles.pedidoTotalContainer}>
+                    <Text style={styles.pedidoTotalLabel}>Total</Text>
+                    <Text style={styles.pedidoTotalValor}>
+                        R$ {pedido.total.toFixed(2)}
+                    </Text>
+                </View>
+                
+                <View style={styles.pedidoPagamentoContainer}>
+                    <View style={[
+                        styles.pagamentoBadge,
+                        pedido.pago ? styles.pagamentoPago : styles.pagamentoPendente
+                    ]}>
+                        <Ionicons 
+                            name={pedido.pago ? "checkmark-circle" : "time"} 
+                            size={12} 
+                            color="#FFF" 
+                        />
+                        <Text style={styles.pagamentoTexto}>
+                            {pedido.pago ? 'Pago' : 'Pendente'}
+                        </Text>
+                    </View>
+                    
+                    {pedido.observacoes && (
+                        <View style={styles.observacoesBadge}>
+                            <Ionicons name="document-text" size={12} color="#888" />
+                            <Text style={styles.observacoesTexto}>Obs</Text>
+                        </View>
+                    )}
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+}
+
 // COMPONENTE PRINCIPAL
 export default function ProdutosScreen() {
+    const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
     const [busca, setBusca] = useState('');
     const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>(produtosPredefinidos);
     const [modalCarrinhoVisible, setModalCarrinhoVisible] = useState(false);
@@ -285,7 +466,7 @@ export default function ProdutosScreen() {
         return itensCarrinho.reduce((total, item) => total + item.subtotal, 0);
     };
 
-    // RESERVAR ITENS (nova função)
+    // RESERVAR ITENS
     const reservarItens = () => {
         // Aqui você faria a integração com o Firebase
         // Criaria um pedido de reserva com status "pendente"
@@ -298,96 +479,241 @@ export default function ProdutosScreen() {
         setModalCarrinhoVisible(false);
     };
 
+    // RENDERIZAR CONTEÚDO DA ABA ATIVA
+    const renderConteudoAba = () => {
+        if (abaAtiva === 'produtos') {
+            return (
+                <>
+                    {/* CAMPO DE BUSCA (apenas na aba produtos) */}
+                    <View style={styles.buscaContainer}>
+                        <View style={styles.buscaInputContainer}>
+                            <Ionicons name="search" size={20} color="#888" style={styles.buscaIcon} />
+                            <TextInput
+                                style={styles.buscaInput}
+                                placeholder="Buscar por nome, descrição..."
+                                placeholderTextColor="#666"
+                                value={busca}
+                                onChangeText={filtrarProdutos}
+                                autoCapitalize="none"
+                            />
+                            {busca.length > 0 && (
+                                <TouchableOpacity onPress={limparBusca} style={styles.buscaLimpar}>
+                                    <Ionicons name="close-circle" size={20} color="#888" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        <View style={styles.resultadosInfo}>
+                            <Text style={styles.resultadosTexto}>
+                                {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
+                            </Text>
+                            {busca && (
+                                <Text style={styles.buscaAtivaTexto}>
+                                    Buscando por: "{busca}"
+                                </Text>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* LISTA DE PRODUTOS */}
+                    <ScrollView
+                        style={styles.scrollContainer}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {produtosFiltrados.length > 0 ? (
+                            <View style={styles.produtosGrid}>
+                                {produtosFiltrados.map((produto) => (
+                                    <ProdutoCard
+                                        key={produto.id}
+                                        produto={produto}
+                                        onPress={() => console.log('Ver detalhes:', produto.nome)}
+                                        onAdicionarAoCarrinho={adicionarAoCarrinho}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.nenhumResultado}>
+                                <Ionicons name="search-outline" size={64} color="#666" />
+                                <Text style={styles.nenhumResultadoTitle}>
+                                    Nenhum produto encontrado
+                                </Text>
+                                <Text style={styles.nenhumResultadoText}>
+                                    Não encontramos produtos para "{busca}"
+                                </Text>
+                                <TouchableOpacity style={styles.botaoLimparBusca} onPress={limparBusca}>
+                                    <Text style={styles.botaoLimparBuscaTexto}>Limpar busca</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={styles.footerSpace} />
+                    </ScrollView>
+                </>
+            );
+        } else {
+            return (
+                <>
+                    {/* ESTATÍSTICAS DOS PEDIDOS */}
+                    <View style={styles.estatisticasContainer}>
+                        <View style={styles.estatisticasCard}>
+                            <View style={styles.estatisticaItem}>
+                                <Text style={styles.estatisticaValor}>{pedidosExemplo.length}</Text>
+                                <Text style={styles.estatisticaLabel}>Total</Text>
+                            </View>
+                            <View style={styles.estatisticaDivider} />
+                            <View style={styles.estatisticaItem}>
+                                <Text style={styles.estatisticaValor}>
+                                    {pedidosExemplo.filter(p => p.status === 'pendente').length}
+                                </Text>
+                                <Text style={styles.estatisticaLabel}>Pendentes</Text>
+                            </View>
+                            <View style={styles.estatisticaDivider} />
+                            <View style={styles.estatisticaItem}>
+                                <Text style={styles.estatisticaValor}>
+                                    {pedidosExemplo.filter(p => p.pago).length}
+                                </Text>
+                                <Text style={styles.estatisticaLabel}>Pagos</Text>
+                            </View>
+                            <View style={styles.estatisticaDivider} />
+                            <View style={styles.estatisticaItem}>
+                                <Ionicons name="cube-outline" size={20} color="#B8860B" />
+                                <Text style={styles.estatisticaLabel}>Histórico</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* LISTA DE PEDIDOS */}
+                    <ScrollView
+                        style={styles.scrollContainer}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {pedidosExemplo.length > 0 ? (
+                            <View style={styles.pedidosGrid}>
+                                {pedidosExemplo.map((pedido) => (
+                                    <PedidoCard
+                                        key={pedido.id}
+                                        pedido={pedido}
+                                        onPress={() => console.log('Ver detalhes do pedido:', pedido.id)}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={styles.nenhumResultado}>
+                                <Ionicons name="receipt-outline" size={64} color="#666" />
+                                <Text style={styles.nenhumResultadoTitle}>
+                                    Nenhum pedido encontrado
+                                </Text>
+                                <Text style={styles.nenhumResultadoText}>
+                                    Você ainda não fez nenhum pedido
+                                </Text>
+                                <TouchableOpacity 
+                                    style={styles.botaoVoltarProdutos}
+                                    onPress={() => setAbaAtiva('produtos')}
+                                >
+                                    <Text style={styles.botaoVoltarProdutosTexto}>
+                                        Ver Produtos
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={styles.footerSpace} />
+                    </ScrollView>
+                </>
+            );
+        }
+    };
+
     return (
         <View style={styles.container}>
             {/* HEADER */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
-                    <Ionicons name="search-outline" size={32} color="#B8860B" />
-                    <Text style={styles.headerTitle}>Buscar Produtos</Text>
-                    <Text style={styles.headerSubtitle}>
-                        Digite o nome do produto que procura
-                    </Text>
-                </View>
-            </View>
-
-            {/* CAMPO DE BUSCA */}
-            <View style={styles.buscaContainer}>
-                <View style={styles.buscaInputContainer}>
-                    <Ionicons name="search" size={20} color="#888" style={styles.buscaIcon} />
-                    <TextInput
-                        style={styles.buscaInput}
-                        placeholder="Buscar por nome, descrição..."
-                        placeholderTextColor="#666"
-                        value={busca}
-                        onChangeText={filtrarProdutos}
-                        autoCapitalize="none"
+                    <Ionicons 
+                        name={abaAtiva === 'produtos' ? "search-outline" : "receipt-outline"} 
+                        size={32} 
+                        color="#B8860B" 
                     />
-                    {busca.length > 0 && (
-                        <TouchableOpacity onPress={limparBusca} style={styles.buscaLimpar}>
-                            <Ionicons name="close-circle" size={20} color="#888" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                <View style={styles.resultadosInfo}>
-                    <Text style={styles.resultadosTexto}>
-                        {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
+                    <Text style={styles.headerTitle}>
+                        {abaAtiva === 'produtos' ? 'Buscar Produtos' : 'Meus Pedidos'}
                     </Text>
-                    {busca && (
-                        <Text style={styles.buscaAtivaTexto}>
-                            Buscando por: "{busca}"
-                        </Text>
-                    )}
+                    <Text style={styles.headerSubtitle}>
+                        {abaAtiva === 'produtos' 
+                            ? 'Digite o nome do produto que procura' 
+                            : 'Acompanhe seus pedidos e reservas'
+                        }
+                    </Text>
                 </View>
             </View>
 
-            {/* CONTEÚDO PRINCIPAL */}
-            <ScrollView
-                style={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
-            >
-                {produtosFiltrados.length > 0 ? (
-                    <View style={styles.produtosGrid}>
-                        {produtosFiltrados.map((produto) => (
-                            <ProdutoCard
-                                key={produto.id}
-                                produto={produto}
-                                onPress={() => console.log('Ver detalhes:', produto.nome)}
-                                onAdicionarAoCarrinho={adicionarAoCarrinho}
-                            />
-                        ))}
-                    </View>
-                ) : (
-                    <View style={styles.nenhumResultado}>
-                        <Ionicons name="search-outline" size={64} color="#666" />
-                        <Text style={styles.nenhumResultadoTitle}>
-                            Nenhum produto encontrado
-                        </Text>
-                        <Text style={styles.nenhumResultadoText}>
-                            Não encontramos produtos para "{busca}"
-                        </Text>
-                        <TouchableOpacity style={styles.botaoLimparBusca} onPress={limparBusca}>
-                            <Text style={styles.botaoLimparBuscaTexto}>Limpar busca</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-
-                <View style={styles.footerSpace} />
-            </ScrollView>
-
-            {/* CARRINHO FLUTUANTE */}
-            <TouchableOpacity
-                style={styles.carrinhoFloating}
-                onPress={() => setModalCarrinhoVisible(true)}
-            >
-                <View style={styles.carrinhoBadge}>
-                    <Text style={styles.carrinhoBadgeText}>
-                        {itensCarrinho.reduce((total, item) => total + item.quantidade, 0)}
+            {/* TABS DE NAVEGAÇÃO */}
+            <View style={styles.tabsContainer}>
+                <TouchableOpacity 
+                    style={[
+                        styles.tabItem,
+                        abaAtiva === 'produtos' && styles.tabItemAtiva
+                    ]}
+                    onPress={() => setAbaAtiva('produtos')}
+                >
+                    <Ionicons 
+                        name="cart-outline" 
+                        size={20} 
+                        color={abaAtiva === 'produtos' ? "#B8860B" : "#888"} 
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        abaAtiva === 'produtos' && styles.tabTextAtiva
+                    ]}>
+                        Produtos
                     </Text>
-                </View>
-                <Ionicons name="cart" size={24} color="#FFF" />
-            </TouchableOpacity>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    style={[
+                        styles.tabItem,
+                        abaAtiva === 'pedidos' && styles.tabItemAtiva
+                    ]}
+                    onPress={() => setAbaAtiva('pedidos')}
+                >
+                    <Ionicons 
+                        name="receipt-outline" 
+                        size={20} 
+                        color={abaAtiva === 'pedidos' ? "#B8860B" : "#888"} 
+                    />
+                    <Text style={[
+                        styles.tabText,
+                        abaAtiva === 'pedidos' && styles.tabTextAtiva
+                    ]}>
+                        Meus Pedidos
+                    </Text>
+                    {/* BADGE COM QUANTIDADE DE PEDIDOS PENDENTES */}
+                    {pedidosExemplo.filter(p => !p.pago).length > 0 && (
+                        <View style={styles.tabBadge}>
+                            <Text style={styles.tabBadgeText}>
+                                {pedidosExemplo.filter(p => !p.pago).length}
+                            </Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </View>
+
+            {/* CONTEÚDO DINÂMICO (PRODUTOS OU PEDIDOS) */}
+            {renderConteudoAba()}
+
+            {/* CARRINHO FLUTUANTE (apenas na aba produtos) */}
+            {abaAtiva === 'produtos' && (
+                <TouchableOpacity
+                    style={styles.carrinhoFloating}
+                    onPress={() => setModalCarrinhoVisible(true)}
+                >
+                    <View style={styles.carrinhoBadge}>
+                        <Text style={styles.carrinhoBadgeText}>
+                            {itensCarrinho.reduce((total, item) => total + item.quantidade, 0)}
+                        </Text>
+                    </View>
+                    <Ionicons name="cart" size={24} color="#FFF" />
+                </TouchableOpacity>
+            )}
 
             {/* MODAL DO CARRINHO (COMPONENTE SEPARADO) */}
             <CarrinhoModal
@@ -411,14 +737,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#000",
     },
-    scrollContainer: {
-        flex: 1,
-        paddingHorizontal: 20,
-    },
     header: {
         backgroundColor: '#000',
         paddingTop: 10,
-        paddingBottom: 20,
+        paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: "#333",
@@ -438,6 +760,54 @@ const styles = StyleSheet.create({
         color: "#AAA",
         textAlign: 'center',
     },
+    // TABS
+    tabsContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#000',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+        paddingHorizontal: 20,
+    },
+    tabItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        position: 'relative',
+    },
+    tabItemAtiva: {
+        borderBottomWidth: 2,
+        borderBottomColor: '#B8860B',
+    },
+    tabText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#888',
+    },
+    tabTextAtiva: {
+        color: '#B8860B',
+        fontWeight: '600',
+    },
+    tabBadge: {
+        position: 'absolute',
+        top: 8,
+        right: '25%',
+        backgroundColor: '#EF4444',
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+    },
+    tabBadgeText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    // BUSCA
     buscaContainer: {
         paddingHorizontal: 20,
         paddingTop: 16,
@@ -479,6 +849,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
+    scrollContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    // PRODUTOS
     produtosGrid: {
         gap: 16,
         paddingTop: 8,
@@ -587,6 +962,179 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    // ESTATÍSTICAS
+    estatisticasContainer: {
+        marginTop: 16,
+        marginBottom: 16,
+        paddingHorizontal: 20,
+    },
+    estatisticasCard: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
+        padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    estatisticaItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    estatisticaValor: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#B8860B',
+        marginBottom: 4,
+    },
+    estatisticaLabel: {
+        fontSize: 10,
+        color: '#888',
+        textAlign: 'center',
+    },
+    estatisticaDivider: {
+        width: 1,
+        height: 30,
+        backgroundColor: '#333',
+    },
+    // PEDIDOS
+    pedidosGrid: {
+        gap: 16,
+        paddingTop: 8,
+    },
+    pedidoCard: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    pedidoHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    pedidoInfo: {
+        flex: 1,
+    },
+    pedidoId: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFF',
+        marginBottom: 4,
+    },
+    pedidoData: {
+        fontSize: 12,
+        color: '#888',
+    },
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    pedidoItensContainer: {
+        gap: 8,
+        marginBottom: 12,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    pedidoItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    pedidoItemNome: {
+        fontSize: 14,
+        color: '#AAA',
+        flex: 1,
+        marginRight: 12,
+    },
+    pedidoItemSubtotal: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#B8860B',
+    },
+    pedidoMaisItens: {
+        fontSize: 12,
+        color: '#888',
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginTop: 4,
+    },
+    pedidoResumo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    pedidoTotalContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    pedidoTotalLabel: {
+        fontSize: 14,
+        color: '#AAA',
+    },
+    pedidoTotalValor: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#B8860B',
+    },
+    pedidoPagamentoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    pagamentoBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    pagamentoPago: {
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderWidth: 1,
+        borderColor: '#10B981',
+    },
+    pagamentoPendente: {
+        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+        borderWidth: 1,
+        borderColor: '#F59E0B',
+    },
+    pagamentoTexto: {
+        fontSize: 12,
+        color: '#FFF',
+        fontWeight: '500',
+    },
+    observacoesBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        backgroundColor: 'rgba(136, 136, 136, 0.2)',
+        borderWidth: 1,
+        borderColor: '#888',
+    },
+    observacoesTexto: {
+        fontSize: 10,
+        color: '#888',
+    },
+    // MENSAGENS DE NENHUM RESULTADO
     nenhumResultado: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -619,6 +1167,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    botaoVoltarProdutos: {
+        backgroundColor: '#B8860B',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    botaoVoltarProdutosTexto: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    // CARRINHO FLUTUANTE
     carrinhoFloating: {
         position: 'absolute',
         bottom: 30,
