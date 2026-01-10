@@ -2,7 +2,7 @@
 
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
 import { estoqueService } from '@/services/estoqueService';
-import { ItemEstoque } from '@/types/estoque';
+import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
 import {
@@ -16,26 +16,7 @@ import {
     View
 } from "react-native";
 
-// TIPOS PARA PEDIDOS
-interface Pedido {
-    id: string;
-    pessoa: string;
-    itens: {
-        nome: string;
-        quantidade: number;
-        tamanho?: string;
-        precoUnitario: number;
-        subtotal: number;
-    }[];
-    data: string;
-    pago: boolean;
-    total: number;
-    observacoes?: string;
-    status: 'pendente' | 'reservado' | 'entregue';
-}
 
-
-// DADOS DE EXEMPLO PARA MEUS PEDIDOS
 const pedidosExemplo: Pedido[] = [
     {
         id: '001',

@@ -16,15 +16,19 @@ export interface ItemPedido {
   subtotal: number;
 }
 
-export interface Pedido {
-  id: string;
-  pessoa: string;
-  itens: ItemPedido[];
-  data: string;
-  dataTimestamp: any;
-  pago: boolean;
-  total: number;
-  observacoes?: string;
-  createdAt?: any;
-  updatedAt?: any;
+export interface  Pedido {
+    id: string;
+    pessoa: string;
+    itens: {
+        nome: string;
+        quantidade: number;
+        tamanho?: string;
+        precoUnitario: number;
+        subtotal: number;
+    }[];
+    data: string;
+    pago: boolean;
+    total: number;
+    observacoes?: string;
+    status: 'pendente' | 'reservado' | 'entregue';
 }
