@@ -2,7 +2,7 @@ import { UserProvider, useUser } from '@/contexts/UserContext'; // ✅ ADD IMPOR
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
-import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck } from 'lucide-react-native';
+import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck, Ticket } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -44,9 +44,9 @@ function CustomDrawerContent(props: any) {
       return showAdmin;
     }
     // Para outras telas, sempre mostra (exceto as que estão configuradas para não aparecer)
-    return route.name !== 'settingsScreen' && 
-           route.name !== 'perfilScreen' && 
-           route.name !== 'registroScreen';
+    return route.name !== 'settingsScreen' &&
+      route.name !== 'perfilScreen' &&
+      route.name !== 'registroScreen';
   });
 
   return (
@@ -76,7 +76,7 @@ function CustomDrawerContent(props: any) {
       {filteredRoutes.map((route: any, index: number) => {
         const { options } = props.descriptors[route.key];
         const isFocused = props.state.index === index;
-        
+
         // Se for uma tela que não deve aparecer no drawer, não renderiza
         if (options.drawerItemStyle?.display === 'none') {
           return null;
@@ -218,7 +218,18 @@ function RootLayoutContent() {
                   ),
                 }}
               />
-              
+
+              <Drawer.Screen
+                name="produtosScreen"
+                options={{
+                  drawerLabel: 'Produtos',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <Ticket size={size} color={color} />
+                  ),
+                }}
+              />
+
               {/* Tela Admin - sempre definida, mas só aparece no drawer para admins */}
               <Drawer.Screen
                 name="adminScreen"
