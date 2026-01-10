@@ -1,8 +1,12 @@
 // components/CarrinhoModal.tsx
-import { ItemEstoque } from '@/types/estoque';
+import { auth } from '@/config/firebaseConfig'; // Adicione esta importação
+import { pedidoService } from '@/services/PedidoService';
+import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -40,9 +44,11 @@ export interface CarrinhoModalProps {
   onAumentarQuantidade: (index: number) => void;
   onDiminuirQuantidade: (index: number) => void;
   onRemoverItem: (index: number) => void;
-  onReservar: () => void;
+  onReservar?: () => void; // Agora opcional, pois vamos criar o pedido aqui
   observacoes?: string;
   onObservacoesChange?: (text: string) => void;
+  usuarioNome?: string; // Adicionado: nome do usuário logado
+  usuarioId?: string;   // Adicionado: ID do usuário logado
 }
 
 // COMPONENTE DE ITEM DO CARRINHO
@@ -132,27 +138,199 @@ export function CarrinhoModal({
   onRemoverItem,
   onReservar,
   observacoes = '',
-  onObservacoesChange
+  onObservacoesChange,
+  usuarioNome = 'Cliente', // Valor padrão
+  usuarioId = ''           // Valor padrão
 }: CarrinhoModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [pedidoCriado, setPedidoCriado] = useState(false);
+  const [pedidoId, setPedidoId] = useState('');
+
+  // Função para criar o pedido
+  const criarPedido = async () => {
+    if (itens.length === 0) {
+      Alert.alert('Carrinho vazio', 'Adicione itens ao carrinho antes de reservar.');
+      return;
+    }
+
+    // IMPORTANTE: Obter o usuário atual do Firebase Auth
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Alert.alert('Não autenticado', 'Por favor, faça login para criar um pedido.');
+      return;
+    }
+
+    const usuarioId = currentUser.uid;
+    const usuarioNome = currentUser.displayName || currentUser.email?.split('@')[0] || 'Cliente';
+
+    setLoading(true);
+
+    try {
+      // Converter itens do carrinho para itens do pedido
+      const itensPedido = itens.map(item => ({
+        itemId: item.produto.id,
+        nome: item.produto.nome,
+        quantidade: item.quantidade,
+        tamanho: item.tamanhoSelecionado,
+        precoUnitario: item.produto.preco,
+        subtotal: item.subtotal
+      }));
+
+      // Criar o objeto do pedido
+      const pedido: Omit<Pedido, 'id'> = {
+        usuarioId: usuarioId, // Usando o ID do usuário autenticado
+        pessoa: usuarioNome,  // Usando o nome/email do usuário
+        itens: itensPedido,
+        data: new Date().toLocaleDateString('pt-BR'),
+        dataTimestamp: Date.now(),
+        pago: false,
+        status: 'reservado',
+        total: total,
+        observacoes: observacoes.trim(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Criar o pedido no Firebase
+      const idCriado = await pedidoService.criarPedido(pedido);
+
+      setPedidoId(idCriado);
+      setPedidoCriado(true);
+
+      // Chamar função onReservar se fornecida (para compatibilidade)
+      if (onReservar) {
+        onReservar();
+      }
+
+
+    } catch (error: any) {
+      console.error('Erro ao criar pedido:', error);
+      Alert.alert(
+        'Erro',
+        `Não foi possível criar o pedido: ${error.message || 'Erro desconhecido'}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para visualizar o pedido criado
+  const visualizarPedido = () => {
+    Alert.alert(
+      'Detalhes do Pedido',
+      `Pedido #${pedidoId}\n\n` +
+      `Cliente: ${usuarioNome}\n` +
+      `Data: ${new Date().toLocaleDateString('pt-BR')}\n` +
+      `Total: R$ ${total.toFixed(2)}\n` +
+      `Status: Reservado\n` +
+      `Observações: ${observacoes || 'Nenhuma'}`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  // Limpar estado quando o modal for fechado
+  const handleFechar = () => {
+    setPedidoCriado(false);
+    setPedidoId('');
+    onFechar();
+  };
+
   return (
     <Modal
       animationType="slide"
       transparent={true}
       visible={visible}
-      onRequestClose={onFechar}
+      onRequestClose={handleFechar}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           {/* HEADER DO MODAL */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Carrinho de Reservas</Text>
-            <TouchableOpacity onPress={onFechar} style={styles.modalFechar}>
+            <View style={styles.modalHeaderTitleContainer}>
+              <Ionicons name="cart" size={24} color="#FFF" />
+              <Text style={styles.modalTitle}>
+                {pedidoCriado ? 'Reserva Confirmada!' : 'Carrinho de Reservas'}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={handleFechar} style={styles.modalFechar}>
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
 
           {/* CONTEÚDO DO CARRINHO */}
-          {itens.length > 0 ? (
+          {pedidoCriado ? (
+            // TELA DE CONFIRMAÇÃO DO PEDIDO
+            <View style={styles.confirmacaoContainer}>
+              <View style={styles.confirmacaoIconContainer}>
+                <Ionicons name="checkmark-circle" size={80} color="#22C55E" />
+              </View>
+
+              <Text style={styles.confirmacaoTitle}>Reserva Realizada com Sucesso!</Text>
+
+              <View style={styles.pedidoInfoContainer}>
+                <View style={styles.pedidoInfoItem}>
+                  <Ionicons name="receipt" size={20} color="#B8860B" />
+                  <Text style={styles.pedidoInfoLabel}>Número do Pedido:</Text>
+                  <Text style={styles.pedidoInfoValue}>#{pedidoId}</Text>
+                </View>
+
+                <View style={styles.pedidoInfoItem}>
+                  <Ionicons name="person" size={20} color="#B8860B" />
+                  <Text style={styles.pedidoInfoLabel}>Cliente:</Text>
+                  <Text style={styles.pedidoInfoValue}>{usuarioNome}</Text>
+                </View>
+
+                <View style={styles.pedidoInfoItem}>
+                  <Ionicons name="calendar" size={20} color="#B8860B" />
+                  <Text style={styles.pedidoInfoLabel}>Data:</Text>
+                  <Text style={styles.pedidoInfoValue}>{new Date().toLocaleDateString('pt-BR')}</Text>
+                </View>
+
+                <View style={styles.pedidoInfoItem}>
+                  <Ionicons name="cash" size={20} color="#B8860B" />
+                  <Text style={styles.pedidoInfoLabel}>Total:</Text>
+                  <Text style={styles.pedidoInfoValue}>R$ {total.toFixed(2)}</Text>
+                </View>
+
+                <View style={styles.pedidoInfoItem}>
+                  <Ionicons name="time" size={20} color="#B8860B" />
+                  <Text style={styles.pedidoInfoLabel}>Status:</Text>
+                  <Text style={[styles.pedidoInfoValue, styles.statusReservado]}>Reservado</Text>
+                </View>
+              </View>
+
+              {observacoes && (
+                <View style={styles.observacoesConfirmacaoContainer}>
+                  <Text style={styles.observacoesConfirmacaoLabel}>Observações:</Text>
+                  <Text style={styles.observacoesConfirmacaoText}>{observacoes}</Text>
+                </View>
+              )}
+
+              <View style={styles.botoesConfirmacaoContainer}>
+                <TouchableOpacity
+                  style={styles.botaoVisualizarPedido}
+                  onPress={visualizarPedido}
+                >
+                  <Ionicons name="eye" size={20} color="#FFF" />
+                  <Text style={styles.botaoVisualizarPedidoTexto}>Ver Detalhes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.botaoNovoPedido}
+                  onPress={() => {
+                    setPedidoCriado(false);
+                    setPedidoId('');
+                    onFechar();
+                  }}
+                >
+                  <Ionicons name="add-circle" size={20} color="#B8860B" />
+                  <Text style={styles.botaoNovoPedidoTexto}>Novo Pedido</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : itens.length > 0 ? (
+            // TELA NORMAL DO CARRINHO
             <>
               <ScrollView style={styles.carrinhoLista}>
                 {itens.map((item, index) => (
@@ -170,7 +348,9 @@ export function CarrinhoModal({
               <View style={styles.resumoContainer}>
                 <View style={styles.resumoItem}>
                   <Text style={styles.resumoLabel}>Total de Itens</Text>
-                  <Text style={styles.resumoValor}>{itens.length}</Text>
+                  <Text style={styles.resumoValor}>
+                    {itens.reduce((total, item) => total + item.quantidade, 0)}
+                  </Text>
                 </View>
 
                 <View style={styles.resumoItem}>
@@ -219,16 +399,25 @@ export function CarrinhoModal({
                 {/* BOTÕES DE AÇÃO */}
                 <View style={styles.botoesContainer}>
                   <TouchableOpacity
-                    style={styles.botaoReservar}
-                    onPress={onReservar}
+                    style={[styles.botaoReservar, loading && styles.botaoReservarDisabled]}
+                    onPress={criarPedido}
+                    disabled={loading}
                   >
-                    <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-                    <Text style={styles.botaoReservarTexto}>Reservar Itens</Text>
+                    {loading ? (
+                      <ActivityIndicator color="#FFF" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                        <Text style={styles.botaoReservarTexto}>
+                          Confirmar Reserva
+                        </Text>
+                      </>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.botaoContinuar}
-                    onPress={onFechar}
+                    onPress={handleFechar}
                   >
                     <Text style={styles.botaoContinuarTexto}>Continuar Comprando</Text>
                   </TouchableOpacity>
@@ -236,6 +425,7 @@ export function CarrinhoModal({
               </View>
             </>
           ) : (
+            // CARRINHO VAZIO
             <View style={styles.carrinhoVazio}>
               <Ionicons name="cart-outline" size={64} color="#666" />
               <Text style={styles.carrinhoVazioTitle}>Seu carrinho está vazio</Text>
@@ -244,7 +434,7 @@ export function CarrinhoModal({
               </Text>
               <TouchableOpacity
                 style={styles.botaoContinuarComprando}
-                onPress={onFechar}
+                onPress={handleFechar}
               >
                 <Text style={styles.botaoContinuarComprandoTexto}>
                   Ver Produtos
@@ -266,46 +456,47 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: '#000',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderColor: '#333',
-    maxHeight: '98%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
+  modalHeaderTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#B8860B',
+    color: '#FFF',
   },
   modalFechar: {
     padding: 4,
   },
   carrinhoLista: {
-    maxHeight: 350,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    maxHeight: 300,
   },
   itemCarrinhoCard: {
     flexDirection: 'row',
     backgroundColor: '#1a1a1a',
+    marginHorizontal: 16,
+    marginVertical: 8,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 18,
     borderWidth: 1,
     borderColor: '#333',
   },
   itemCarrinhoImagem: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 8,
   },
   itemCarrinhoInfo: {
@@ -316,41 +507,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
   },
   itemCarrinhoNome: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFF',
-    flex: 1,
     marginRight: 8,
   },
   itemCarrinhoRemover: {
-    padding: 2,
+    padding: 4,
   },
   itemCarrinhoVariacoes: {
-    gap: 4,
-    marginBottom: 8,
+    marginTop: 4,
   },
   itemCarrinhoVariacao: {
     fontSize: 12,
-    color: '#888',
+    color: '#AAA',
+    marginTop: 2,
   },
   itemCarrinhoControles: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 12,
   },
   quantidadeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#333',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   quantidadeBotao: {
-    padding: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#444',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quantidadeTexto: {
     color: '#FFF',
@@ -366,9 +562,8 @@ const styles = StyleSheet.create({
     color: '#B8860B',
   },
   resumoContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    padding: 16,
+    backgroundColor: '#1a1a1a',
     borderTopWidth: 1,
     borderTopColor: '#333',
   },
@@ -381,21 +576,32 @@ const styles = StyleSheet.create({
   resumoLabel: {
     fontSize: 14,
     color: '#AAA',
-    fontWeight: '500',
   },
   resumoValor: {
-    fontSize: 14,
-    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
+    color: '#FFF',
+  },
+  clienteInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a2a',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
+  clienteInfoText: {
+    fontSize: 14,
+    color: '#B8860B',
+    fontWeight: '500',
   },
   observacoesContainer: {
-    marginTop: 16,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   observacoesLabel: {
     fontSize: 14,
     color: '#AAA',
-    fontWeight: '500',
     marginBottom: 8,
   },
   observacoesInputContainer: {
@@ -406,14 +612,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 10,
+    paddingVertical: 8,
+    gap: 8,
   },
   observacoesInput: {
     flex: 1,
     color: '#FFF',
     fontSize: 14,
-    minHeight: 60,
+    minHeight: 40,
     textAlignVertical: 'top',
   },
   observacoesTexto: {
@@ -429,13 +635,10 @@ const styles = StyleSheet.create({
   },
   statusReservaContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(184, 134, 11, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#B8860B',
-    marginBottom: 20,
+    backgroundColor: '#2a1a00',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   statusIconContainer: {
     marginRight: 12,
@@ -444,8 +647,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#B8860B',
     marginBottom: 4,
   },
@@ -461,28 +664,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
     backgroundColor: '#B8860B',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  botaoReservarDisabled: {
+    opacity: 0.7,
   },
   botaoReservarTexto: {
     color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   botaoContinuar: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
+    backgroundColor: '#333',
+    paddingVertical: 16,
+    borderRadius: 8,
   },
   botaoContinuarTexto: {
-    color: '#AAA',
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   carrinhoVazio: {
     alignItems: 'center',
@@ -513,6 +718,99 @@ const styles = StyleSheet.create({
   },
   botaoContinuarComprandoTexto: {
     color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Estilos para a tela de confirmação
+  confirmacaoContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  confirmacaoIconContainer: {
+    marginBottom: 20,
+  },
+  confirmacaoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  pedidoInfoContainer: {
+    width: '100%',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  pedidoInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  pedidoInfoLabel: {
+    fontSize: 14,
+    color: '#AAA',
+    marginLeft: 8,
+  },
+  pedidoInfoValue: {
+    fontSize: 14,
+    color: '#FFF',
+    fontWeight: '600',
+    marginLeft: 'auto',
+  },
+  statusReservado: {
+    color: '#B8860B',
+  },
+  observacoesConfirmacaoContainer: {
+    width: '100%',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+  },
+  observacoesConfirmacaoLabel: {
+    fontSize: 12,
+    color: '#AAA',
+    marginBottom: 4,
+  },
+  observacoesConfirmacaoText: {
+    fontSize: 14,
+    color: '#FFF',
+    lineHeight: 20,
+  },
+  botoesConfirmacaoContainer: {
+    width: '100%',
+    gap: 12,
+  },
+  botaoVisualizarPedido: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#B8860B',
+    paddingVertical: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  botaoVisualizarPedidoTexto: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  botaoNovoPedido: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    gap: 8,
+  },
+  botaoNovoPedidoTexto: {
+    color: '#B8860B',
     fontSize: 16,
     fontWeight: '600',
   },
