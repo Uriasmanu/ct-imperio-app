@@ -1,8 +1,11 @@
-// components/Estoque.tsx (atualizado completo)
+// components/Estoque.tsx (completo atualizado)
+import { db } from "@/config/firebaseConfig";
 import { estoqueService } from "@/services/estoqueService";
 import { pedidoService } from "@/services/PedidoService";
 import { ItemEstoque, Pedido } from "@/types/estoque";
+import { Usuario } from '@/types/usuarios';
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
     Alert,
@@ -29,11 +32,47 @@ export const Estoque: React.FC = () => {
     const [pedidos, setPedidos] = useState<Pedido[]>([]);
     const [pedidoEditando, setPedidoEditando] = useState<Pedido | null>(null);
 
+    // Estado para alunos (usuários)
+    const [alunos, setAlunos] = useState<Usuario[]>([]);
+    const [carregandoAlunos, setCarregandoAlunos] = useState(true);
+
+    // Função para carregar alunos do banco de dados
+    const carregarAlunos = async () => {
+        try {
+            setCarregandoAlunos(true);
+            const querySnapshot = await getDocs(collection(db, "usuarios"));
+            const alunosData: Usuario[] = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                alunosData.push({
+                    id: doc.id,
+                    nome: data.nome || "",
+                    email: data.email || "",
+                    telefone: data.telefone || "",
+                    ...data
+                } as Usuario);
+            });
+
+            // Ordena os alunos por nome
+            alunosData.sort((a, b) => a.nome.localeCompare(b.nome));
+            setAlunos(alunosData);
+        } catch (error) {
+            console.error("Erro ao carregar alunos:", error);
+            Alert.alert("Erro", "Não foi possível carregar a lista de alunos.");
+        } finally {
+            setCarregandoAlunos(false);
+        }
+    };
+
     // Carregar produtos ao iniciar
     useEffect(() => {
         const unsubscribe = estoqueService.listenProdutos((produtos) => {
             setEstoque(produtos);
         });
+
+        // Carregar alunos quando o componente montar
+        carregarAlunos();
 
         return () => unsubscribe();
     }, []);
@@ -45,7 +84,6 @@ export const Estoque: React.FC = () => {
         }
     }, [abaAtiva]);
 
-
     const carregarPedidos = async () => {
         try {
             const pedidosData = await pedidoService.getPedidos();
@@ -53,6 +91,14 @@ export const Estoque: React.FC = () => {
         } catch (error) {
             console.error('Erro ao carregar pedidos:', error);
             Alert.alert('Erro', 'Não foi possível carregar os pedidos');
+        }
+    };
+
+    // Função para recarregar dados (pull to refresh)
+    const recarregarDados = async () => {
+        await carregarAlunos();
+        if (abaAtiva === 'pedidos') {
+            await carregarPedidos();
         }
     };
 
@@ -194,7 +240,6 @@ export const Estoque: React.FC = () => {
                     onPress: async () => {
                         try {
                             await estoqueService.deleteProduto(produto.id);
-            
                             Alert.alert('Sucesso', 'Produto excluído com sucesso!');
                         } catch (error) {
                             console.error('Erro ao excluir produto:', error);
@@ -303,8 +348,8 @@ export const Estoque: React.FC = () => {
                 onAtualizarPedido={handleAtualizarPedido}
                 pedidoEditando={pedidoEditando}
                 produtos={estoque}
+                alunos={alunos} // Passa a lista de alunos carregada
             />
-
 
             {/* BOTÕES DE AÇÃO */}
             <View style={styles.acoesContainer}>
@@ -530,395 +575,335 @@ const styles = StyleSheet.create({
         backgroundColor: "#000",
     },
     header: {
-        padding: 16,
-        backgroundColor: "#1a1a1a",
+        backgroundColor: '#000',
+        paddingTop: 20,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: "#333",
     },
     sectionTitleContainer: {
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 12,
         marginBottom: 16,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: "700",
-        color: "#B8860B",
+        fontWeight: '700',
+        color: '#B8860B',
+        letterSpacing: 0.5,
     },
     abasContainer: {
-        flexDirection: "row",
-        backgroundColor: "#1a1a1a",
-        borderRadius: 8,
+        flexDirection: 'row',
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
         padding: 4,
     },
     aba: {
         flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 6,
-    },
-    abaAtiva: {
-        backgroundColor: "#B8860B",
-    },
-    abaTexto: {
-        color: "#B8860B",
-        fontWeight: "600",
-        fontSize: 14,
-    },
-    abaTextoAtivo: {
-        color: "#000",
-        fontWeight: "bold",
-    },
-    acoesContainer: {
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-    },
-    botaoAdicionar: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        backgroundColor: "#B8860B",
-        paddingVertical: 12,
+        paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
     },
-    botaoAdicionarTexto: {
-        color: "#000",
-        fontWeight: "bold",
+    abaAtiva: {
+        backgroundColor: '#B8860B',
+    },
+    abaTexto: {
         fontSize: 14,
+        fontWeight: '600',
+        color: '#B8860B',
+    },
+    abaTextoAtivo: {
+        color: '#000',
+    },
+    acoesContainer: {
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    botaoAdicionar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#B8860B',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+    },
+    botaoAdicionarTexto: {
+        color: '#000',
+        fontSize: 16,
+        fontWeight: '600',
     },
     conteudo: {
         flex: 1,
-        padding: 4,
+        paddingHorizontal: 20,
+        paddingTop: 20,
     },
     estoqueContainer: {
-        gap: 12,
-        padding: 8,
+        gap: 16,
+        paddingBottom: 40,
+    },
+    pedidosContainer: {
+        gap: 16,
+        paddingBottom: 40,
     },
     listaVazia: {
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
+        paddingHorizontal: 40,
     },
     listaVaziaTexto: {
-        color: "#666",
+        color: '#888',
         fontSize: 16,
-        marginTop: 12,
-        textAlign: "center",
+        textAlign: 'center',
+        marginTop: 16,
+        marginBottom: 8,
     },
     botaoAdicionarPrimeiro: {
-        backgroundColor: "#B8860B",
-        paddingVertical: 12,
+        backgroundColor: '#B8860B',
         paddingHorizontal: 20,
-        borderRadius: 8,
+        paddingVertical: 12,
+        borderRadius: 12,
         marginTop: 16,
     },
     botaoAdicionarPrimeiroTexto: {
-        color: "#000",
-        fontWeight: "bold",
+        color: '#000',
         fontSize: 14,
+        fontWeight: '600',
     },
     itemCard: {
-        backgroundColor: "#1a1a1a",
+        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
         padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#333",
+        gap: 12,
     },
     itemHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
     itemNome: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#FFF",
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFF',
         flex: 1,
     },
     itemPrecoContainer: {
-        backgroundColor: "#B8860B",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
+        backgroundColor: '#B8860B',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
     },
     itemPreco: {
-        color: "#000",
-        fontWeight: "bold",
-        fontSize: 12,
+        color: '#000',
+        fontSize: 14,
+        fontWeight: 'bold',
     },
     itemInfo: {
         gap: 8,
     },
     quantidadeContainer: {
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
     },
     quantidadeTexto: {
-        color: "#FFF",
+        color: '#AAA',
         fontSize: 14,
     },
     tamanhosContainer: {
-        marginTop: 4,
+        gap: 8,
     },
     tamanhosTitulo: {
-        color: "#B8860B",
+        color: '#888',
         fontSize: 12,
-        fontWeight: "600",
-        marginBottom: 4,
+        fontWeight: '500',
     },
     tamanhosLista: {
-        flexDirection: "row",
-        flexWrap: "wrap",
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 8,
     },
     tamanhoItem: {
-        backgroundColor: "#333",
-        paddingHorizontal: 8,
+        backgroundColor: '#2a2a2a',
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 6,
     },
     tamanhoTexto: {
-        color: "#FFF",
+        color: '#AAA',
         fontSize: 12,
     },
     itemAcoes: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 12,
+        flexDirection: 'row',
         gap: 8,
+        marginTop: 8,
     },
     botaoEditar: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: "transparent",
-        borderWidth: 1,
-        borderColor: "#B8860B",
-        borderRadius: 6,
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#2a2a2a',
+        paddingVertical: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#B8860B',
     },
     botaoEditarTexto: {
-        color: "#B8860B",
-        fontSize: 12,
-        fontWeight: "600",
+        color: '#B8860B',
+        fontSize: 14,
+        fontWeight: '500',
     },
     botaoVender: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: "#22C55E",
-        borderRadius: 6,
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#22C55E',
+        paddingVertical: 10,
+        borderRadius: 8,
     },
     botaoVenderTexto: {
-        color: "#FFF",
-        fontSize: 12,
-        fontWeight: "600",
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '500',
     },
     botaoDeletar: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: "#EF4444",
-        borderRadius: 6,
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#EF4444',
+        paddingVertical: 10,
+        borderRadius: 8,
     },
     botaoDeletarTexto: {
-        color: "#FFF",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-
-    statusPedido: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    statusPago: {
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-    },
-    statusPendente: {
-        backgroundColor: "rgba(239, 68, 68, 0.1)",
-    },
-    pedidoItemDetalhes: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-    },
-    pedidoItemTamanho: {
-        color: "#888",
-        fontSize: 12,
-    },
-    botaoMarcarPago: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        backgroundColor: "#22C55E",
-        borderRadius: 6,
-    },
-    botaoMarcarPagoTexto: {
-        color: "#FFF",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    botaoDetalhes: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        backgroundColor: "transparent",
-        borderWidth: 1,
-        borderColor: "#EF4444",
-        borderRadius: 6,
-    },
-    botaoDetalhesTexto: {
-        color: "#EF4444",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    pedidosContainer: {
-        padding: 12,
-        gap: 16,
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: '500',
     },
     pedidoCard: {
-        backgroundColor: "#1a1a1a",
+        backgroundColor: '#1a1a1a',
         borderRadius: 16,
         padding: 16,
-        borderWidth: 1,
-        borderColor: "#333",
-        // Sombra leve para profundidade no iOS
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5, // Sombra no Android
+        gap: 16,
     },
     pedidoHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        borderBottomWidth: 1,
-        borderBottomColor: "#333",
-        paddingBottom: 12,
-        marginBottom: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
     pedidoPessoa: {
         fontSize: 18,
-        fontWeight: "800",
-        color: "#FFF",
-        textTransform: 'capitalize',
+        fontWeight: '600',
+        color: '#FFF',
     },
     pedidoData: {
+        color: '#888',
         fontSize: 12,
-        color: "#888",
-        marginTop: 2,
-    },
-    statusBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
-        gap: 4,
-    },
-    statusBadgePago: {
-        backgroundColor: "rgba(34, 197, 94, 0.15)",
-    },
-    statusBadgePendente: {
-        backgroundColor: "rgba(239, 68, 68, 0.15)",
-    },
-    statusTexto: {
-        fontSize: 11,
-        fontWeight: "bold",
-        textTransform: "uppercase",
-    },
-    pedidoItens: {
-        gap: 10,
-        marginBottom: 16,
-    },
-    pedidoItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        backgroundColor: "#262626",
-        padding: 10,
-        borderRadius: 8,
-    },
-    pedidoItemNome: {
-        color: "#DDD",
-        fontSize: 14,
-        fontWeight: "500",
-        flex: 1,
-    },
-    pedidoItemBadge: {
-        backgroundColor: "#333",
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginRight: 8,
-    },
-    pedidoItemQuantidade: {
-        color: "#B8860B",
-        fontSize: 12,
-        fontWeight: "bold",
-    },
-    pedidoItemPreco: {
-        color: "#22C55E",
-        fontSize: 13,
-        fontWeight: "700",
-    },
-    pedidoFooter: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
         marginTop: 4,
     },
-    pedidoTotalContainer: {
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: '#2a2a2a',
+    },
+    statusBadgePago: {
+        borderWidth: 1,
+        borderColor: '#22C55E',
+    },
+    statusBadgePendente: {
+        borderWidth: 1,
+        borderColor: '#EF4444',
+    },
+    statusTexto: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    pedidoItens: {
+        gap: 8,
+    },
+    pedidoItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#2a2a2a',
+    },
+    pedidoItemBadge: {
+        backgroundColor: '#B8860B',
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pedidoItemQuantidade: {
+        color: '#000',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    pedidoItemNome: {
         flex: 1,
+        color: '#FFF',
+        fontSize: 14,
+    },
+    pedidoItemPreco: {
+        color: '#B8860B',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    pedidoFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#2a2a2a',
+    },
+    pedidoTotalContainer: {
+        gap: 4,
     },
     totalLabel: {
-        color: "#888",
-        fontSize: 10,
-        textTransform: "uppercase",
+        color: '#888',
+        fontSize: 12,
     },
     pedidoTotal: {
-        color: "#FFF",
-        fontSize: 20,
-        fontWeight: "900",
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     pedidoAcoes: {
-        flexDirection: "row",
+        flexDirection: 'row',
         gap: 8,
     },
     botaoAcaoIcone: {
-        padding: 10,
-        borderRadius: 10,
-        backgroundColor: "#262626",
-        borderWidth: 1,
-        borderColor: "#444",
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#2a2a2a',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     botaoAcaoPagar: {
-        backgroundColor: "#22C55E",
-        borderColor: "#22C55E",
-    }
+        backgroundColor: '#22C55E',
+    },
 });
