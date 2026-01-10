@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from "react";
 import {
     Image,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -61,7 +62,6 @@ const produtosPredefinidos: ItemEstoque[] = [
     }
 ];
 
-
 // DADOS DE EXEMPLO PARA MEUS PEDIDOS
 const pedidosExemplo: Pedido[] = [
     {
@@ -104,6 +104,119 @@ const pedidosExemplo: Pedido[] = [
     }
 ];
 
+// MODAL DE SELEÇÃO DE TAMANHO
+interface ModalTamanhoProps {
+    visible: boolean;
+    produto: ItemEstoque | null;
+    onFechar: () => void;
+    onConfirmar: (tamanho: string) => void;
+}
+
+function ModalTamanho({ visible, produto, onFechar, onConfirmar }: ModalTamanhoProps) {
+    const [tamanhoSelecionado, setTamanhoSelecionado] = useState<string>('');
+
+    if (!produto) return null;
+
+    const tamanhosDisponiveis = produto.tamanhos ? Object.keys(produto.tamanhos) : [];
+
+    const handleConfirmar = () => {
+        if (tamanhoSelecionado) {
+            onConfirmar(tamanhoSelecionado);
+            setTamanhoSelecionado('');
+        }
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            onRequestClose={onFechar}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalTamanhoContainer}>
+                    {/* HEADER */}
+                    <View style={styles.modalTamanhoHeader}>
+                        <Text style={styles.modalTamanhoTitulo}>
+                            Selecione o Tamanho
+                        </Text>
+                        <TouchableOpacity onPress={onFechar} style={styles.modalFecharBtn}>
+                            <Ionicons name="close" size={24} color="#AAA" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* INFO DO PRODUTO */}
+                    <View style={styles.modalProdutoInfo}>
+                        <Text style={styles.modalProdutoNome}>{produto.nome}</Text>
+                        <Text style={styles.modalProdutoPreco}>
+                            R$ {produto.preco.toFixed(2)}
+                        </Text>
+                    </View>
+
+                    {/* TAMANHOS DISPONÍVEIS */}
+                    <View style={styles.tamanhosContainer}>
+                        {tamanhosDisponiveis.map((tamanho) => {
+                            const estoque = produto.tamanhos?.[tamanho] || 0;
+                            const disponivel = estoque > 0;
+
+                            return (
+                                <TouchableOpacity
+                                    key={tamanho}
+                                    style={[
+                                        styles.tamanhoItem,
+                                        tamanhoSelecionado === tamanho && styles.tamanhoSelecionado,
+                                        !disponivel && styles.tamanhoIndisponivel
+                                    ]}
+                                    onPress={() => disponivel && setTamanhoSelecionado(tamanho)}
+                                    disabled={!disponivel}
+                                >
+                                    <Text style={[
+                                        styles.tamanhoTexto,
+                                        tamanhoSelecionado === tamanho && styles.tamanhoTextoSelecionado,
+                                        !disponivel && styles.tamanhoTextoIndisponivel
+                                    ]}>
+                                        {tamanho}
+                                    </Text>
+                                    <Text style={[
+                                        styles.estoqueTexto,
+                                        !disponivel && styles.estoqueTextoIndisponivel
+                                    ]}>
+                                        {disponivel ? `${estoque} disponíveis` : 'Indisponível'}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    {/* BOTÕES */}
+                    <View style={styles.modalBotoesContainer}>
+                        <TouchableOpacity
+                            style={styles.modalBotaoCancelar}
+                            onPress={onFechar}
+                        >
+                            <Text style={styles.modalBotaoCancelarTexto}>Cancelar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.modalBotaoConfirmar,
+                                !tamanhoSelecionado && styles.modalBotaoConfirmarDisabled
+                            ]}
+                            onPress={handleConfirmar}
+                            disabled={!tamanhoSelecionado}
+                        >
+                            <Ionicons name="cart" size={20} color="#FFF" />
+                            <Text style={styles.modalBotaoConfirmarTexto}>
+                                Adicionar ao Carrinho
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}
+
 // COMPONENTE DE CARD DE PRODUTO
 interface ProdutoCardProps {
     produto: ItemEstoque;
@@ -137,7 +250,6 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                             </Text>
                         </View>
                     )}
-
                 </View>
             </TouchableOpacity>
 
@@ -152,7 +264,6 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                 </View>
 
                 <View style={styles.detalhesContainer}>
-
                     {produto.tamanhos && Object.keys(produto.tamanhos).length > 0 && (
                         <View style={styles.detalheItem}>
                             <Ionicons name="resize-outline" size={14} color="#888" />
@@ -161,19 +272,13 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                             </Text>
                         </View>
                     )}
-
                 </View>
 
                 <TouchableOpacity
-                    style={[
-                        styles.botaoComprar
-                    ]}
+                    style={styles.botaoComprar}
                     onPress={() => onAdicionarAoCarrinho(produto)}
                 >
-                    <Ionicons
-                        size={18}
-                        color="#FFF"
-                    />
+                    <Ionicons name="cart" size={18} color="#FFF" />
                     <Text style={styles.botaoComprarTexto}>
                         Adicionar ao Carrinho
                     </Text>
@@ -190,27 +295,24 @@ interface PedidoCardProps {
 }
 
 function PedidoCard({ pedido, onPress }: PedidoCardProps) {
-    // Função para obter cor do status
     const getStatusColor = (status: Pedido['status']) => {
         switch (status) {
-            case 'pendente': return '#F59E0B'; // Amarelo
-            case 'reservado': return '#3B82F6'; // Azul
-            case 'entregue': return '#10B981'; // Verde 
+            case 'pendente': return '#F59E0B';
+            case 'reservado': return '#3B82F6';
+            case 'entregue': return '#10B981';
             default: return '#888';
         }
     };
 
-    // Função para obter ícone do status
     const getStatusIcon = (status: Pedido['status']) => {
         switch (status) {
             case 'pendente': return 'time-outline';
             case 'reservado': return 'checkmark-circle-outline';
-            case 'entregue': return 'cube-outline';;
+            case 'entregue': return 'cube-outline';
             default: return 'help-circle-outline';
         }
     };
 
-    // Função para obter texto do status
     const getStatusText = (status: Pedido['status']) => {
         switch (status) {
             case 'pendente': return 'Pendente';
@@ -222,7 +324,6 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
 
     return (
         <TouchableOpacity style={styles.pedidoCard} onPress={onPress} activeOpacity={0.7}>
-            {/* HEADER DO PEDIDO */}
             <View style={styles.pedidoHeader}>
                 <View style={styles.pedidoInfo}>
                     <Text style={styles.pedidoId}>Pedido #{pedido.id}</Text>
@@ -244,7 +345,6 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
                 </View>
             </View>
 
-            {/* LISTA DE ITENS */}
             <View style={styles.pedidoItensContainer}>
                 {pedido.itens.slice(0, 2).map((item, index) => (
                     <View key={index} style={styles.pedidoItem}>
@@ -264,7 +364,6 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
                 )}
             </View>
 
-            {/* RESUMO DO PEDIDO */}
             <View style={styles.pedidoResumo}>
                 <View style={styles.pedidoTotalContainer}>
                     <Text style={styles.pedidoTotalLabel}>Total</Text>
@@ -306,6 +405,8 @@ export default function ProdutosScreen() {
     const [busca, setBusca] = useState('');
     const [produtosFiltrados, setProdutosFiltrados] = useState<ItemEstoque[]>(produtosPredefinidos);
     const [modalCarrinhoVisible, setModalCarrinhoVisible] = useState(false);
+    const [modalTamanhoVisible, setModalTamanhoVisible] = useState(false);
+    const [produtoSelecionado, setProdutoSelecionado] = useState<ItemEstoque | null>(null);
     const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([
         {
             produto: produtosPredefinidos[0],
@@ -323,7 +424,6 @@ export default function ProdutosScreen() {
     ]);
     const [observacoes, setObservacoes] = useState('');
 
-    // FILTRAR PRODUTOS POR TEXTO DE BUSCA
     const filtrarProdutos = (texto: string) => {
         setBusca(texto);
 
@@ -338,41 +438,45 @@ export default function ProdutosScreen() {
         }
     };
 
-    // LIMPAR BUSCA
     const limparBusca = () => {
         setBusca('');
         setProdutosFiltrados(produtosPredefinidos);
     };
 
-    // ADICIONAR PRODUTO AO CARRINHO
     const adicionarAoCarrinho = (produto: ItemEstoque) => {
+        setProdutoSelecionado(produto);
+        setModalTamanhoVisible(true);
+    };
+
+    const confirmarAdicao = (tamanho: string) => {
+        if (!produtoSelecionado) return;
+
         const itemExistenteIndex = itensCarrinho.findIndex(item =>
-            item.produto.id === produto.id
+            item.produto.id === produtoSelecionado.id && item.tamanhoSelecionado === tamanho
         );
 
         if (itemExistenteIndex >= 0) {
             const novosItens = [...itensCarrinho];
             novosItens[itemExistenteIndex].quantidade += 1;
             novosItens[itemExistenteIndex].subtotal =
-                novosItens[itemExistenteIndex].quantidade * produto.preco;
+                novosItens[itemExistenteIndex].quantidade * produtoSelecionado.preco;
             setItensCarrinho(novosItens);
         } else {
-            const tamanhosDisponiveis = Object.keys(produto.tamanhos);
-
             const novoItem: ItemCarrinho = {
-                produto,
+                produto: produtoSelecionado,
                 quantidade: 1,
-                tamanhoSelecionado: tamanhosDisponiveis[0],
-                subtotal: produto.preco
+                tamanhoSelecionado: tamanho,
+                subtotal: produtoSelecionado.preco
             };
 
             setItensCarrinho([...itensCarrinho, novoItem]);
         }
 
+        setModalTamanhoVisible(false);
+        setProdutoSelecionado(null);
         setModalCarrinhoVisible(true);
     };
 
-    // AUMENTAR QUANTIDADE DO ITEM
     const aumentarQuantidade = (index: number) => {
         const novosItens = [...itensCarrinho];
         novosItens[index].quantidade += 1;
@@ -381,7 +485,6 @@ export default function ProdutosScreen() {
         setItensCarrinho(novosItens);
     };
 
-    // DIMINUIR QUANTIDADE DO ITEM
     const diminuirQuantidade = (index: number) => {
         const novosItens = [...itensCarrinho];
         if (novosItens[index].quantidade > 1) {
@@ -392,36 +495,27 @@ export default function ProdutosScreen() {
         }
     };
 
-    // REMOVER ITEM DO CARRINHO
     const removerItem = (index: number) => {
         const novosItens = itensCarrinho.filter((_, i) => i !== index);
         setItensCarrinho(novosItens);
     };
 
-    // CALCULAR TOTAL DO CARRINHO
     const calcularTotal = () => {
         return itensCarrinho.reduce((total, item) => total + item.subtotal, 0);
     };
 
-    // RESERVAR ITENS
     const reservarItens = () => {
-        // Aqui você faria a integração com o Firebase
-        // Criaria um pedido de reserva com status "pendente"
-
         alert(`Reserva realizada com sucesso!\n\nItens: ${itensCarrinho.length}\nTotal: R$ ${calcularTotal().toFixed(2)}\nObservações: ${observacoes || 'Nenhuma'}`);
 
-        // Limpar carrinho após reserva
         setItensCarrinho([]);
         setObservacoes('');
         setModalCarrinhoVisible(false);
     };
 
-    // RENDERIZAR CONTEÚDO DA ABA ATIVA
     const renderConteudoAba = () => {
         if (abaAtiva === 'produtos') {
             return (
                 <>
-                    {/* CAMPO DE BUSCA (apenas na aba produtos) */}
                     <View style={styles.buscaContainer}>
                         <View style={styles.buscaInputContainer}>
                             <Ionicons name="search" size={20} color="#888" style={styles.buscaIcon} />
@@ -452,7 +546,6 @@ export default function ProdutosScreen() {
                         </View>
                     </View>
 
-                    {/* LISTA DE PRODUTOS */}
                     <ScrollView
                         style={styles.scrollContainer}
                         showsVerticalScrollIndicator={false}
@@ -489,52 +582,48 @@ export default function ProdutosScreen() {
             );
         } else {
             return (
-                <>
-                    {/* LISTA DE PEDIDOS */}
-                    <ScrollView
-                        style={styles.scrollContainer}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {pedidosExemplo.length > 0 ? (
-                            <View style={styles.pedidosGrid}>
-                                {pedidosExemplo.map((pedido) => (
-                                    <PedidoCard
-                                        key={pedido.id}
-                                        pedido={pedido}
-                                        onPress={() => console.log('Ver detalhes do pedido:', pedido.id)}
-                                    />
-                                ))}
-                            </View>
-                        ) : (
-                            <View style={styles.nenhumResultado}>
-                                <Ionicons name="receipt-outline" size={64} color="#666" />
-                                <Text style={styles.nenhumResultadoTitle}>
-                                    Nenhum pedido encontrado
+                <ScrollView
+                    style={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {pedidosExemplo.length > 0 ? (
+                        <View style={styles.pedidosGrid}>
+                            {pedidosExemplo.map((pedido) => (
+                                <PedidoCard
+                                    key={pedido.id}
+                                    pedido={pedido}
+                                    onPress={() => console.log('Ver detalhes do pedido:', pedido.id)}
+                                />
+                            ))}
+                        </View>
+                    ) : (
+                        <View style={styles.nenhumResultado}>
+                            <Ionicons name="receipt-outline" size={64} color="#666" />
+                            <Text style={styles.nenhumResultadoTitle}>
+                                Nenhum pedido encontrado
+                            </Text>
+                            <Text style={styles.nenhumResultadoText}>
+                                Você ainda não fez nenhum pedido
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.botaoVoltarProdutos}
+                                onPress={() => setAbaAtiva('produtos')}
+                            >
+                                <Text style={styles.botaoVoltarProdutosTexto}>
+                                    Ver Produtos
                                 </Text>
-                                <Text style={styles.nenhumResultadoText}>
-                                    Você ainda não fez nenhum pedido
-                                </Text>
-                                <TouchableOpacity
-                                    style={styles.botaoVoltarProdutos}
-                                    onPress={() => setAbaAtiva('produtos')}
-                                >
-                                    <Text style={styles.botaoVoltarProdutosTexto}>
-                                        Ver Produtos
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
-                        <View style={styles.footerSpace} />
-                    </ScrollView>
-                </>
+                    <View style={styles.footerSpace} />
+                </ScrollView>
             );
         }
     };
 
     return (
         <View style={styles.container}>
-            {/* HEADER */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <Ionicons
@@ -554,7 +643,6 @@ export default function ProdutosScreen() {
                 </View>
             </View>
 
-            {/* TABS DE NAVEGAÇÃO */}
             <View style={styles.tabsContainer}>
                 <TouchableOpacity
                     style={[
@@ -594,14 +682,11 @@ export default function ProdutosScreen() {
                     ]}>
                         Meus Pedidos
                     </Text>
-
                 </TouchableOpacity>
             </View>
 
-            {/* CONTEÚDO DINÂMICO (PRODUTOS OU PEDIDOS) */}
             {renderConteudoAba()}
 
-            {/* CARRINHO FLUTUANTE (apenas na aba produtos) */}
             {abaAtiva === 'produtos' && (
                 <TouchableOpacity
                     style={styles.carrinhoFloating}
@@ -616,7 +701,16 @@ export default function ProdutosScreen() {
                 </TouchableOpacity>
             )}
 
-            {/* MODAL DO CARRINHO (COMPONENTE SEPARADO) */}
+            <ModalTamanho
+                visible={modalTamanhoVisible}
+                produto={produtoSelecionado}
+                onFechar={() => {
+                    setModalTamanhoVisible(false);
+                    setProdutoSelecionado(null);
+                }}
+                onConfirmar={confirmarAdicao}
+            />
+
             <CarrinhoModal
                 visible={modalCarrinhoVisible}
                 itens={itensCarrinho}
@@ -661,7 +755,6 @@ const styles = StyleSheet.create({
         color: "#AAA",
         textAlign: 'center',
     },
-    // TABS
     tabsContainer: {
         flexDirection: 'row',
         backgroundColor: '#000',
@@ -691,24 +784,6 @@ const styles = StyleSheet.create({
         color: '#B8860B',
         fontWeight: '600',
     },
-    tabBadge: {
-        position: 'absolute',
-        top: 8,
-        right: '25%',
-        backgroundColor: '#EF4444',
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1,
-    },
-    tabBadgeText: {
-        color: '#FFF',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    // BUSCA
     buscaContainer: {
         paddingHorizontal: 20,
         paddingTop: 16,
@@ -754,7 +829,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
     },
-    // PRODUTOS
     produtosGrid: {
         gap: 16,
         paddingTop: 8,
@@ -769,7 +843,7 @@ const styles = StyleSheet.create({
     produtoImagemContainer: {
         height: 200,
         position: 'relative',
-        backgroundColor: '#2a2a2a', // COR DE FUNDO PARA QUANDO NÃO HÁ IMAGEM
+        backgroundColor: '#2a2a2a',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -788,32 +862,6 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 14,
         fontWeight: '500',
-    },
-    disponibilidadeBadge: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    disponivelBadge: {
-        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-        borderWidth: 1,
-        borderColor: '#10B981',
-    },
-    indisponivelBadge: {
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        borderWidth: 1,
-        borderColor: '#EF4444',
-    },
-    disponibilidadeTexto: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: '#FFF',
     },
     produtoInfo: {
         padding: 16,
@@ -836,12 +884,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#B8860B',
     },
-    produtoDescricao: {
-        fontSize: 14,
-        color: '#AAA',
-        lineHeight: 20,
-        marginBottom: 12,
-    },
     detalhesContainer: {
         gap: 8,
         marginBottom: 16,
@@ -856,10 +898,6 @@ const styles = StyleSheet.create({
         color: '#888',
         flex: 1,
     },
-    estoqueBaixo: {
-        color: '#EF4444',
-        fontWeight: '600',
-    },
     botaoComprar: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -869,16 +907,11 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 8,
     },
-    botaoComprarDisabled: {
-        backgroundColor: '#333',
-        opacity: 0.7,
-    },
     botaoComprarTexto: {
         color: '#FFF',
         fontSize: 14,
         fontWeight: '600',
     },
-    // PEDIDOS
     pedidosGrid: {
         gap: 16,
         paddingTop: 16,
@@ -1014,7 +1047,6 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#888',
     },
-    // MENSAGENS DE NENHUM RESULTADO
     nenhumResultado: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -1058,7 +1090,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    // CARRINHO FLUTUANTE
     carrinhoFloating: {
         position: 'absolute',
         bottom: 30,
@@ -1094,5 +1125,134 @@ const styles = StyleSheet.create({
     },
     footerSpace: {
         height: 80,
+    },
+    // MODAL DE TAMANHO
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    modalTamanhoContainer: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 20,
+        width: '100%',
+        maxWidth: 400,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    modalTamanhoHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    modalTamanhoTitulo: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    modalFecharBtn: {
+        padding: 4,
+    },
+    modalProdutoInfo: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    modalProdutoNome: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFF',
+        marginBottom: 8,
+    },
+    modalProdutoPreco: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#B8860B',
+    },
+    tamanhosContainer: {
+        padding: 20,
+        gap: 12,
+    },
+    tamanhoItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#0a0a0a',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#333',
+    },
+    tamanhoSelecionado: {
+        borderColor: '#B8860B',
+        backgroundColor: 'rgba(184, 134, 11, 0.1)',
+    },
+    tamanhoIndisponivel: {
+        opacity: 0.5,
+        backgroundColor: '#1a1a1a',
+    },
+    tamanhoTexto: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    tamanhoTextoSelecionado: {
+        color: '#B8860B',
+    },
+    tamanhoTextoIndisponivel: {
+        color: '#666',
+    },
+    estoqueTexto: {
+        fontSize: 14,
+        color: '#888',
+    },
+    estoqueTextoIndisponivel: {
+        color: '#666',
+    },
+    modalBotoesContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        padding: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#333',
+    },
+    modalBotaoCancelar: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 8,
+        backgroundColor: '#2a2a2a',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalBotaoCancelarTexto: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    modalBotaoConfirmar: {
+        flex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        borderRadius: 8,
+        backgroundColor: '#B8860B',
+    },
+    modalBotaoConfirmarDisabled: {
+        backgroundColor: '#333',
+        opacity: 0.5,
+    },
+    modalBotaoConfirmarTexto: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
