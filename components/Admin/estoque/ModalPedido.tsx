@@ -1,5 +1,7 @@
 // components/ModalPedido.tsx
+
 import { ItemEstoque, ItemPedido, Pedido } from '@/types/estoque';
+import { Usuario } from '@/types/usuarios';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -15,14 +17,6 @@ import {
   View
 } from 'react-native';
 
-// Interface para aluno
-interface Aluno {
-  id: string;
-  nome: string;
-  email?: string;
-  telefone?: string;
-}
-
 interface ModalPedidoProps {
   visible: boolean;
   onClose: () => void;
@@ -30,7 +24,7 @@ interface ModalPedidoProps {
   onAtualizarPedido?: (id: string, pedido: Partial<Pedido>) => void;
   produtos: ItemEstoque[];
   pedidoEditando?: Pedido | null;
-  alunos?: Aluno[]; // Adicione esta prop para receber a lista de alunos
+  alunos?: Usuario[]; // Usando a interface Usuario existente
 }
 
 export const ModalPedido: React.FC<ModalPedidoProps> = ({
@@ -48,7 +42,8 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const [pago, setPago] = useState(false);
   const [status, setStatus] = useState<'pendente' | 'reservado' | 'entregue'>('pendente');
   const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
-  const [alunoSelecionado, setAlunoSelecionado] = useState<Aluno | null>(null);
+  const [alunoSelecionado, setAlunoSelecionado] = useState<Usuario | null>(null);
+  const [buscaAluno, setBuscaAluno] = useState('');
 
   useEffect(() => {
     if (pedidoEditando) {
@@ -81,6 +76,13 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       setAlunoSelecionado(null);
     }
   }, [pedidoEditando, visible, alunos]);
+
+  // Filtrar alunos com base na busca
+  const alunosFiltrados = buscaAluno.trim() === '' 
+    ? alunos 
+    : alunos.filter(aluno => 
+        aluno.nome.toLowerCase().includes(buscaAluno.toLowerCase())
+      );
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
@@ -318,10 +320,11 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   };
 
   // Função para selecionar aluno da lista
-  const selecionarAluno = (aluno: Aluno) => {
+  const selecionarAluno = (aluno: Usuario) => {
     setAlunoSelecionado(aluno);
     setNomePessoa(aluno.nome);
     setMostrarListaAlunos(false);
+    setBuscaAluno('');
   };
 
   // Função para limpar seleção de aluno
@@ -385,6 +388,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     setObservacoes('');
     setPago(false);
     setAlunoSelecionado(null);
+    setBuscaAluno('');
   };
 
   const handleFechar = () => {
@@ -679,22 +683,46 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           visible={mostrarListaAlunos}
           animationType="slide"
           presentationStyle="pageSheet"
-          onRequestClose={() => setMostrarListaAlunos(false)}
+          onRequestClose={() => {
+            setMostrarListaAlunos(false);
+            setBuscaAluno('');
+          }}
         >
           <View style={styles.modalAlunosContainer}>
             <View style={styles.modalAlunosHeader}>
               <Text style={styles.modalAlunosTitle}>Selecione um Aluno</Text>
               <TouchableOpacity 
-                onPress={() => setMostrarListaAlunos(false)}
+                onPress={() => {
+                  setMostrarListaAlunos(false);
+                  setBuscaAluno('');
+                }}
                 style={styles.modalAlunosCloseButton}
               >
                 <Ionicons name="close" size={24} color="#FFF" />
               </TouchableOpacity>
             </View>
+
+            {/* Barra de busca no modal */}
+            <View style={styles.buscaAlunoContainer}>
+              <Ionicons name="search" size={20} color="#666" />
+              <TextInput
+                style={styles.buscaAlunoInput}
+                placeholder="Buscar aluno..."
+                placeholderTextColor="#666"
+                value={buscaAluno}
+                onChangeText={setBuscaAluno}
+                autoFocus
+              />
+              {buscaAluno ? (
+                <TouchableOpacity onPress={() => setBuscaAluno('')}>
+                  <Ionicons name="close-circle" size={20} color="#666" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
             
             <ScrollView style={styles.modalAlunosLista}>
-              {alunos.length > 0 ? (
-                alunos.map((aluno) => (
+              {alunosFiltrados.length > 0 ? (
+                alunosFiltrados.map((aluno) => (
                   <TouchableOpacity
                     key={aluno.id}
                     style={styles.alunoItem}
@@ -704,9 +732,9 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                       <Ionicons name="person-circle" size={24} color="#B8860B" />
                       <View style={styles.alunoItemTextContainer}>
                         <Text style={styles.alunoItemNome}>{aluno.nome}</Text>
-                        {aluno.email && (
-                          <Text style={styles.alunoItemEmail}>{aluno.email}</Text>
-                        )}
+                        <Text style={styles.alunoItemInfoExtra}>
+                          {aluno.email || aluno.telefone || 'Sem informações adicionais'}
+                        </Text>
                       </View>
                     </View>
                     {alunoSelecionado?.id === aluno.id && (
@@ -718,8 +746,16 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                 <View style={styles.nenhumAlunoContainer}>
                   <Ionicons name="people-outline" size={48} color="#666" />
                   <Text style={styles.nenhumAlunoTexto}>
-                    Nenhum aluno cadastrado
+                    {buscaAluno ? 'Nenhum aluno encontrado' : 'Nenhum aluno cadastrado'}
                   </Text>
+                  {buscaAluno && (
+                    <TouchableOpacity 
+                      style={styles.limparBuscaButton}
+                      onPress={() => setBuscaAluno('')}
+                    >
+                      <Text style={styles.limparBuscaTexto}>Limpar busca</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </ScrollView>
@@ -1052,9 +1088,27 @@ const styles = StyleSheet.create({
   modalAlunosCloseButton: {
     padding: 4,
   },
+  buscaAlunoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    margin: 16,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    gap: 12,
+  },
+  buscaAlunoInput: {
+    flex: 1,
+    color: '#FFF',
+    fontSize: 16,
+  },
   modalAlunosLista: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   alunoItem: {
     flexDirection: 'row',
@@ -1080,11 +1134,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  alunoItemEmail: {
+  alunoItemInfoExtra: {
     color: '#888',
     fontSize: 12,
-    marginTop: 2,
   },
   nenhumAlunoContainer: {
     alignItems: 'center',
@@ -1094,5 +1148,18 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 12,
     fontSize: 14,
+    textAlign: 'center',
+  },
+  limparBuscaButton: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#333',
+    borderRadius: 8,
+  },
+  limparBuscaTexto: {
+    color: '#B8860B',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
