@@ -43,6 +43,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const [status, setStatus] = useState<'pendente' | 'reservado' | 'entregue'>('pendente');
   const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState<Usuario | null>(null);
+  const [usuarioId, setUsuarioId] = useState<string>('');
   const [buscaAluno, setBuscaAluno] = useState('');
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       setItensPedido(pedidoEditando.itens);
       setObservacoes(pedidoEditando.observacoes || '');
       setStatus(pedidoEditando.status);
+      setUsuarioId(pedidoEditando.usuarioId || '');
       
       // Se houver alunos na lista, tente encontrar o aluno correspondente
       if (alunos.length > 0 && pessoa) {
@@ -74,6 +76,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       setObservacoes('');
       setStatus('pendente');
       setAlunoSelecionado(null);
+      setUsuarioId('');
     }
   }, [pedidoEditando, visible, alunos]);
 
@@ -323,6 +326,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const selecionarAluno = (aluno: Usuario) => {
     setAlunoSelecionado(aluno);
     setNomePessoa(aluno.nome);
+    setUsuarioId(aluno.id);
     setMostrarListaAlunos(false);
     setBuscaAluno('');
   };
@@ -331,6 +335,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const limparSelecaoAluno = () => {
     setAlunoSelecionado(null);
     setNomePessoa('');
+    setUsuarioId('');
   };
 
   const handleSalvar = () => {
@@ -356,6 +361,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       // Editar pedido existente
       const pedidoAtualizado: Partial<Pedido> = {
         pessoa: pessoaFinal,
+        usuarioId: usuarioId,
         itens: itensPedido,
         total: calcularTotal(),
         observacoes: observacoes.trim(),
@@ -368,6 +374,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       // Criar novo pedido
       const pedido: Omit<Pedido, 'id'> = {
         pessoa: pessoaFinal,
+        usuarioId: usuarioId,
         itens: itensPedido,
         data: new Date().toLocaleDateString('pt-BR'),
         dataTimestamp: Date.now(),
@@ -389,6 +396,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     setPago(false);
     setAlunoSelecionado(null);
     setBuscaAluno('');
+    setUsuarioId('');
   };
 
   const handleFechar = () => {

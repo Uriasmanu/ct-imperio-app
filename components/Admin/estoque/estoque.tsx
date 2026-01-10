@@ -536,7 +536,10 @@ export const Estoque: React.FC = () => {
                                             <TouchableOpacity
                                                 style={styles.botaoAcaoIcone}
                                                 onPress={() => {
-                                                    setPedidoEditando(pedido);
+                                                    setPedidoEditando({
+                                                        ...pedido,
+                                                        usuarioId: pedido.usuarioId || '' 
+                                                    });
                                                     setMostrarModalPedido(true);
                                                 }}
                                             >
