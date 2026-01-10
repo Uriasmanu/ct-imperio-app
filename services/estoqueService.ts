@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   updateDoc,
@@ -21,7 +22,6 @@ export const estoqueService = {
       const produtosRef = collection(db, 'estoque');
       const q = query(produtosRef, orderBy('nome'));
       const querySnapshot = await getDocs(q);
-      
       const produtos: ItemEstoque[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
@@ -34,7 +34,6 @@ export const estoqueService = {
           imagem: data.imagem || ''
         } as ItemEstoque);
       });
-      
       return produtos;
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
@@ -47,7 +46,6 @@ export const estoqueService = {
     try {
       const produtoRef = doc(db, 'estoque', id);
       const produtoSnap = await getDoc(produtoRef);
-      
       if (produtoSnap.exists()) {
         const data = produtoSnap.data();
         return {
@@ -73,13 +71,11 @@ export const estoqueService = {
     try {
       // Validar dados antes de salvar
       const produtoValidado = this.validarProduto(produto);
-      
       const docRef = await addDoc(collection(db, 'estoque'), {
         ...produtoValidado,
         createdAt: new Date(),
         updatedAt: new Date()
       });
-      
       return docRef.id;
     } catch (error) {
       console.error('Erro ao adicionar produto:', error);
@@ -91,7 +87,6 @@ export const estoqueService = {
   async updateProduto(id: string, produto: Partial<ItemEstoque>): Promise<void> {
     try {
       const produtoRef = doc(db, 'estoque', id);
-      
       await updateDoc(produtoRef, {
         ...produto,
         updatedAt: new Date()
@@ -113,19 +108,40 @@ export const estoqueService = {
     }
   },
 
+  listenProdutos(callback: (produtos: ItemEstoque[]) => void) {
+    const produtosRef = collection(db, 'estoque');
+    const q = query(produtosRef, orderBy('nome'));
+
+    return onSnapshot(q, (snapshot) => {
+      const produtos: ItemEstoque[] = [];
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        produtos.push({
+          id: doc.id,
+          nome: data.nome,
+          quantidade: data.quantidade,
+          tamanhos: data.tamanhos || {},
+          preco: data.preco,
+          imagem: data.imagem || ''
+        } as ItemEstoque);
+      });
+
+      callback(produtos);
+    });
+  },
+
   // Buscar produtos por nome
   async searchProdutos(nome: string): Promise<ItemEstoque[]> {
     try {
       const produtosRef = collection(db, 'estoque');
       const q = query(
-        produtosRef, 
+        produtosRef,
         where('nome', '>=', nome),
         where('nome', '<=', nome + '\uf8ff')
       );
-      
       const querySnapshot = await getDocs(q);
       const produtos: ItemEstoque[] = [];
-      
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         produtos.push({
@@ -137,7 +153,6 @@ export const estoqueService = {
           imagem: data.imagem || ''
         } as ItemEstoque);
       });
-      
       return produtos;
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
@@ -147,9 +162,9 @@ export const estoqueService = {
 
   // Atualizar estoque (quantidade total e tamanhos)
   async atualizarEstoque(
-    id: string, 
-    tamanho: string, 
-    quantidade: number, 
+    id: string,
+    tamanho: string,
+    quantidade: number,
     operacao: 'adicionar' | 'remover' = 'adicionar'
   ): Promise<void> {
     try {
@@ -159,7 +174,6 @@ export const estoqueService = {
       }
 
       const novosTamanhos = { ...produto.tamanhos };
-      
       if (operacao === 'adicionar') {
         novosTamanhos[tamanho] = (novosTamanhos[tamanho] || 0) + quantidade;
       } else {

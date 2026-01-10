@@ -31,7 +31,11 @@ export const Estoque: React.FC = () => {
 
     // Carregar produtos ao iniciar
     useEffect(() => {
-        carregarProdutos();
+        const unsubscribe = estoqueService.listenProdutos((produtos) => {
+            setEstoque(produtos);
+        });
+
+        return () => unsubscribe();
     }, []);
 
     // Carregar pedidos quando a aba estiver ativa
@@ -41,15 +45,6 @@ export const Estoque: React.FC = () => {
         }
     }, [abaAtiva]);
 
-    const carregarProdutos = async () => {
-        try {
-            const produtos = await estoqueService.getProdutos();
-            setEstoque(produtos);
-        } catch (error) {
-            console.error('Erro ao carregar produtos:', error);
-            Alert.alert('Erro', 'Não foi possível carregar os produtos');
-        }
-    };
 
     const carregarPedidos = async () => {
         try {
@@ -115,7 +110,6 @@ export const Estoque: React.FC = () => {
     const handleAdicionarProduto = async (produto: Omit<ItemEstoque, 'id'>) => {
         try {
             await estoqueService.addProduto(produto);
-            await carregarProdutos();
         } catch (error) {
             console.error('Erro ao adicionar produto:', error);
             throw error;
@@ -126,7 +120,6 @@ export const Estoque: React.FC = () => {
     const handleAtualizarProduto = async (id: string, produto: Partial<ItemEstoque>) => {
         try {
             await estoqueService.updateProduto(id, produto);
-            await carregarProdutos();
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
             throw error;
@@ -137,7 +130,6 @@ export const Estoque: React.FC = () => {
     const handleProcessarVenda = async (produtoId: string, tamanho: string, quantidade: number) => {
         try {
             await estoqueService.atualizarEstoque(produtoId, tamanho, quantidade, 'remover');
-            await carregarProdutos();
         } catch (error) {
             console.error('Erro ao processar venda:', error);
             throw error;
@@ -202,7 +194,7 @@ export const Estoque: React.FC = () => {
                     onPress: async () => {
                         try {
                             await estoqueService.deleteProduto(produto.id);
-                            await carregarProdutos();
+            
                             Alert.alert('Sucesso', 'Produto excluído com sucesso!');
                         } catch (error) {
                             console.error('Erro ao excluir produto:', error);

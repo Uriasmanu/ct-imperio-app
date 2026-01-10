@@ -12,6 +12,7 @@ import {
   updateDoc,
   where
 } from "firebase/firestore";
+import { estoqueService } from "./estoqueService";
 
 export const pedidoService = {
   // Criar pedido
@@ -108,12 +109,57 @@ export const pedidoService = {
   // Marcar como pago
   async marcarComoPago(id: string): Promise<void> {
     try {
+      const pedido = await this.getPedidoById(id);
+
+      if (!pedido) {
+        throw new Error('Pedido não encontrado');
+      }
+
+      if (pedido.pago) return;
+
+      for (const item of pedido.itens) {
+        if (!item.itemId) continue;
+
+        const produto = await estoqueService.getProdutoById(item.itemId);
+        if (!produto) continue;
+
+        if (item.tamanho && produto.tamanhos[item.tamanho] !== undefined) {
+          await estoqueService.atualizarEstoque(
+            item.itemId,
+            item.tamanho,
+            item.quantidade,
+            'remover'
+          );
+        } else {
+          const tamanhos = { ...produto.tamanhos };
+          const tamanhoFallback = Object.keys(tamanhos)[0];
+          if (!tamanhoFallback) continue;
+
+          tamanhos[tamanhoFallback] = Math.max(
+            0,
+            tamanhos[tamanhoFallback] - item.quantidade
+          );
+
+          const novaQuantidade = Object.values(tamanhos).reduce(
+            (total, qtd) => total + qtd,
+            0
+          );
+
+          await estoqueService.updateProduto(item.itemId, {
+            tamanhos,
+            quantidade: novaQuantidade
+          });
+        }
+      }
+
       await this.atualizarPedido(id, { pago: true });
+
     } catch (error) {
       console.error('Erro ao marcar pedido como pago:', error);
       throw error;
     }
   },
+
 
   // Deletar pedido
   async deletarPedido(id: string): Promise<void> {
