@@ -94,14 +94,6 @@ export const Estoque: React.FC = () => {
         }
     };
 
-    // Função para recarregar dados (pull to refresh)
-    const recarregarDados = async () => {
-        await carregarAlunos();
-        if (abaAtiva === 'pedidos') {
-            await carregarPedidos();
-        }
-    };
-
     // Função para criar novo pedido
     const handleCriarPedido = async (pedido: Omit<Pedido, 'id'>) => {
         try {
