@@ -1,6 +1,7 @@
 export interface ItemEstoque {
   id: string;
   nome: string;
+  imagem?: string;
   quantidade: number;
   tamanhos: { [key: string]: number };
   preco: number;

@@ -34,6 +34,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
   const [formData, setFormData] = useState({
     nome: '',
     preco: '',
+    imagem: '',
   });
   const [tamanhos, setTamanhos] = useState<{ tamanho: string; quantidade: string }[]>([
     { tamanho: 'P', quantidade: '0' },
@@ -49,7 +50,8 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
       setFormData({
         nome: produtoEditando.nome,
         preco: produtoEditando.preco.toString(),
-      });
+        imagem: produtoEditando.imagem || '', // Adicionado
+      });;
 
       // Converter os tamanhos do produto para o formato do formulário
       const tamanhosFormatados = Object.entries(produtoEditando.tamanhos).map(
@@ -143,6 +145,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
 
     const produtoData = {
       nome: formData.nome.trim(),
+      imagem: formData.imagem.trim(),
       preco: parseFloat(formData.preco),
       tamanhos: tamanhosFormatados,
       quantidade: Object.values(tamanhosFormatados).reduce((total, qtd) => total + qtd, 0),
@@ -150,7 +153,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
 
     try {
       setLoading(true);
-      
+
       if (modoEdicao && produtoEditando && onUpdate) {
         // Modo edição
         await onUpdate(produtoEditando.id, produtoData);
@@ -160,7 +163,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
         await onSave(produtoData);
         Alert.alert('Sucesso', 'Produto adicionado com sucesso!');
       }
-      
+
       resetForm();
       onClose();
     } catch (error) {
@@ -174,6 +177,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
     setFormData({
       nome: '',
       preco: '',
+      imagem: '',
     });
     setTamanhos([
       { tamanho: 'P', quantidade: '0' },
@@ -185,7 +189,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
   };
 
   const tituloModal = modoEdicao ? 'Editar Produto' : 'Adicionar Novo Item';
-  const textoBotaoSalvar = loading 
+  const textoBotaoSalvar = loading
     ? (modoEdicao ? 'Atualizando...' : 'Salvando...')
     : (modoEdicao ? 'Atualizar' : 'Salvar');
 
@@ -203,6 +207,17 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
             <TouchableOpacity onPress={onClose} style={styles.botaoFechar}>
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Link da Imagem (URL)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Cole o link da imagem aqui"
+              placeholderTextColor="#666"
+              value={formData.imagem}
+              onChangeText={(text) => setFormData({ ...formData, imagem: text })}
+            />
           </View>
 
           <ScrollView style={styles.formContainer}>
@@ -296,7 +311,7 @@ export const FormProduto: React.FC<FormProdutoProps> = ({
             >
               <Text style={styles.botaoCancelarTexto}>Cancelar</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[styles.botao, styles.botaoSalvar]}
               onPress={handleSave}
