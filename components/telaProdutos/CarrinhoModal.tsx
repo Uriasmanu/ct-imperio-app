@@ -7,11 +7,12 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
 
-// TIPOS (também podem ser movidos para um arquivo types.ts)
+// TIPOS
 export interface Produto {
   id: string;
   nome: string;
@@ -41,10 +42,12 @@ export interface CarrinhoModalProps {
   onAumentarQuantidade: (index: number) => void;
   onDiminuirQuantidade: (index: number) => void;
   onRemoverItem: (index: number) => void;
-  onFinalizarCompra: () => void;
+  onReservar: () => void;
+  observacoes?: string;
+  onObservacoesChange?: (text: string) => void;
 }
 
-// COMPONENTE DE ITEM DO CARRINHO (interno ao modal)
+// COMPONENTE DE ITEM DO CARRINHO
 interface ItemCarrinhoComponentProps {
   item: ItemCarrinho;
   onAumentarQuantidade: () => void;
@@ -129,7 +132,9 @@ export function CarrinhoModal({
   onAumentarQuantidade,
   onDiminuirQuantidade,
   onRemoverItem,
-  onFinalizarCompra
+  onReservar,
+  observacoes = '',
+  onObservacoesChange
 }: CarrinhoModalProps) {
   return (
     <Modal
@@ -142,7 +147,7 @@ export function CarrinhoModal({
         <View style={styles.modalContainer}>
           {/* HEADER DO MODAL */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seu Carrinho</Text>
+            <Text style={styles.modalTitle}>Carrinho de Reservas</Text>
             <TouchableOpacity onPress={onFechar} style={styles.modalFechar}>
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
@@ -166,37 +171,70 @@ export function CarrinhoModal({
               {/* RESUMO DO PEDIDO */}
               <View style={styles.resumoContainer}>
                 <View style={styles.resumoItem}>
-                  <Text style={styles.resumoLabel}>Subtotal</Text>
+                  <Text style={styles.resumoLabel}>Total de Itens</Text>
+                  <Text style={styles.resumoValor}>{itens.length}</Text>
+                </View>
+                
+                <View style={styles.resumoItem}>
+                  <Text style={styles.resumoLabel}>Valor Total</Text>
                   <Text style={styles.resumoValor}>R$ {total.toFixed(2)}</Text>
                 </View>
-                <View style={styles.resumoItem}>
-                  <Text style={styles.resumoLabel}>Frete</Text>
-                  <Text style={styles.resumoValor}>R$ 15,00</Text>
+                
+                {/* OBSERVAÇÕES */}
+                <View style={styles.observacoesContainer}>
+                  <Text style={styles.observacoesLabel}>Observações (opcional)</Text>
+                  <View style={styles.observacoesInputContainer}>
+                    <Ionicons name="document-text-outline" size={16} color="#888" />
+                    {onObservacoesChange ? (
+                      <TextInput
+                        style={styles.observacoesInput}
+                        placeholder="Ex: Retirar na academia, cor preferida..."
+                        placeholderTextColor="#666"
+                        value={observacoes}
+                        onChangeText={onObservacoesChange}
+                        multiline
+                        maxLength={200}
+                      />
+                    ) : (
+                      <Text style={styles.observacoesTexto}>
+                        {observacoes || 'Nenhuma observação'}
+                      </Text>
+                    )}
+                  </View>
                 </View>
+                
                 <View style={styles.resumoDivider} />
-                <View style={styles.resumoItem}>
-                  <Text style={styles.resumoTotalLabel}>Total</Text>
-                  <Text style={styles.resumoTotalValor}>
-                    R$ {(total + 15).toFixed(2)}
-                  </Text>
+                
+                {/* STATUS DA RESERVA */}
+                <View style={styles.statusReservaContainer}>
+                  <View style={styles.statusIconContainer}>
+                    <Ionicons name="time-outline" size={20} color="#B8860B" />
+                  </View>
+                  <View style={styles.statusInfo}>
+                    <Text style={styles.statusTitle}>Reserva Pendente</Text>
+                    <Text style={styles.statusText}>
+                      Itens serão reservados no estoque até a confirmação do pagamento
+                    </Text>
+                  </View>
                 </View>
                 
-                {/* BOTÃO FINALIZAR */}
-                <TouchableOpacity 
-                  style={styles.botaoFinalizar}
-                  onPress={onFinalizarCompra}
-                >
-                  <Ionicons name="card" size={20} color="#FFF" />
-                  <Text style={styles.botaoFinalizarTexto}>Finalizar Compra</Text>
-                </TouchableOpacity>
-                
-                {/* CONTINUAR COMPRANDO */}
-                <TouchableOpacity 
-                  style={styles.botaoContinuar}
-                  onPress={onFechar}
-                >
-                  <Text style={styles.botaoContinuarTexto}>Continuar Comprando</Text>
-                </TouchableOpacity>
+                {/* BOTÕES DE AÇÃO */}
+                <View style={styles.botoesContainer}>
+                  <TouchableOpacity 
+                    style={styles.botaoReservar}
+                    onPress={onReservar}
+                  >
+                    <Ionicons name="checkmark-circle" size={20} color="#FFF" />
+                    <Text style={styles.botaoReservarTexto}>Reservar Itens</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.botaoContinuar}
+                    onPress={onFechar}
+                  >
+                    <Text style={styles.botaoContinuarTexto}>Continuar Comprando</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </>
           ) : (
@@ -204,7 +242,7 @@ export function CarrinhoModal({
               <Ionicons name="cart-outline" size={64} color="#666" />
               <Text style={styles.carrinhoVazioTitle}>Seu carrinho está vazio</Text>
               <Text style={styles.carrinhoVazioText}>
-                Adicione produtos para ver eles aqui
+                Adicione produtos para reservá-los
               </Text>
               <TouchableOpacity 
                 style={styles.botaoContinuarComprando}
@@ -234,7 +272,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderWidth: 1,
     borderColor: '#333',
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -248,13 +286,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: '#B8860B',
   },
   modalFechar: {
     padding: 4,
   },
   carrinhoLista: {
-    maxHeight: 400,
+    maxHeight: 350,
     paddingHorizontal: 20,
     paddingTop: 16,
   },
@@ -332,7 +370,7 @@ const styles = StyleSheet.create({
   resumoContainer: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: '#333',
   },
@@ -340,43 +378,97 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   resumoLabel: {
     fontSize: 14,
     color: '#AAA',
+    fontWeight: '500',
   },
   resumoValor: {
     fontSize: 14,
     color: '#FFF',
+    fontWeight: '600',
+  },
+  observacoesContainer: {
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  observacoesLabel: {
+    fontSize: 14,
+    color: '#AAA',
     fontWeight: '500',
+    marginBottom: 8,
+  },
+  observacoesInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  observacoesInput: {
+    flex: 1,
+    color: '#FFF',
+    fontSize: 14,
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  observacoesTexto: {
+    flex: 1,
+    color: '#888',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   resumoDivider: {
     height: 1,
     backgroundColor: '#333',
-    marginVertical: 12,
+    marginVertical: 16,
   },
-  resumoTotalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+  statusReservaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(184, 134, 11, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    marginBottom: 20,
   },
-  resumoTotalValor: {
-    fontSize: 20,
+  statusIconContainer: {
+    marginRight: 12,
+  },
+  statusInfo: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#B8860B',
+    marginBottom: 4,
   },
-  botaoFinalizar: {
+  statusText: {
+    fontSize: 12,
+    color: '#AAA',
+    lineHeight: 16,
+  },
+  botoesContainer: {
+    gap: 12,
+  },
+  botaoReservar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: '#B8860B',
     paddingVertical: 16,
     borderRadius: 12,
-    marginTop: 16,
   },
-  botaoFinalizarTexto: {
+  botaoReservarTexto: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
@@ -386,7 +478,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    marginTop: 12,
     borderWidth: 1,
     borderColor: '#333',
   },
