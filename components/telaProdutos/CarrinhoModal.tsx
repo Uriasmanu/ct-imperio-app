@@ -1,33 +1,31 @@
 // components/CarrinhoModal.tsx
+import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 // TIPOS
 export interface Produto {
   id: string;
   nome: string;
-  descricao: string;
   preco: number;
   categoria: string;
-  disponivel: boolean;
   imagem?: string;
-  cores?: string[];
   tamanhos?: string[];
   estoque?: number;
 }
 
 export interface ItemCarrinho {
-  produto: Produto;
+  produto: ItemEstoque;
   quantidade: number;
   tamanhoSelecionado?: string;
   corSelecionada?: string;
@@ -55,20 +53,20 @@ interface ItemCarrinhoComponentProps {
   onRemover: () => void;
 }
 
-function ItemCarrinhoComponent({ 
-  item, 
-  onAumentarQuantidade, 
-  onDiminuirQuantidade, 
-  onRemover 
+function ItemCarrinhoComponent({
+  item,
+  onAumentarQuantidade,
+  onDiminuirQuantidade,
+  onRemover
 }: ItemCarrinhoComponentProps) {
   return (
     <View style={styles.itemCarrinhoCard}>
-      <Image 
-        source={{ uri: item.produto.imagem }} 
+      <Image
+        source={{ uri: item.produto.imagem }}
         style={styles.itemCarrinhoImagem}
         resizeMode="cover"
       />
-      
+
       <View style={styles.itemCarrinhoInfo}>
         <View style={styles.itemCarrinhoHeader}>
           <Text style={styles.itemCarrinhoNome} numberOfLines={2}>
@@ -78,7 +76,7 @@ function ItemCarrinhoComponent({
             <Ionicons name="close-circle" size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
-        
+
         {(item.tamanhoSelecionado || item.corSelecionada) && (
           <View style={styles.itemCarrinhoVariacoes}>
             {item.tamanhoSelecionado && (
@@ -93,27 +91,27 @@ function ItemCarrinhoComponent({
             )}
           </View>
         )}
-        
+
         <View style={styles.itemCarrinhoControles}>
           <View style={styles.quantidadeContainer}>
-            <TouchableOpacity 
-              onPress={onDiminuirQuantidade} 
+            <TouchableOpacity
+              onPress={onDiminuirQuantidade}
               style={styles.quantidadeBotao}
               disabled={item.quantidade <= 1}
             >
               <Ionicons name="remove" size={16} color={item.quantidade <= 1 ? "#666" : "#FFF"} />
             </TouchableOpacity>
-            
+
             <Text style={styles.quantidadeTexto}>{item.quantidade}</Text>
-            
-            <TouchableOpacity 
-              onPress={onAumentarQuantidade} 
+
+            <TouchableOpacity
+              onPress={onAumentarQuantidade}
               style={styles.quantidadeBotao}
             >
               <Ionicons name="add" size={16} color="#FFF" />
             </TouchableOpacity>
           </View>
-          
+
           <Text style={styles.itemCarrinhoSubtotal}>
             R$ {item.subtotal.toFixed(2)}
           </Text>
@@ -124,9 +122,9 @@ function ItemCarrinhoComponent({
 }
 
 // COMPONENTE PRINCIPAL DO MODAL
-export function CarrinhoModal({ 
-  visible, 
-  itens, 
+export function CarrinhoModal({
+  visible,
+  itens,
   total,
   onFechar,
   onAumentarQuantidade,
@@ -152,7 +150,7 @@ export function CarrinhoModal({
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
-          
+
           {/* CONTEÚDO DO CARRINHO */}
           {itens.length > 0 ? (
             <>
@@ -167,19 +165,19 @@ export function CarrinhoModal({
                   />
                 ))}
               </ScrollView>
-              
+
               {/* RESUMO DO PEDIDO */}
               <View style={styles.resumoContainer}>
                 <View style={styles.resumoItem}>
                   <Text style={styles.resumoLabel}>Total de Itens</Text>
                   <Text style={styles.resumoValor}>{itens.length}</Text>
                 </View>
-                
+
                 <View style={styles.resumoItem}>
                   <Text style={styles.resumoLabel}>Valor Total</Text>
                   <Text style={styles.resumoValor}>R$ {total.toFixed(2)}</Text>
                 </View>
-                
+
                 {/* OBSERVAÇÕES */}
                 <View style={styles.observacoesContainer}>
                   <Text style={styles.observacoesLabel}>Observações (opcional)</Text>
@@ -202,9 +200,9 @@ export function CarrinhoModal({
                     )}
                   </View>
                 </View>
-                
+
                 <View style={styles.resumoDivider} />
-                
+
                 {/* STATUS DA RESERVA */}
                 <View style={styles.statusReservaContainer}>
                   <View style={styles.statusIconContainer}>
@@ -217,18 +215,18 @@ export function CarrinhoModal({
                     </Text>
                   </View>
                 </View>
-                
+
                 {/* BOTÕES DE AÇÃO */}
                 <View style={styles.botoesContainer}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.botaoReservar}
                     onPress={onReservar}
                   >
                     <Ionicons name="checkmark-circle" size={20} color="#FFF" />
                     <Text style={styles.botaoReservarTexto}>Reservar Itens</Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity 
+
+                  <TouchableOpacity
                     style={styles.botaoContinuar}
                     onPress={onFechar}
                   >
@@ -244,7 +242,7 @@ export function CarrinhoModal({
               <Text style={styles.carrinhoVazioText}>
                 Adicione produtos para reservá-los
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.botaoContinuarComprando}
                 onPress={onFechar}
               >
@@ -272,14 +270,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderWidth: 1,
     borderColor: '#333',
-    maxHeight: '90%',
+    maxHeight: '98%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -293,7 +291,7 @@ const styles = StyleSheet.create({
   },
   carrinhoLista: {
     maxHeight: 350,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 16,
   },
   itemCarrinhoCard: {
@@ -301,7 +299,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: '#333',
   },

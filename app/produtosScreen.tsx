@@ -1,6 +1,7 @@
 // screens/ProdutosScreen.tsx
 
-import { CarrinhoModal, ItemCarrinho, Produto } from '@/components/telaProdutos/CarrinhoModal';
+import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
+import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from "react";
 import {
@@ -15,97 +16,51 @@ import {
 
 // TIPOS PARA PEDIDOS
 interface Pedido {
-  id: string;
-  pessoa: string;
-  itens: {
-    nome: string;
-    quantidade: number;
-    tamanho?: string;
-    precoUnitario: number;
-    subtotal: number;
-  }[];
-  data: string;
-  pago: boolean;
-  total: number;
-  observacoes?: string;
-  status: 'pendente' | 'reservado' | 'entregue';
+    id: string;
+    pessoa: string;
+    itens: {
+        nome: string;
+        quantidade: number;
+        tamanho?: string;
+        precoUnitario: number;
+        subtotal: number;
+    }[];
+    data: string;
+    pago: boolean;
+    total: number;
+    observacoes?: string;
+    status: 'pendente' | 'reservado' | 'entregue';
 }
 
 // DADOS PRE-ESCRITOS DOS PRODUTOS
-const produtosPredefinidos: Produto[] = [
+const produtosPredefinidos: ItemEstoque[] = [
     {
         id: '1',
         nome: 'Camisa Oficial',
-        descricao: 'Camisa oficial da academia, 100% algodão, respirável e confortável para treinos intensos.',
-        preco: 89.90,
-        categoria: 'Vestuário',
-        disponivel: true,
+        preco: 89.9,
         imagem: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
-        cores: ['Preto', 'Branco', 'Cinza', 'Vermelho'],
-        tamanhos: ['P', 'M', 'G', 'GG'],
-        estoque: 45
+        quantidade: 45,
+        tamanhos: {
+            P: 10,
+            M: 15,
+            G: 12,
+            GG: 8
+        }
     },
     {
         id: '2',
         nome: 'Short de Treino',
-        descricao: 'Short leve e flexível, ideal para atividades físicas. Secagem rápida e tecido anti-odor.',
-        preco: 69.90,
-        categoria: 'Vestuário',
-        disponivel: true,
+        preco: 69.9,
         imagem: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
-        cores: ['Preto', 'Azul', 'Verde', 'Cinza'],
-        tamanhos: ['P', 'M', 'G'],
-        estoque: 32
-    },
-    {
-        id: '3',
-        nome: 'Luva de Academia',
-        descricao: 'Luva com proteção para palma da mão, ideal para levantamento de peso e barras.',
-        preco: 49.90,
-        categoria: 'Acessórios',
-        disponivel: true,
-        imagem: '',
-        cores: ['Preto', 'Vermelho', 'Azul'],
-        tamanhos: ['Único'],
-        estoque: 28
-    },
-    {
-        id: '4',
-        nome: 'Camisa Dry Fit',
-        descricao: 'Tecido dry fit que absorve o suor, mantendo o corpo seco durante o treino.',
-        preco: 99.90,
-        categoria: 'Vestuário',
-        disponivel: false,
-        imagem: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400',
-        cores: ['Preto', 'Azul Marinho'],
-        tamanhos: ['M', 'G', 'GG'],
-        estoque: 0
-    },
-    {
-        id: '5',
-        nome: 'Short Compressão',
-        descricao: 'Short de compressão para melhor performance e recuperação muscular.',
-        preco: 119.90,
-        categoria: 'Vestuário',
-        disponivel: true,
-        imagem: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400',
-        cores: ['Preto'],
-        tamanhos: ['P', 'M', 'G'],
-        estoque: 15
-    },
-    {
-        id: '6',
-        nome: 'Luva de Dedos Abertos',
-        descricao: 'Luva com dedos abertos para melhor aderência e sensibilidade.',
-        preco: 59.90,
-        categoria: 'Acessórios',
-        disponivel: true,
-        imagem: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400',
-        cores: ['Cinza', 'Preto'],
-        tamanhos: ['P', 'M', 'G'],
-        estoque: 22
+        quantidade: 32,
+        tamanhos: {
+            P: 8,
+            M: 12,
+            G: 12
+        }
     }
 ];
+
 
 // DADOS DE EXEMPLO PARA MEUS PEDIDOS
 const pedidosExemplo: Pedido[] = [
@@ -151,14 +106,14 @@ const pedidosExemplo: Pedido[] = [
 
 // COMPONENTE DE CARD DE PRODUTO
 interface ProdutoCardProps {
-    produto: Produto;
+    produto: ItemEstoque;
     onPress?: () => void;
-    onAdicionarAoCarrinho: (produto: Produto) => void;
+    onAdicionarAoCarrinho: (produto: ItemEstoque) => void;
 }
 
 function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardProps) {
     const temImagem = produto.imagem && produto.imagem.trim() !== '';
-    
+
     return (
         <View style={styles.produtoCard}>
             <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
@@ -171,10 +126,10 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                         />
                     ) : (
                         <View style={styles.imagemPlaceholder}>
-                            <Ionicons 
-                                name="image-outline" 
-                                size={48} 
-                                color="#666" 
+                            <Ionicons
+                                name="image-outline"
+                                size={48}
+                                color="#666"
                                 style={styles.placeholderIcon}
                             />
                             <Text style={styles.placeholderTexto}>
@@ -182,14 +137,7 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                             </Text>
                         </View>
                     )}
-                    <View style={[
-                        styles.disponibilidadeBadge,
-                        produto.disponivel ? styles.disponivelBadge : styles.indisponivelBadge
-                    ]}>
-                        <Text style={styles.disponibilidadeTexto}>
-                            {produto.disponivel ? 'Disponível' : 'Esgotado'}
-                        </Text>
-                    </View>
+
                 </View>
             </TouchableOpacity>
 
@@ -203,55 +151,31 @@ function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardPro
                     </Text>
                 </View>
 
-                <Text style={styles.produtoDescricao} numberOfLines={2}>
-                    {produto.descricao}
-                </Text>
-
                 <View style={styles.detalhesContainer}>
-                    {produto.cores && produto.cores.length > 0 && (
-                        <View style={styles.detalheItem}>
-                            <Ionicons name="color-palette-outline" size={14} color="#888" />
-                            <Text style={styles.detalheTexto} numberOfLines={1}>
-                                {produto.cores.join(', ')}
-                            </Text>
-                        </View>
-                    )}
 
-                    {produto.tamanhos && produto.tamanhos.length > 0 && (
+                    {produto.tamanhos && Object.keys(produto.tamanhos).length > 0 && (
                         <View style={styles.detalheItem}>
                             <Ionicons name="resize-outline" size={14} color="#888" />
                             <Text style={styles.detalheTexto} numberOfLines={1}>
-                                {produto.tamanhos.join(', ')}
+                                {Object.keys(produto.tamanhos).join(', ')}
                             </Text>
                         </View>
                     )}
 
-                    <View style={styles.detalheItem}>
-                        <Ionicons name="cube-outline" size={14} color="#888" />
-                        <Text style={[
-                            styles.detalheTexto,
-                            produto.estoque && produto.estoque < 10 ? styles.estoqueBaixo : null
-                        ]}>
-                            Estoque: {produto.estoque || 0}
-                        </Text>
-                    </View>
                 </View>
 
                 <TouchableOpacity
                     style={[
-                        styles.botaoComprar,
-                        !produto.disponivel && styles.botaoComprarDisabled
+                        styles.botaoComprar
                     ]}
-                    disabled={!produto.disponivel}
                     onPress={() => onAdicionarAoCarrinho(produto)}
                 >
                     <Ionicons
-                        name={produto.disponivel ? "cart-outline" : "close-circle-outline"}
                         size={18}
                         color="#FFF"
                     />
                     <Text style={styles.botaoComprarTexto}>
-                        {produto.disponivel ? 'Adicionar ao Carrinho' : 'Indisponível'}
+                        Adicionar ao Carrinho
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -304,15 +228,15 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
                     <Text style={styles.pedidoId}>Pedido #{pedido.id}</Text>
                     <Text style={styles.pedidoData}>{pedido.data}</Text>
                 </View>
-                
+
                 <View style={[
                     styles.statusBadge,
                     { backgroundColor: getStatusColor(pedido.status) + '20', borderColor: getStatusColor(pedido.status) }
                 ]}>
-                    <Ionicons 
-                        name={getStatusIcon(pedido.status) as any} 
-                        size={14} 
-                        color={getStatusColor(pedido.status)} 
+                    <Ionicons
+                        name={getStatusIcon(pedido.status) as any}
+                        size={14}
+                        color={getStatusColor(pedido.status)}
                     />
                     <Text style={[styles.statusText, { color: getStatusColor(pedido.status) }]}>
                         {getStatusText(pedido.status)}
@@ -332,7 +256,7 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
                         </Text>
                     </View>
                 ))}
-                
+
                 {pedido.itens.length > 2 && (
                     <Text style={styles.pedidoMaisItens}>
                         +{pedido.itens.length - 2} iten(s)
@@ -348,22 +272,22 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
                         R$ {pedido.total.toFixed(2)}
                     </Text>
                 </View>
-                
+
                 <View style={styles.pedidoPagamentoContainer}>
                     <View style={[
                         styles.pagamentoBadge,
                         pedido.pago ? styles.pagamentoPago : styles.pagamentoPendente
                     ]}>
-                        <Ionicons 
-                            name={pedido.pago ? "checkmark-circle" : "time"} 
-                            size={12} 
-                            color="#FFF" 
+                        <Ionicons
+                            name={pedido.pago ? "checkmark-circle" : "time"}
+                            size={12}
+                            color="#FFF"
                         />
                         <Text style={styles.pagamentoTexto}>
                             {pedido.pago ? 'Pago' : 'Pendente'}
                         </Text>
                     </View>
-                    
+
                     {pedido.observacoes && (
                         <View style={styles.observacoesBadge}>
                             <Ionicons name="document-text" size={12} color="#888" />
@@ -380,7 +304,7 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
 export default function ProdutosScreen() {
     const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
     const [busca, setBusca] = useState('');
-    const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>(produtosPredefinidos);
+    const [produtosFiltrados, setProdutosFiltrados] = useState<ItemEstoque[]>(produtosPredefinidos);
     const [modalCarrinhoVisible, setModalCarrinhoVisible] = useState(false);
     const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([
         {
@@ -408,9 +332,7 @@ export default function ProdutosScreen() {
         } else {
             const textoLower = texto.toLowerCase();
             const filtrados = produtosPredefinidos.filter(produto =>
-                produto.nome.toLowerCase().includes(textoLower) ||
-                produto.descricao.toLowerCase().includes(textoLower) ||
-                produto.categoria.toLowerCase().includes(textoLower)
+                produto.nome.toLowerCase().includes(textoLower)
             );
             setProdutosFiltrados(filtrados);
         }
@@ -423,7 +345,7 @@ export default function ProdutosScreen() {
     };
 
     // ADICIONAR PRODUTO AO CARRINHO
-    const adicionarAoCarrinho = (produto: Produto) => {
+    const adicionarAoCarrinho = (produto: ItemEstoque) => {
         const itemExistenteIndex = itensCarrinho.findIndex(item =>
             item.produto.id === produto.id
         );
@@ -435,13 +357,15 @@ export default function ProdutosScreen() {
                 novosItens[itemExistenteIndex].quantidade * produto.preco;
             setItensCarrinho(novosItens);
         } else {
+            const tamanhosDisponiveis = Object.keys(produto.tamanhos);
+
             const novoItem: ItemCarrinho = {
                 produto,
                 quantidade: 1,
-                tamanhoSelecionado: produto.tamanhos?.[0],
-                corSelecionada: produto.cores?.[0],
+                tamanhoSelecionado: tamanhosDisponiveis[0],
                 subtotal: produto.preco
             };
+
             setItensCarrinho([...itensCarrinho, novoItem]);
         }
 
@@ -483,9 +407,9 @@ export default function ProdutosScreen() {
     const reservarItens = () => {
         // Aqui você faria a integração com o Firebase
         // Criaria um pedido de reserva com status "pendente"
-        
+
         alert(`Reserva realizada com sucesso!\n\nItens: ${itensCarrinho.length}\nTotal: R$ ${calcularTotal().toFixed(2)}\nObservações: ${observacoes || 'Nenhuma'}`);
-        
+
         // Limpar carrinho após reserva
         setItensCarrinho([]);
         setObservacoes('');
@@ -590,7 +514,7 @@ export default function ProdutosScreen() {
                                 <Text style={styles.nenhumResultadoText}>
                                     Você ainda não fez nenhum pedido
                                 </Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.botaoVoltarProdutos}
                                     onPress={() => setAbaAtiva('produtos')}
                                 >
@@ -613,17 +537,17 @@ export default function ProdutosScreen() {
             {/* HEADER */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
-                    <Ionicons 
-                        name={abaAtiva === 'produtos' ? "search-outline" : "receipt-outline"} 
-                        size={32} 
-                        color="#B8860B" 
+                    <Ionicons
+                        name={abaAtiva === 'produtos' ? "search-outline" : "receipt-outline"}
+                        size={32}
+                        color="#B8860B"
                     />
                     <Text style={styles.headerTitle}>
                         {abaAtiva === 'produtos' ? 'Buscar Produtos' : 'Meus Pedidos'}
                     </Text>
                     <Text style={styles.headerSubtitle}>
-                        {abaAtiva === 'produtos' 
-                            ? 'Digite o nome do produto que procura' 
+                        {abaAtiva === 'produtos'
+                            ? 'Digite o nome do produto que procura'
                             : 'Acompanhe seus pedidos e reservas'
                         }
                     </Text>
@@ -632,17 +556,17 @@ export default function ProdutosScreen() {
 
             {/* TABS DE NAVEGAÇÃO */}
             <View style={styles.tabsContainer}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[
                         styles.tabItem,
                         abaAtiva === 'produtos' && styles.tabItemAtiva
                     ]}
                     onPress={() => setAbaAtiva('produtos')}
                 >
-                    <Ionicons 
-                        name="cart-outline" 
-                        size={20} 
-                        color={abaAtiva === 'produtos' ? "#B8860B" : "#888"} 
+                    <Ionicons
+                        name="cart-outline"
+                        size={20}
+                        color={abaAtiva === 'produtos' ? "#B8860B" : "#888"}
                     />
                     <Text style={[
                         styles.tabText,
@@ -652,17 +576,17 @@ export default function ProdutosScreen() {
                     </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[
                         styles.tabItem,
                         abaAtiva === 'pedidos' && styles.tabItemAtiva
                     ]}
                     onPress={() => setAbaAtiva('pedidos')}
                 >
-                    <Ionicons 
-                        name="receipt-outline" 
-                        size={20} 
-                        color={abaAtiva === 'pedidos' ? "#B8860B" : "#888"} 
+                    <Ionicons
+                        name="receipt-outline"
+                        size={20}
+                        color={abaAtiva === 'pedidos' ? "#B8860B" : "#888"}
                     />
                     <Text style={[
                         styles.tabText,
@@ -670,7 +594,7 @@ export default function ProdutosScreen() {
                     ]}>
                         Meus Pedidos
                     </Text>
-                    
+
                 </TouchableOpacity>
             </View>
 
