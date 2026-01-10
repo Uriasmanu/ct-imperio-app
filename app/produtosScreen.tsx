@@ -2,7 +2,6 @@
 
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
 import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
-import { PedidoCard } from '@/components/telaProdutos/PedidoCard';
 import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
 import { estoqueService } from '@/services/estoqueService';
 import { ItemEstoque } from '@/types/estoque';
@@ -17,7 +16,6 @@ import {
     View
 } from "react-native";
 
-
 // COMPONENTE PRINCIPAL
 export default function ProdutosScreen() {
     const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
@@ -30,6 +28,7 @@ export default function ProdutosScreen() {
     const [produtoSelecionado, setProdutoSelecionado] = useState<ItemEstoque | null>(null);
     const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([]);
     const [observacoes, setObservacoes] = useState('');
+    const [pedidosUsuario, setPedidosUsuario] = useState<any[]>([]); // Estado para pedidos do usuário
 
     useEffect(() => {
         const carregarProdutos = async () => {
@@ -57,7 +56,32 @@ export default function ProdutosScreen() {
         return () => unsubscribe();
     }, []);
 
+    // Carregar pedidos quando a aba de pedidos estiver ativa
+    useEffect(() => {
+        if (abaAtiva === 'pedidos') {
+            carregarPedidosUsuario();
+        }
+    }, [abaAtiva]);
 
+    const carregarPedidosUsuario = async () => {
+        try {
+            // TODO: Aqui você precisará implementar a lógica para carregar
+            // os pedidos do usuário atual. Você pode precisar:
+            // 1. Obter o ID do usuário logado (via autenticação)
+            // 2. Buscar pedidos com esse usuarioId no banco de dados
+            // 3. Atualizar o estado pedidosUsuario
+            
+            // Exemplo:
+            // const usuarioId = await obterUsuarioId(); // Implemente essa função
+            // const pedidos = await pedidoService.getPedidosPorUsuario(usuarioId);
+            // setPedidosUsuario(pedidos);
+            
+            // Por enquanto, vamos deixar vazio
+            setPedidosUsuario([]);
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+        }
+    };
 
     const filtrarProdutos = (texto: string) => {
         setBusca(texto);
@@ -73,12 +97,10 @@ export default function ProdutosScreen() {
         }
     };
 
-
     const limparBusca = () => {
         setBusca('');
         setProdutosFiltrados(produtos);
     };
-
 
     const adicionarAoCarrinho = (produto: ItemEstoque) => {
         setProdutoSelecionado(produto);
@@ -218,19 +240,19 @@ export default function ProdutosScreen() {
                 </>
             );
         } else {
+            // ABA DE PEDIDOS
             return (
                 <ScrollView
                     style={styles.scrollContainer}
                     showsVerticalScrollIndicator={false}
                 >
-                    {pedidosExemplo.length > 0 ? (
-                        <View style={styles.pedidosGrid}>
-                            {pedidosExemplo.map((pedido) => (
-                                <PedidoCard
-                                    key={pedido.id}
-                                    pedido={pedido}
-                                    onPress={() => console.log('Ver detalhes do pedido:', pedido.id)}
-                                />
+                    {pedidosUsuario.length > 0 ? (
+                        <View style={styles.pedidosContainer}>
+                            {pedidosUsuario.map((pedido) => (
+                                <View key={pedido.id} style={styles.pedidoCard}>
+                                    {/* TODO: Implementar o card de pedido real aqui */}
+                                    <Text style={styles.pedidoText}>Pedido #{pedido.id}</Text>
+                                </View>
                             ))}
                         </View>
                     ) : (
@@ -469,11 +491,21 @@ const styles = StyleSheet.create({
         gap: 16,
         paddingTop: 8,
     },
-    pedidosGrid: {
+    pedidosContainer: {
         gap: 16,
         paddingTop: 16,
     },
-
+    pedidoCard: {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    pedidoText: {
+        color: '#FFF',
+        fontSize: 16,
+    },
     /* ESTADOS VAZIOS */
     nenhumResultado: {
         alignItems: 'center',
@@ -518,7 +550,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-
     /* CARRINHO */
     carrinhoFloating: {
         position: 'absolute',
@@ -552,4 +583,3 @@ const styles = StyleSheet.create({
         height: 80,
     },
 });
-
