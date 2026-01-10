@@ -1,3 +1,6 @@
+// screens/ProdutosScreen.tsx
+
+import { CarrinhoModal, ItemCarrinho, Produto } from '@/components/telaProdutos/CarrinhoModal';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from "react";
 import {
@@ -9,20 +12,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-
-// TIPOS
-interface Produto {
-  id: string;
-  nome: string;
-  descricao: string;
-  preco: number;
-  categoria: string;
-  disponivel: boolean;
-  imagem?: string;
-  cores?: string[];
-  tamanhos?: string[];
-  estoque?: number;
-}
 
 // DADOS PRE-ESCRITOS DOS PRODUTOS
 const produtosPredefinidos: Produto[] = [
@@ -45,7 +34,7 @@ const produtosPredefinidos: Produto[] = [
     preco: 69.90,
     categoria: 'Vestuário',
     disponivel: true,
-    imagem: 'https://lh3.googleusercontent.com/d/1LTkYPAVPDHwOSB-irlnOa63lBR2x1XOP',
+    imagem: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
     cores: ['Preto', 'Azul', 'Verde', 'Cinza'],
     tamanhos: ['P', 'M', 'G'],
     estoque: 32
@@ -104,34 +93,30 @@ const produtosPredefinidos: Produto[] = [
 interface ProdutoCardProps {
   produto: Produto;
   onPress?: () => void;
+  onAdicionarAoCarrinho: (produto: Produto) => void;
 }
 
-function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
+function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardProps) {
   return (
-    <TouchableOpacity 
-      style={styles.produtoCard} 
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      {/* IMAGEM DO PRODUTO */}
-      <View style={styles.produtoImagemContainer}>
-        <Image 
-          source={{ uri: produto.imagem }} 
-          style={styles.produtoImagem}
-          resizeMode="cover"
-        />
-        {/* STATUS DE DISPONIBILIDADE */}
-        <View style={[
-          styles.disponibilidadeBadge,
-          produto.disponivel ? styles.disponivelBadge : styles.indisponivelBadge
-        ]}>
-          <Text style={styles.disponibilidadeTexto}>
-            {produto.disponivel ? 'Disponível' : 'Esgotado'}
-          </Text>
+    <View style={styles.produtoCard}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <View style={styles.produtoImagemContainer}>
+          <Image 
+            source={{ uri: produto.imagem }} 
+            style={styles.produtoImagem}
+            resizeMode="cover"
+          />
+          <View style={[
+            styles.disponibilidadeBadge,
+            produto.disponivel ? styles.disponivelBadge : styles.indisponivelBadge
+          ]}>
+            <Text style={styles.disponibilidadeTexto}>
+              {produto.disponivel ? 'Disponível' : 'Esgotado'}
+            </Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
-      {/* INFORMAÇÕES DO PRODUTO */}
       <View style={styles.produtoInfo}>
         <View style={styles.produtoHeader}>
           <Text style={styles.produtoNome} numberOfLines={1}>
@@ -146,9 +131,7 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
           {produto.descricao}
         </Text>
 
-        {/* DETALHES DO PRODUTO */}
         <View style={styles.detalhesContainer}>
-          {/* CORES DISPONÍVEIS */}
           {produto.cores && produto.cores.length > 0 && (
             <View style={styles.detalheItem}>
               <Ionicons name="color-palette-outline" size={14} color="#888" />
@@ -158,7 +141,6 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
             </View>
           )}
 
-          {/* TAMANHOS */}
           {produto.tamanhos && produto.tamanhos.length > 0 && (
             <View style={styles.detalheItem}>
               <Ionicons name="resize-outline" size={14} color="#888" />
@@ -168,7 +150,6 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
             </View>
           )}
 
-          {/* ESTOQUE */}
           <View style={styles.detalheItem}>
             <Ionicons name="cube-outline" size={14} color="#888" />
             <Text style={[
@@ -180,14 +161,13 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
           </View>
         </View>
 
-        {/* BOTÃO DE AÇÃO */}
         <TouchableOpacity 
           style={[
             styles.botaoComprar,
             !produto.disponivel && styles.botaoComprarDisabled
           ]}
           disabled={!produto.disponivel}
-          onPress={() => console.log('Comprar:', produto.nome)}
+          onPress={() => onAdicionarAoCarrinho(produto)}
         >
           <Ionicons 
             name={produto.disponivel ? "cart-outline" : "close-circle-outline"} 
@@ -199,7 +179,7 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
           </Text>
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -207,6 +187,22 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
 export default function ProdutosScreen() {
   const [busca, setBusca] = useState('');
   const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>(produtosPredefinidos);
+  const [modalCarrinhoVisible, setModalCarrinhoVisible] = useState(false);
+  const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([
+    {
+      produto: produtosPredefinidos[0],
+      quantidade: 2,
+      tamanhoSelecionado: 'M',
+      corSelecionada: 'Preto',
+      subtotal: 179.80
+    },
+    {
+      produto: produtosPredefinidos[1],
+      quantidade: 1,
+      tamanhoSelecionado: 'G',
+      subtotal: 69.90
+    }
+  ]);
 
   // FILTRAR PRODUTOS POR TEXTO DE BUSCA
   const filtrarProdutos = (texto: string) => {
@@ -229,6 +225,70 @@ export default function ProdutosScreen() {
   const limparBusca = () => {
     setBusca('');
     setProdutosFiltrados(produtosPredefinidos);
+  };
+
+  // ADICIONAR PRODUTO AO CARRINHO
+  const adicionarAoCarrinho = (produto: Produto) => {
+    const itemExistenteIndex = itensCarrinho.findIndex(item => 
+      item.produto.id === produto.id
+    );
+    
+    if (itemExistenteIndex >= 0) {
+      const novosItens = [...itensCarrinho];
+      novosItens[itemExistenteIndex].quantidade += 1;
+      novosItens[itemExistenteIndex].subtotal = 
+        novosItens[itemExistenteIndex].quantidade * produto.preco;
+      setItensCarrinho(novosItens);
+    } else {
+      const novoItem: ItemCarrinho = {
+        produto,
+        quantidade: 1,
+        tamanhoSelecionado: produto.tamanhos?.[0],
+        corSelecionada: produto.cores?.[0],
+        subtotal: produto.preco
+      };
+      setItensCarrinho([...itensCarrinho, novoItem]);
+    }
+    
+    setModalCarrinhoVisible(true);
+  };
+
+  // AUMENTAR QUANTIDADE DO ITEM
+  const aumentarQuantidade = (index: number) => {
+    const novosItens = [...itensCarrinho];
+    novosItens[index].quantidade += 1;
+    novosItens[index].subtotal = 
+      novosItens[index].quantidade * novosItens[index].produto.preco;
+    setItensCarrinho(novosItens);
+  };
+
+  // DIMINUIR QUANTIDADE DO ITEM
+  const diminuirQuantidade = (index: number) => {
+    const novosItens = [...itensCarrinho];
+    if (novosItens[index].quantidade > 1) {
+      novosItens[index].quantidade -= 1;
+      novosItens[index].subtotal = 
+        novosItens[index].quantidade * novosItens[index].produto.preco;
+      setItensCarrinho(novosItens);
+    }
+  };
+
+  // REMOVER ITEM DO CARRINHO
+  const removerItem = (index: number) => {
+    const novosItens = itensCarrinho.filter((_, i) => i !== index);
+    setItensCarrinho(novosItens);
+  };
+
+  // CALCULAR TOTAL DO CARRINHO
+  const calcularTotal = () => {
+    return itensCarrinho.reduce((total, item) => total + item.subtotal, 0);
+  };
+
+  // FINALIZAR COMPRA
+  const finalizarCompra = () => {
+    alert('Compra finalizada com sucesso! Total: R$ ' + (calcularTotal() + 15).toFixed(2));
+    setItensCarrinho([]);
+    setModalCarrinhoVisible(false);
   };
 
   return (
@@ -263,7 +323,6 @@ export default function ProdutosScreen() {
           )}
         </View>
         
-        {/* INFO DE RESULTADOS */}
         <View style={styles.resultadosInfo}>
           <Text style={styles.resultadosTexto}>
             {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
@@ -281,7 +340,6 @@ export default function ProdutosScreen() {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* LISTA DE PRODUTOS */}
         {produtosFiltrados.length > 0 ? (
           <View style={styles.produtosGrid}>
             {produtosFiltrados.map((produto) => (
@@ -289,6 +347,7 @@ export default function ProdutosScreen() {
                 key={produto.id} 
                 produto={produto}
                 onPress={() => console.log('Ver detalhes:', produto.nome)}
+                onAdicionarAoCarrinho={adicionarAoCarrinho}
               />
             ))}
           </View>
@@ -307,20 +366,33 @@ export default function ProdutosScreen() {
           </View>
         )}
 
-        {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
       </ScrollView>
 
       {/* CARRINHO FLUTUANTE */}
       <TouchableOpacity 
         style={styles.carrinhoFloating}
-        onPress={() => console.log('Abrir carrinho')}
+        onPress={() => setModalCarrinhoVisible(true)}
       >
         <View style={styles.carrinhoBadge}>
-          <Text style={styles.carrinhoBadgeText}>3</Text>
+          <Text style={styles.carrinhoBadgeText}>
+            {itensCarrinho.reduce((total, item) => total + item.quantidade, 0)}
+          </Text>
         </View>
         <Ionicons name="cart" size={24} color="#FFF" />
       </TouchableOpacity>
+
+      {/* MODAL DO CARRINHO (COMPONENTE SEPARADO) */}
+      <CarrinhoModal
+        visible={modalCarrinhoVisible}
+        itens={itensCarrinho}
+        total={calcularTotal()}
+        onFechar={() => setModalCarrinhoVisible(false)}
+        onAumentarQuantidade={aumentarQuantidade}
+        onDiminuirQuantidade={diminuirQuantidade}
+        onRemoverItem={removerItem}
+        onFinalizarCompra={finalizarCompra}
+      />
     </View>
   );
 }
@@ -410,7 +482,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   produtoImagemContainer: {
-    height: 300,
+    height: 200,
     position: 'relative',
   },
   produtoImagem: {
