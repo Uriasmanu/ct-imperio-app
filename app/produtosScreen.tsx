@@ -64,7 +64,7 @@ const produtosPredefinidos: Produto[] = [
         preco: 49.90,
         categoria: 'Acessórios',
         disponivel: true,
-        imagem: 'https://images.unsplash.com/photo-1584735175097-719d848f8449?w=400',
+        imagem: '',
         cores: ['Preto', 'Vermelho', 'Azul'],
         tamanhos: ['Único'],
         estoque: 28
@@ -157,15 +157,31 @@ interface ProdutoCardProps {
 }
 
 function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardProps) {
+    const temImagem = produto.imagem && produto.imagem.trim() !== '';
+    
     return (
         <View style={styles.produtoCard}>
             <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
                 <View style={styles.produtoImagemContainer}>
-                    <Image
-                        source={{ uri: produto.imagem }}
-                        style={styles.produtoImagem}
-                        resizeMode="cover"
-                    />
+                    {temImagem ? (
+                        <Image
+                            source={{ uri: produto.imagem }}
+                            style={styles.produtoImagem}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={styles.imagemPlaceholder}>
+                            <Ionicons 
+                                name="image-outline" 
+                                size={48} 
+                                color="#666" 
+                                style={styles.placeholderIcon}
+                            />
+                            <Text style={styles.placeholderTexto}>
+                                Sem imagem
+                            </Text>
+                        </View>
+                    )}
                     <View style={[
                         styles.disponibilidadeBadge,
                         produto.disponivel ? styles.disponivelBadge : styles.indisponivelBadge
@@ -751,7 +767,23 @@ const styles = StyleSheet.create({
         color: '#B8860B',
         fontWeight: '600',
     },
-
+    tabBadge: {
+        position: 'absolute',
+        top: 8,
+        right: '25%',
+        backgroundColor: '#EF4444',
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+    },
+    tabBadgeText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
     // BUSCA
     buscaContainer: {
         paddingHorizontal: 20,
@@ -813,10 +845,25 @@ const styles = StyleSheet.create({
     produtoImagemContainer: {
         height: 200,
         position: 'relative',
+        backgroundColor: '#2a2a2a', // COR DE FUNDO PARA QUANDO NÃO HÁ IMAGEM
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     produtoImagem: {
         width: '100%',
         height: '100%',
+    },
+    imagemPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    placeholderIcon: {
+        marginBottom: 12,
+    },
+    placeholderTexto: {
+        color: '#666',
+        fontSize: 14,
+        fontWeight: '500',
     },
     disponibilidadeBadge: {
         position: 'absolute',
