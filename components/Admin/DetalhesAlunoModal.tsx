@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -892,6 +893,7 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
@@ -1206,11 +1208,17 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
           salvando={salvandoFilho}
         />
       </View>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    paddingBottom: 40,
+    backgroundColor: '#000'
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',
