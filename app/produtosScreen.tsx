@@ -1,13 +1,13 @@
 // screens/ProdutosScreen.tsx
 
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
+import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
+import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
 import { estoqueService } from '@/services/estoqueService';
 import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
 import {
-    Image,
-    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -58,189 +58,6 @@ const pedidosExemplo: Pedido[] = [
     }
 ];
 
-// MODAL DE SELEÇÃO DE TAMANHO
-interface ModalTamanhoProps {
-    visible: boolean;
-    produto: ItemEstoque | null;
-    onFechar: () => void;
-    onConfirmar: (tamanho: string) => void;
-}
-
-function ModalTamanho({ visible, produto, onFechar, onConfirmar }: ModalTamanhoProps) {
-    const [tamanhoSelecionado, setTamanhoSelecionado] = useState<string>('');
-
-    if (!produto) return null;
-
-    const tamanhosDisponiveis = produto.tamanhos ? Object.keys(produto.tamanhos) : [];
-
-    const handleConfirmar = () => {
-        if (tamanhoSelecionado) {
-            onConfirmar(tamanhoSelecionado);
-            setTamanhoSelecionado('');
-        }
-    };
-
-    return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            onRequestClose={onFechar}
-        >
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalTamanhoContainer}>
-                    {/* HEADER */}
-                    <View style={styles.modalTamanhoHeader}>
-                        <Text style={styles.modalTamanhoTitulo}>
-                            Selecione o Tamanho
-                        </Text>
-                        <TouchableOpacity onPress={onFechar} style={styles.modalFecharBtn}>
-                            <Ionicons name="close" size={24} color="#AAA" />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* INFO DO PRODUTO */}
-                    <View style={styles.modalProdutoInfo}>
-                        <Text style={styles.modalProdutoNome}>{produto.nome}</Text>
-                        <Text style={styles.modalProdutoPreco}>
-                            R$ {produto.preco.toFixed(2)}
-                        </Text>
-                    </View>
-
-                    {/* TAMANHOS DISPONÍVEIS */}
-                    <View style={styles.tamanhosContainer}>
-                        {tamanhosDisponiveis.map((tamanho) => {
-                            const estoque = produto.tamanhos?.[tamanho] || 0;
-                            const disponivel = estoque > 0;
-
-                            return (
-                                <TouchableOpacity
-                                    key={tamanho}
-                                    style={[
-                                        styles.tamanhoItem,
-                                        tamanhoSelecionado === tamanho && styles.tamanhoSelecionado,
-                                        !disponivel && styles.tamanhoIndisponivel
-                                    ]}
-                                    onPress={() => disponivel && setTamanhoSelecionado(tamanho)}
-                                    disabled={!disponivel}
-                                >
-                                    <Text style={[
-                                        styles.tamanhoTexto,
-                                        tamanhoSelecionado === tamanho && styles.tamanhoTextoSelecionado,
-                                        !disponivel && styles.tamanhoTextoIndisponivel
-                                    ]}>
-                                        {tamanho}
-                                    </Text>
-                                    <Text style={[
-                                        styles.estoqueTexto,
-                                        !disponivel && styles.estoqueTextoIndisponivel
-                                    ]}>
-                                        {disponivel ? `${estoque} disponíveis` : 'Indisponível'}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-
-                    {/* BOTÕES */}
-                    <View style={styles.modalBotoesContainer}>
-                        <TouchableOpacity
-                            style={styles.modalBotaoCancelar}
-                            onPress={onFechar}
-                        >
-                            <Text style={styles.modalBotaoCancelarTexto}>Cancelar</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.modalBotaoConfirmar,
-                                !tamanhoSelecionado && styles.modalBotaoConfirmarDisabled
-                            ]}
-                            onPress={handleConfirmar}
-                            disabled={!tamanhoSelecionado}
-                        >
-                            <Ionicons name="cart" size={20} color="#FFF" />
-                            <Text style={styles.modalBotaoConfirmarTexto}>
-                                Adicionar ao Carrinho
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
-// COMPONENTE DE CARD DE PRODUTO
-interface ProdutoCardProps {
-    produto: ItemEstoque;
-    onPress?: () => void;
-    onAdicionarAoCarrinho: (produto: ItemEstoque) => void;
-}
-
-function ProdutoCard({ produto, onPress, onAdicionarAoCarrinho }: ProdutoCardProps) {
-    const temImagem = produto.imagem && produto.imagem.trim() !== '';
-
-    return (
-        <View style={styles.produtoCard}>
-            <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-                <View style={styles.produtoImagemContainer}>
-                    {temImagem ? (
-                        <Image
-                            source={{ uri: produto.imagem }}
-                            style={styles.produtoImagem}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View style={styles.imagemPlaceholder}>
-                            <Ionicons
-                                name="image-outline"
-                                size={48}
-                                color="#666"
-                                style={styles.placeholderIcon}
-                            />
-                            <Text style={styles.placeholderTexto}>
-                                Sem imagem
-                            </Text>
-                        </View>
-                    )}
-                </View>
-            </TouchableOpacity>
-
-            <View style={styles.produtoInfo}>
-                <View style={styles.produtoHeader}>
-                    <Text style={styles.produtoNome} numberOfLines={1}>
-                        {produto.nome}
-                    </Text>
-                    <Text style={styles.produtoPreco}>
-                        R$ {produto.preco.toFixed(2)}
-                    </Text>
-                </View>
-
-                <View style={styles.detalhesContainer}>
-                    {produto.tamanhos && Object.keys(produto.tamanhos).length > 0 && (
-                        <View style={styles.detalheItem}>
-                            <Ionicons name="resize-outline" size={14} color="#888" />
-                            <Text style={styles.detalheTexto} numberOfLines={1}>
-                                {Object.keys(produto.tamanhos).join(', ')}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    style={styles.botaoComprar}
-                    onPress={() => onAdicionarAoCarrinho(produto)}
-                >
-                    <Ionicons name="cart" size={18} color="#FFF" />
-                    <Text style={styles.botaoComprarTexto}>
-                        Adicionar ao Carrinho
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 // COMPONENTE DE CARD DE PEDIDO
 interface PedidoCardProps {
@@ -741,7 +558,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         paddingVertical: 14,
-        position: 'relative',
     },
     tabItemAtiva: {
         borderBottomWidth: 2,
@@ -805,85 +621,8 @@ const styles = StyleSheet.create({
         gap: 16,
         paddingTop: 8,
     },
-    produtoCard: {
-        backgroundColor: '#1a1a1a',
-        borderRadius: 16,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    produtoImagemContainer: {
-        height: 200,
-        position: 'relative',
-        backgroundColor: '#2a2a2a',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    produtoImagem: {
-        width: '100%',
-        height: '100%',
-    },
-    imagemPlaceholder: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    placeholderIcon: {
-        marginBottom: 12,
-    },
-    placeholderTexto: {
-        color: '#666',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    produtoInfo: {
-        padding: 16,
-    },
-    produtoHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
-    },
-    produtoNome: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFF',
-        flex: 1,
-        marginRight: 12,
-    },
-    produtoPreco: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#B8860B',
-    },
-    detalhesContainer: {
-        gap: 8,
-        marginBottom: 16,
-    },
-    detalheItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    detalheTexto: {
-        fontSize: 12,
-        color: '#888',
-        flex: 1,
-    },
-    botaoComprar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        backgroundColor: '#B8860B',
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    botaoComprarTexto: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '600',
-    },
+
+    /* PEDIDOS */
     pedidosGrid: {
         gap: 16,
         paddingTop: 16,
@@ -1019,6 +758,8 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#888',
     },
+
+    /* ESTADOS VAZIOS */
     nenhumResultado: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -1062,6 +803,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+
+    /* CARRINHO */
     carrinhoFloating: {
         position: 'absolute',
         bottom: 30,
@@ -1073,10 +816,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
     },
     carrinhoBadge: {
         position: 'absolute',
@@ -1088,143 +827,14 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1,
     },
     carrinhoBadgeText: {
         color: '#FFF',
         fontSize: 10,
         fontWeight: 'bold',
     },
+
     footerSpace: {
         height: 80,
-    },
-    // MODAL DE TAMANHO
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    modalTamanhoContainer: {
-        backgroundColor: '#1a1a1a',
-        borderRadius: 20,
-        width: '100%',
-        maxWidth: 400,
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    modalTamanhoHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-    },
-    modalTamanhoTitulo: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFF',
-    },
-    modalFecharBtn: {
-        padding: 4,
-    },
-    modalProdutoInfo: {
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-    },
-    modalProdutoNome: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#FFF',
-        marginBottom: 8,
-    },
-    modalProdutoPreco: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#B8860B',
-    },
-    tamanhosContainer: {
-        padding: 20,
-        gap: 12,
-    },
-    tamanhoItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#0a0a0a',
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#333',
-    },
-    tamanhoSelecionado: {
-        borderColor: '#B8860B',
-        backgroundColor: 'rgba(184, 134, 11, 0.1)',
-    },
-    tamanhoIndisponivel: {
-        opacity: 0.5,
-        backgroundColor: '#1a1a1a',
-    },
-    tamanhoTexto: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFF',
-    },
-    tamanhoTextoSelecionado: {
-        color: '#B8860B',
-    },
-    tamanhoTextoIndisponivel: {
-        color: '#666',
-    },
-    estoqueTexto: {
-        fontSize: 14,
-        color: '#888',
-    },
-    estoqueTextoIndisponivel: {
-        color: '#666',
-    },
-    modalBotoesContainer: {
-        flexDirection: 'row',
-        gap: 12,
-        padding: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#333',
-    },
-    modalBotaoCancelar: {
-        flex: 1,
-        paddingVertical: 14,
-        borderRadius: 8,
-        backgroundColor: '#2a2a2a',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBotaoCancelarTexto: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    modalBotaoConfirmar: {
-        flex: 2,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 14,
-        borderRadius: 8,
-        backgroundColor: '#B8860B',
-    },
-    modalBotaoConfirmarDisabled: {
-        backgroundColor: '#333',
-        opacity: 0.5,
-    },
-    modalBotaoConfirmarTexto: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
