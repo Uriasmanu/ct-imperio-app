@@ -15,6 +15,14 @@ import {
   View
 } from 'react-native';
 
+// Interface para aluno
+interface Aluno {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+}
+
 interface ModalPedidoProps {
   visible: boolean;
   onClose: () => void;
@@ -22,6 +30,7 @@ interface ModalPedidoProps {
   onAtualizarPedido?: (id: string, pedido: Partial<Pedido>) => void;
   produtos: ItemEstoque[];
   pedidoEditando?: Pedido | null;
+  alunos?: Aluno[]; // Adicione esta prop para receber a lista de alunos
 }
 
 export const ModalPedido: React.FC<ModalPedidoProps> = ({
@@ -30,29 +39,48 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   onSalvarPedido,
   onAtualizarPedido,
   pedidoEditando,
-  produtos
+  produtos,
+  alunos = [] // Valor padrão vazio
 }) => {
   const [nomePessoa, setNomePessoa] = useState('');
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [pago, setPago] = useState(false);
   const [status, setStatus] = useState<'pendente' | 'reservado' | 'entregue'>('pendente');
-
+  const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
+  const [alunoSelecionado, setAlunoSelecionado] = useState<Aluno | null>(null);
 
   useEffect(() => {
     if (pedidoEditando) {
-      setNomePessoa(pedidoEditando.pessoa || '');
+      const pessoa = pedidoEditando.pessoa || '';
+      setNomePessoa(pessoa);
       setItensPedido(pedidoEditando.itens);
       setObservacoes(pedidoEditando.observacoes || '');
       setStatus(pedidoEditando.status);
+      
+      // Se houver alunos na lista, tente encontrar o aluno correspondente
+      if (alunos.length > 0 && pessoa) {
+        const alunoEncontrado = alunos.find(aluno => {
+          if (!aluno || !aluno.nome) return false;
+          return aluno.nome.toLowerCase() === pessoa.toLowerCase();
+        });
+        
+        if (alunoEncontrado) {
+          setAlunoSelecionado(alunoEncontrado);
+        } else {
+          setAlunoSelecionado(null);
+        }
+      } else {
+        setAlunoSelecionado(null);
+      }
     } else {
       setNomePessoa('');
       setItensPedido([]);
       setObservacoes('');
       setStatus('pendente');
+      setAlunoSelecionado(null);
     }
-  }, [pedidoEditando, visible]);
-
+  }, [pedidoEditando, visible, alunos]);
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
@@ -289,9 +317,25 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     setItensPedido(novosItens);
   };
 
+  // Função para selecionar aluno da lista
+  const selecionarAluno = (aluno: Aluno) => {
+    setAlunoSelecionado(aluno);
+    setNomePessoa(aluno.nome);
+    setMostrarListaAlunos(false);
+  };
+
+  // Função para limpar seleção de aluno
+  const limparSelecaoAluno = () => {
+    setAlunoSelecionado(null);
+    setNomePessoa('');
+  };
+
   const handleSalvar = () => {
-    if (!nomePessoa.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o nome da pessoa');
+    // Garantir que pessoaFinal nunca seja undefined
+    let pessoaFinal = nomePessoa.trim();
+    
+    if (!pessoaFinal) {
+      Alert.alert('Erro', 'Por favor, informe o nome da pessoa ou selecione um aluno');
       return;
     }
 
@@ -300,10 +344,15 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       return;
     }
 
+    // Usar alunoSelecionado se existir
+    if (alunoSelecionado && alunoSelecionado.nome) {
+      pessoaFinal = alunoSelecionado.nome;
+    }
+
     if (pedidoEditando && onAtualizarPedido) {
       // Editar pedido existente
       const pedidoAtualizado: Partial<Pedido> = {
-        pessoa: nomePessoa.trim(),
+        pessoa: pessoaFinal,
         itens: itensPedido,
         total: calcularTotal(),
         observacoes: observacoes.trim(),
@@ -315,7 +364,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     } else {
       // Criar novo pedido
       const pedido: Omit<Pedido, 'id'> = {
-        pessoa: nomePessoa.trim(),
+        pessoa: pessoaFinal,
         itens: itensPedido,
         data: new Date().toLocaleDateString('pt-BR'),
         dataTimestamp: Date.now(),
@@ -326,7 +375,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         createdAt: new Date(),
       };
 
-
       onSalvarPedido(pedido);
     }
   };
@@ -336,6 +384,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     setItensPedido([]);
     setObservacoes('');
     setPago(false);
+    setAlunoSelecionado(null);
   };
 
   const handleFechar = () => {
@@ -386,13 +435,72 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           {/* Informações do Cliente */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações do Cliente</Text>
+            
+            {/* Seletor de Aluno */}
+            <View style={styles.alunoSelectorContainer}>
+              <TouchableOpacity
+                style={styles.alunoSelectorButton}
+                onPress={() => alunos.length > 0 && setMostrarListaAlunos(true)}
+                disabled={alunos.length === 0}
+              >
+                <Ionicons 
+                  name="person" 
+                  size={20} 
+                  color={alunos.length === 0 ? "#666" : "#B8860B"} 
+                />
+                <Text style={[
+                  styles.alunoSelectorText,
+                  alunos.length === 0 && styles.alunoSelectorTextDisabled
+                ]}>
+                  {alunos.length === 0 
+                    ? 'Nenhum aluno cadastrado' 
+                    : alunoSelecionado 
+                      ? 'Aluno selecionado' 
+                      : 'Selecionar aluno da lista'
+                  }
+                </Text>
+                {alunos.length > 0 && (
+                  <Ionicons name="chevron-down" size={20} color="#B8860B" />
+                )}
+              </TouchableOpacity>
+              
+              {alunoSelecionado && (
+                <View style={styles.alunoSelecionadoContainer}>
+                  <View style={styles.alunoSelecionadoInfo}>
+                    <Ionicons name="person-circle" size={20} color="#B8860B" />
+                    <Text style={styles.alunoSelecionadoNome}>
+                      {alunoSelecionado.nome}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={limparSelecaoAluno}>
+                    <Ionicons name="close-circle" size={20} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Separador OU */}
+            <View style={styles.ouContainer}>
+              <View style={styles.ouLinha} />
+              <Text style={styles.ouTexto}>OU</Text>
+              <View style={styles.ouLinha} />
+            </View>
+
+            {/* Campo de nome manual */}
             <TextInput
               style={styles.input}
-              placeholder="Nome da pessoa"
+              placeholder="Digite o nome manualmente"
               placeholderTextColor="#666"
               value={nomePessoa}
-              onChangeText={setNomePessoa}
+              onChangeText={(text) => {
+                setNomePessoa(text);
+                // Se o usuário começar a digitar, limpa a seleção de aluno
+                if (alunoSelecionado && text !== alunoSelecionado.nome) {
+                  setAlunoSelecionado(null);
+                }
+              }}
             />
+
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Observações (opcional)"
@@ -565,6 +673,58 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Modal para seleção de alunos */}
+        <Modal
+          visible={mostrarListaAlunos}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setMostrarListaAlunos(false)}
+        >
+          <View style={styles.modalAlunosContainer}>
+            <View style={styles.modalAlunosHeader}>
+              <Text style={styles.modalAlunosTitle}>Selecione um Aluno</Text>
+              <TouchableOpacity 
+                onPress={() => setMostrarListaAlunos(false)}
+                style={styles.modalAlunosCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalAlunosLista}>
+              {alunos.length > 0 ? (
+                alunos.map((aluno) => (
+                  <TouchableOpacity
+                    key={aluno.id}
+                    style={styles.alunoItem}
+                    onPress={() => selecionarAluno(aluno)}
+                  >
+                    <View style={styles.alunoItemInfo}>
+                      <Ionicons name="person-circle" size={24} color="#B8860B" />
+                      <View style={styles.alunoItemTextContainer}>
+                        <Text style={styles.alunoItemNome}>{aluno.nome}</Text>
+                        {aluno.email && (
+                          <Text style={styles.alunoItemEmail}>{aluno.email}</Text>
+                        )}
+                      </View>
+                    </View>
+                    {alunoSelecionado?.id === aluno.id && (
+                      <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.nenhumAlunoContainer}>
+                  <Ionicons name="people-outline" size={48} color="#666" />
+                  <Text style={styles.nenhumAlunoTexto}>
+                    Nenhum aluno cadastrado
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -809,5 +969,130 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  // Novos estilos para seleção de aluno
+  alunoSelectorContainer: {
+    marginBottom: 12,
+  },
+  alunoSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    padding: 12,
+  },
+  alunoSelectorText: {
+    flex: 1,
+    marginLeft: 8,
+    color: '#B8860B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  alunoSelectorTextDisabled: {
+    color: '#666',
+  },
+  alunoSelecionadoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(184, 134, 11, 0.1)',
+    borderWidth: 1,
+    borderColor: '#B8860B',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  alunoSelecionadoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alunoSelecionadoNome: {
+    color: '#B8860B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ouContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  ouLinha: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  ouTexto: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+    marginHorizontal: 12,
+  },
+  modalAlunosContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  modalAlunosHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#1a1a1a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalAlunosTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#B8860B',
+  },
+  modalAlunosCloseButton: {
+    padding: 4,
+  },
+  modalAlunosLista: {
+    flex: 1,
+    padding: 16,
+  },
+  alunoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  alunoItemInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  alunoItemTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  alunoItemNome: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  alunoItemEmail: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  nenhumAlunoContainer: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  nenhumAlunoTexto: {
+    color: '#666',
+    marginTop: 12,
+    fontSize: 14,
   },
 });
