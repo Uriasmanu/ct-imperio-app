@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from "react";
+import React, { useState } from "react";
 import {
     Image,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from "react-native";
@@ -145,29 +146,27 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
           {produto.descricao}
         </Text>
 
-        {/* CATEGORIA */}
-        <View style={styles.categoriaContainer}>
-          <Ionicons name="pricetag-outline" size={14} color="#B8860B" />
-          <Text style={styles.categoriaTexto}>{produto.categoria}</Text>
-        </View>
-
         {/* DETALHES DO PRODUTO */}
         <View style={styles.detalhesContainer}>
           {/* CORES DISPONÍVEIS */}
-          <View style={styles.detalheItem}>
-            <Ionicons name="color-palette-outline" size={14} color="#888" />
-            <Text style={styles.detalheTexto} numberOfLines={1}>
-              {produto.cores?.join(', ')}
-            </Text>
-          </View>
+          {produto.cores && produto.cores.length > 0 && (
+            <View style={styles.detalheItem}>
+              <Ionicons name="color-palette-outline" size={14} color="#888" />
+              <Text style={styles.detalheTexto} numberOfLines={1}>
+                {produto.cores.join(', ')}
+              </Text>
+            </View>
+          )}
 
           {/* TAMANHOS */}
-          <View style={styles.detalheItem}>
-            <Ionicons name="resize-outline" size={14} color="#888" />
-            <Text style={styles.detalheTexto} numberOfLines={1}>
-              {produto.tamanhos?.join(', ')}
-            </Text>
-          </View>
+          {produto.tamanhos && produto.tamanhos.length > 0 && (
+            <View style={styles.detalheItem}>
+              <Ionicons name="resize-outline" size={14} color="#888" />
+              <Text style={styles.detalheTexto} numberOfLines={1}>
+                {produto.tamanhos.join(', ')}
+              </Text>
+            </View>
+          )}
 
           {/* ESTOQUE */}
           <View style={styles.detalheItem}>
@@ -204,82 +203,76 @@ function ProdutoCard({ produto, onPress }: ProdutoCardProps) {
   );
 }
 
-// COMPONENTE DE CATEGORIA
-interface CategoriaItemProps {
-  icone: string;
-  label: string;
-  ativa?: boolean;
-  onPress?: () => void;
-}
-
-function CategoriaItem({ icone, label, ativa = false, onPress }: CategoriaItemProps) {
-  return (
-    <TouchableOpacity 
-      style={[
-        styles.categoriaItem,
-        ativa && styles.categoriaItemAtiva
-      ]}
-      onPress={onPress}
-    >
-      <Ionicons 
-        name={icone as any} 
-        size={22} 
-        color={ativa ? "#B8860B" : "#888"} 
-      />
-      <Text style={[
-        styles.categoriaLabel,
-        ativa && styles.categoriaLabelAtiva
-      ]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
 // COMPONENTE PRINCIPAL
 export default function ProdutosScreen() {
-  const [categoriaAtiva, setCategoriaAtiva] = React.useState<string>('todos');
-  const [produtosFiltrados, setProdutosFiltrados] = React.useState<Produto[]>(produtosPredefinidos);
+  const [busca, setBusca] = useState('');
+  const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>(produtosPredefinidos);
 
-  // FILTRAR PRODUTOS POR CATEGORIA
-  const filtrarPorCategoria = (categoria: string) => {
-    setCategoriaAtiva(categoria);
+  // FILTRAR PRODUTOS POR TEXTO DE BUSCA
+  const filtrarProdutos = (texto: string) => {
+    setBusca(texto);
     
-    if (categoria === 'todos') {
+    if (texto.trim() === '') {
       setProdutosFiltrados(produtosPredefinidos);
     } else {
-      const filtrados = produtosPredefinidos.filter(
-        produto => produto.categoria.toLowerCase() === categoria.toLowerCase()
+      const textoLower = texto.toLowerCase();
+      const filtrados = produtosPredefinidos.filter(produto =>
+        produto.nome.toLowerCase().includes(textoLower) ||
+        produto.descricao.toLowerCase().includes(textoLower) ||
+        produto.categoria.toLowerCase().includes(textoLower)
       );
       setProdutosFiltrados(filtrados);
     }
   };
 
-  // CALCULAR ESTATÍSTICAS
-  const estatisticas = {
-    total: produtosPredefinidos.length,
-    disponiveis: produtosPredefinidos.filter(p => p.disponivel).length,
-    vestuario: produtosPredefinidos.filter(p => p.categoria === 'Vestuário').length,
-    acessorios: produtosPredefinidos.filter(p => p.categoria === 'Acessórios').length,
+  // LIMPAR BUSCA
+  const limparBusca = () => {
+    setBusca('');
+    setProdutosFiltrados(produtosPredefinidos);
   };
-
-  // CATEGORIAS
-  const categorias = [
-    { id: 'todos', icone: 'grid-outline', label: 'Todos' },
-    { id: 'vestuario', icone: 'shirt-outline', label: 'Vestuário' },
-    { id: 'acessorios', icone: 'fitness-outline', label: 'Acessórios' },
-  ];
 
   return (
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Ionicons name="storefront-outline" size={32} color="#B8860B" />
-          <Text style={styles.headerTitle}>Loja de Produtos</Text>
+          <Ionicons name="search-outline" size={32} color="#B8860B" />
+          <Text style={styles.headerTitle}>Buscar Produtos</Text>
           <Text style={styles.headerSubtitle}>
-            Equipamentos e vestuário para seu treino
+            Digite o nome do produto que procura
           </Text>
+        </View>
+      </View>
+
+      {/* CAMPO DE BUSCA */}
+      <View style={styles.buscaContainer}>
+        <View style={styles.buscaInputContainer}>
+          <Ionicons name="search" size={20} color="#888" style={styles.buscaIcon} />
+          <TextInput
+            style={styles.buscaInput}
+            placeholder="Buscar por nome, descrição..."
+            placeholderTextColor="#666"
+            value={busca}
+            onChangeText={filtrarProdutos}
+            autoCapitalize="none"
+          />
+          {busca.length > 0 && (
+            <TouchableOpacity onPress={limparBusca} style={styles.buscaLimpar}>
+              <Ionicons name="close-circle" size={20} color="#888" />
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        {/* INFO DE RESULTADOS */}
+        <View style={styles.resultadosInfo}>
+          <Text style={styles.resultadosTexto}>
+            {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
+          </Text>
+          {busca && (
+            <Text style={styles.buscaAtivaTexto}>
+              Buscando por: "{busca}"
+            </Text>
+          )}
         </View>
       </View>
 
@@ -288,60 +281,8 @@ export default function ProdutosScreen() {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* ESTATÍSTICAS */}
-        <View style={styles.estatisticasContainer}>
-          <View style={styles.estatisticasCard}>
-            <View style={styles.estatisticaItem}>
-              <Text style={styles.estatisticaValor}>{estatisticas.total}</Text>
-              <Text style={styles.estatisticaLabel}>Total</Text>
-            </View>
-            <View style={styles.estatisticaDivider} />
-            <View style={styles.estatisticaItem}>
-              <Text style={styles.estatisticaValor}>{estatisticas.disponiveis}</Text>
-              <Text style={styles.estatisticaLabel}>Disponíveis</Text>
-            </View>
-            <View style={styles.estatisticaDivider} />
-            <View style={styles.estatisticaItem}>
-              <Text style={styles.estatisticaValor}>{estatisticas.vestuario}</Text>
-              <Text style={styles.estatisticaLabel}>Vestuário</Text>
-            </View>
-            <View style={styles.estatisticaDivider} />
-            <View style={styles.estatisticaItem}>
-              <Text style={styles.estatisticaValor}>{estatisticas.acessorios}</Text>
-              <Text style={styles.estatisticaLabel}>Acessórios</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* CATEGORIAS */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categorias</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoriasScroll}
-          >
-            {categorias.map((categoria) => (
-              <CategoriaItem
-                key={categoria.id}
-                icone={categoria.icone}
-                label={categoria.label}
-                ativa={categoriaAtiva === categoria.id}
-                onPress={() => filtrarPorCategoria(categoria.id)}
-              />
-            ))}
-          </ScrollView>
-        </View>
-
         {/* LISTA DE PRODUTOS */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Produtos</Text>
-            <Text style={styles.sectionSubtitle}>
-              {produtosFiltrados.length} produtos encontrados
-            </Text>
-          </View>
-
+        {produtosFiltrados.length > 0 ? (
           <View style={styles.produtosGrid}>
             {produtosFiltrados.map((produto) => (
               <ProdutoCard 
@@ -351,22 +292,35 @@ export default function ProdutosScreen() {
               />
             ))}
           </View>
-        </View>
-
-        {/* CARRINHO FLUTUANTE */}
-        <TouchableOpacity 
-          style={styles.carrinhoFloating}
-          onPress={() => console.log('Abrir carrinho')}
-        >
-          <View style={styles.carrinhoBadge}>
-            <Text style={styles.carrinhoBadgeText}>3</Text>
+        ) : (
+          <View style={styles.nenhumResultado}>
+            <Ionicons name="search-outline" size={64} color="#666" />
+            <Text style={styles.nenhumResultadoTitle}>
+              Nenhum produto encontrado
+            </Text>
+            <Text style={styles.nenhumResultadoText}>
+              Não encontramos produtos para "{busca}"
+            </Text>
+            <TouchableOpacity style={styles.botaoLimparBusca} onPress={limparBusca}>
+              <Text style={styles.botaoLimparBuscaTexto}>Limpar busca</Text>
+            </TouchableOpacity>
           </View>
-          <Ionicons name="cart" size={24} color="#FFF" />
-        </TouchableOpacity>
+        )}
 
         {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
       </ScrollView>
+
+      {/* CARRINHO FLUTUANTE */}
+      <TouchableOpacity 
+        style={styles.carrinhoFloating}
+        onPress={() => console.log('Abrir carrinho')}
+      >
+        <View style={styles.carrinhoBadge}>
+          <Text style={styles.carrinhoBadgeText}>3</Text>
+        </View>
+        <Ionicons name="cart" size={24} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -383,7 +337,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#000',
     paddingTop: 10,
-    paddingBottom: 1,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
@@ -391,12 +345,11 @@ const styles = StyleSheet.create({
   headerContent: {
     alignItems: "center",
     gap: 12,
-    marginBottom: 20,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#B8860B",
     textAlign: 'center',
   },
   headerSubtitle: {
@@ -404,90 +357,50 @@ const styles = StyleSheet.create({
     color: "#AAA",
     textAlign: 'center',
   },
-  estatisticasContainer: {
-    marginTop: 20,
-    marginBottom: 24,
+  buscaContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: '#000',
   },
-  estatisticasCard: {
+  buscaInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  estatisticaItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  estatisticaValor: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#B8860B',
-    marginBottom: 4,
-  },
-  estatisticaLabel: {
-    fontSize: 12,
-    color: '#888',
-    textAlign: 'center',
-  },
-  estatisticaDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: '#333',
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#B8860B',
-    letterSpacing: 0.5,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#888',
-    fontWeight: '500',
-  },
-  categoriasScroll: {
-    flexDirection: 'row',
-  },
-  categoriaItem: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginRight: 12,
     borderRadius: 12,
-    backgroundColor: '#1a1a1a',
     borderWidth: 1,
     borderColor: '#333',
-    minWidth: 100,
+    paddingHorizontal: 16,
   },
-  categoriaItemAtiva: {
-    backgroundColor: '#2a2a2a',
-    borderColor: '#B8860B',
+  buscaIcon: {
+    marginRight: 12,
   },
-  categoriaLabel: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#888',
+  buscaInput: {
+    flex: 1,
+    color: '#FFF',
+    fontSize: 16,
+    paddingVertical: 14,
+  },
+  buscaLimpar: {
+    padding: 4,
+  },
+  resultadosInfo: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  resultadosTexto: {
+    color: '#AAA',
+    fontSize: 14,
     fontWeight: '500',
   },
-  categoriaLabelAtiva: {
+  buscaAtivaTexto: {
     color: '#B8860B',
-    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 4,
   },
   produtosGrid: {
     gap: 16,
+    paddingTop: 8,
   },
   produtoCard: {
     backgroundColor: '#1a1a1a',
@@ -497,7 +410,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
   },
   produtoImagemContainer: {
-    height: 200,
+    height: 300,
     position: 'relative',
   },
   produtoImagem: {
@@ -557,17 +470,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
-  categoriaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  categoriaTexto: {
-    fontSize: 12,
-    color: '#B8860B',
-    fontWeight: '500',
-  },
   detalhesContainer: {
     gap: 8,
     marginBottom: 16,
@@ -602,6 +504,38 @@ const styles = StyleSheet.create({
   botaoComprarTexto: {
     color: '#FFF',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  nenhumResultado: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  nenhumResultadoTitle: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 24,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  nenhumResultadoText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  botaoLimparBusca: {
+    backgroundColor: '#B8860B',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  botaoLimparBuscaTexto: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   carrinhoFloating: {
