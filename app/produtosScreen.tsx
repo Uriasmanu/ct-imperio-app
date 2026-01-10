@@ -28,7 +28,7 @@ interface Pedido {
   pago: boolean;
   total: number;
   observacoes?: string;
-  status: 'pendente' | 'reservado' | 'cancelado' | 'entregue';
+  status: 'pendente' | 'reservado' | 'entregue';
 }
 
 // DADOS PRE-ESCRITOS DOS PRODUTOS
@@ -254,9 +254,8 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
     const getStatusColor = (status: Pedido['status']) => {
         switch (status) {
             case 'pendente': return '#F59E0B'; // Amarelo
-            case 'reservado': return '#3B82F6'; // Verde
-            case 'entregue': return '#10B981'; // Azul
-            case 'cancelado': return '#EF4444'; // Vermelho
+            case 'reservado': return '#3B82F6'; // Azul
+            case 'entregue': return '#10B981'; // Verde 
             default: return '#888';
         }
     };
@@ -266,8 +265,7 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
         switch (status) {
             case 'pendente': return 'time-outline';
             case 'reservado': return 'checkmark-circle-outline';
-            case 'entregue': return 'cube-outline';
-            case 'cancelado': return 'close-circle-outline';
+            case 'entregue': return 'cube-outline';;
             default: return 'help-circle-outline';
         }
     };
@@ -278,7 +276,6 @@ function PedidoCard({ pedido, onPress }: PedidoCardProps) {
             case 'pendente': return 'Pendente';
             case 'reservado': return 'Reservado';
             case 'entregue': return 'Entregue';
-            case 'cancelado': return 'Cancelado';
             default: return 'Desconhecido';
         }
     };
@@ -553,35 +550,6 @@ export default function ProdutosScreen() {
         } else {
             return (
                 <>
-                    {/* ESTATÍSTICAS DOS PEDIDOS */}
-                    <View style={styles.estatisticasContainer}>
-                        <View style={styles.estatisticasCard}>
-                            <View style={styles.estatisticaItem}>
-                                <Text style={styles.estatisticaValor}>{pedidosExemplo.length}</Text>
-                                <Text style={styles.estatisticaLabel}>Total</Text>
-                            </View>
-                            <View style={styles.estatisticaDivider} />
-                            <View style={styles.estatisticaItem}>
-                                <Text style={styles.estatisticaValor}>
-                                    {pedidosExemplo.filter(p => p.status === 'pendente').length}
-                                </Text>
-                                <Text style={styles.estatisticaLabel}>Pendentes</Text>
-                            </View>
-                            <View style={styles.estatisticaDivider} />
-                            <View style={styles.estatisticaItem}>
-                                <Text style={styles.estatisticaValor}>
-                                    {pedidosExemplo.filter(p => p.pago).length}
-                                </Text>
-                                <Text style={styles.estatisticaLabel}>Pagos</Text>
-                            </View>
-                            <View style={styles.estatisticaDivider} />
-                            <View style={styles.estatisticaItem}>
-                                <Ionicons name="cube-outline" size={20} color="#B8860B" />
-                                <Text style={styles.estatisticaLabel}>Histórico</Text>
-                            </View>
-                        </View>
-                    </View>
-
                     {/* LISTA DE PEDIDOS */}
                     <ScrollView
                         style={styles.scrollContainer}
@@ -686,14 +654,7 @@ export default function ProdutosScreen() {
                     ]}>
                         Meus Pedidos
                     </Text>
-                    {/* BADGE COM QUANTIDADE DE PEDIDOS PENDENTES */}
-                    {pedidosExemplo.filter(p => !p.pago).length > 0 && (
-                        <View style={styles.tabBadge}>
-                            <Text style={styles.tabBadgeText}>
-                                {pedidosExemplo.filter(p => !p.pago).length}
-                            </Text>
-                        </View>
-                    )}
+                    
                 </TouchableOpacity>
             </View>
 
@@ -790,23 +751,7 @@ const styles = StyleSheet.create({
         color: '#B8860B',
         fontWeight: '600',
     },
-    tabBadge: {
-        position: 'absolute',
-        top: 8,
-        right: '25%',
-        backgroundColor: '#EF4444',
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1,
-    },
-    tabBadgeText: {
-        color: '#FFF',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
+
     // BUSCA
     buscaContainer: {
         paddingHorizontal: 20,
@@ -962,46 +907,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    // ESTATÍSTICAS
-    estatisticasContainer: {
-        marginTop: 16,
-        marginBottom: 16,
-        paddingHorizontal: 20,
-    },
-    estatisticasCard: {
-        backgroundColor: '#1a1a1a',
-        borderRadius: 16,
-        padding: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#333',
-    },
-    estatisticaItem: {
-        alignItems: 'center',
-        flex: 1,
-    },
-    estatisticaValor: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#B8860B',
-        marginBottom: 4,
-    },
-    estatisticaLabel: {
-        fontSize: 10,
-        color: '#888',
-        textAlign: 'center',
-    },
-    estatisticaDivider: {
-        width: 1,
-        height: 30,
-        backgroundColor: '#333',
-    },
     // PEDIDOS
     pedidosGrid: {
         gap: 16,
-        paddingTop: 8,
+        paddingTop: 16,
     },
     pedidoCard: {
         backgroundColor: '#1a1a1a',
