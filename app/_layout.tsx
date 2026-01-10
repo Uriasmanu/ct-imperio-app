@@ -39,15 +39,24 @@ function CustomDrawerContent(props: any) {
 
   // Filtra as rotas que devem aparecer no drawer
   const filteredRoutes = props.state.routes.filter((route: any) => {
-    // Se for a tela adminScreen, só mostra se for admin
+    // Admin: só aparece se for admin
     if (route.name === 'adminScreen') {
       return showAdmin;
     }
-    // Para outras telas, sempre mostra (exceto as que estão configuradas para não aparecer)
-    return route.name !== 'settingsScreen' &&
+
+    // Produtos: só aparece se estiver logado
+    if (route.name === 'produtosScreen') {
+      return !!usuario;
+    }
+
+    // Outras telas ocultas
+    return (
+      route.name !== 'settingsScreen' &&
       route.name !== 'perfilScreen' &&
-      route.name !== 'registroScreen';
+      route.name !== 'registroScreen'
+    );
   });
+
 
   return (
     <DrawerContentScrollView
