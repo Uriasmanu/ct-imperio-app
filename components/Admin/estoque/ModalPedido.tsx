@@ -36,21 +36,23 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [pago, setPago] = useState(false);
+  const [status, setStatus] = useState<'pendente' | 'reservado' | 'entregue'>('pendente');
+
 
   useEffect(() => {
     if (pedidoEditando) {
-      setNomePessoa(pedidoEditando.pessoa);
+      setNomePessoa(pedidoEditando.pessoa || '');
       setItensPedido(pedidoEditando.itens);
       setObservacoes(pedidoEditando.observacoes || '');
-      setPago(pedidoEditando.pago || false);
+      setStatus(pedidoEditando.status);
     } else {
-      // Limpar formulário quando não estiver editando
       setNomePessoa('');
       setItensPedido([]);
       setObservacoes('');
-      setPago(false);
+      setStatus('pendente');
     }
   }, [pedidoEditando, visible]);
+
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
@@ -59,20 +61,20 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const adicionarItem = (produto: ItemEstoque) => {
     // Para edição: calcular estoque considerando itens já no pedido
     if (pedidoEditando) {
-      const itemExistenteNoPedido = itensPedido.find(item => 
+      const itemExistenteNoPedido = itensPedido.find(item =>
         item.itemId === produto.id && !item.tamanho
       );
       const quantidadeNoPedido = itemExistenteNoPedido ? itemExistenteNoPedido.quantidade : 0;
-      
+
       // Estoque disponível = estoque atual + quantidade já no pedido
       const estoqueDisponivel = produto.quantidade + quantidadeNoPedido;
-      
+
       if (estoqueDisponivel === 0) {
         Alert.alert('Estoque Insuficiente', 'Este produto está sem estoque.');
         return;
       }
 
-      const itemExistente = itensPedido.find(item => 
+      const itemExistente = itensPedido.find(item =>
         item.itemId === produto.id && item.tamanho === undefined
       );
 
@@ -86,10 +88,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         const novosItens = itensPedido.map(item =>
           item.itemId === produto.id && item.tamanho === undefined
             ? {
-                ...item,
-                quantidade: quantidadeTotal,
-                subtotal: quantidadeTotal * item.precoUnitario
-              }
+              ...item,
+              quantidade: quantidadeTotal,
+              subtotal: quantidadeTotal * item.precoUnitario
+            }
             : item
         );
         setItensPedido(novosItens);
@@ -124,10 +126,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         const novosItens = itensPedido.map(item =>
           item.itemId === produto.id && item.tamanho === undefined
             ? {
-                ...item,
-                quantidade: quantidadeTotal,
-                subtotal: quantidadeTotal * item.precoUnitario
-              }
+              ...item,
+              quantidade: quantidadeTotal,
+              subtotal: quantidadeTotal * item.precoUnitario
+            }
             : item
         );
         setItensPedido(novosItens);
@@ -146,16 +148,16 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
 
   const adicionarItemComTamanho = (produto: ItemEstoque, tamanho: string) => {
     const estoqueTamanho = produto.tamanhos[tamanho] || 0;
-    
+
     // Para edição: ajustar cálculo de estoque
     if (pedidoEditando) {
-      const itemExistenteNoPedido = itensPedido.find(item => 
+      const itemExistenteNoPedido = itensPedido.find(item =>
         item.itemId === produto.id && item.tamanho === tamanho
       );
       const quantidadeNoPedido = itemExistenteNoPedido ? itemExistenteNoPedido.quantidade : 0;
-      
+
       const estoqueDisponivel = estoqueTamanho + quantidadeNoPedido;
-      
+
       if (estoqueDisponivel === 0) {
         Alert.alert('Estoque Insuficiente', `Não há estoque disponível para o tamanho ${tamanho}.`);
         return;
@@ -175,10 +177,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         const novosItens = itensPedido.map(item =>
           item.itemId === produto.id && item.tamanho === tamanho
             ? {
-                ...item,
-                quantidade: quantidadeTotal,
-                subtotal: quantidadeTotal * item.precoUnitario
-              }
+              ...item,
+              quantidade: quantidadeTotal,
+              subtotal: quantidadeTotal * item.precoUnitario
+            }
             : item
         );
         setItensPedido(novosItens);
@@ -214,10 +216,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         const novosItens = itensPedido.map(item =>
           item.itemId === produto.id && item.tamanho === tamanho
             ? {
-                ...item,
-                quantidade: quantidadeTotal,
-                subtotal: quantidadeTotal * item.precoUnitario
-              }
+              ...item,
+              quantidade: quantidadeTotal,
+              subtotal: quantidadeTotal * item.precoUnitario
+            }
             : item
         );
         setItensPedido(novosItens);
@@ -259,11 +261,11 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
 
     // Para edição: ajustar cálculo considerando itens já no pedido
     if (pedidoEditando) {
-      const outrosItensMesmoProduto = itensPedido.filter((itemFiltro, i) => 
+      const outrosItensMesmoProduto = itensPedido.filter((itemFiltro, i) =>
         i !== index && itemFiltro.itemId === item.itemId && itemFiltro.tamanho === item.tamanho
       );
-      
-      const quantidadeOutrosItens = outrosItensMesmoProduto.reduce((total, itemFiltro) => 
+
+      const quantidadeOutrosItens = outrosItensMesmoProduto.reduce((total, itemFiltro) =>
         total + itemFiltro.quantidade, 0
       );
 
@@ -278,10 +280,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
     const novosItens = itensPedido.map((item, i) =>
       i === index
         ? {
-            ...item,
-            quantidade: novaQuantidade,
-            subtotal: novaQuantidade * item.precoUnitario
-          }
+          ...item,
+          quantidade: novaQuantidade,
+          subtotal: novaQuantidade * item.precoUnitario
+        }
         : item
     );
     setItensPedido(novosItens);
@@ -316,11 +318,14 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         pessoa: nomePessoa.trim(),
         itens: itensPedido,
         data: new Date().toLocaleDateString('pt-BR'),
-        dataTimestamp: new Date(),
+        dataTimestamp: Date.now(),
         pago: false,
+        status: 'pendente',
         total: calcularTotal(),
-        observacoes: observacoes.trim()
+        observacoes: observacoes.trim(),
+        createdAt: new Date(),
       };
+
 
       onSalvarPedido(pedido);
     }
@@ -397,7 +402,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               multiline
               numberOfLines={3}
             />
-            
+
             {pedidoEditando && (
               <TouchableOpacity
                 style={[

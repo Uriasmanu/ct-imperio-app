@@ -5,7 +5,7 @@ import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
 import { PedidoCard } from '@/components/telaProdutos/PedidoCard';
 import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
 import { estoqueService } from '@/services/estoqueService';
-import { ItemEstoque, Pedido } from '@/types/estoque';
+import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
 import {
@@ -16,48 +16,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-
-
-const pedidosExemplo: Pedido[] = [
-    {
-        id: '001',
-        pessoa: 'João Silva',
-        itens: [
-            { nome: 'Camisa Oficial', quantidade: 1, tamanho: 'M', precoUnitario: 89.90, subtotal: 89.90 },
-            { nome: 'Short de Treino', quantidade: 2, tamanho: 'G', precoUnitario: 69.90, subtotal: 139.80 }
-        ],
-        data: '15/12/2023',
-        pago: true,
-        total: 229.70,
-        observacoes: 'Retirar na academia',
-        status: 'entregue'
-    },
-    {
-        id: '002',
-        pessoa: 'João Silva',
-        itens: [
-            { nome: 'Luva de Academia', quantidade: 1, precoUnitario: 49.90, subtotal: 49.90 }
-        ],
-        data: '18/12/2023',
-        pago: false,
-        total: 49.90,
-        observacoes: '',
-        status: 'pendente'
-    },
-    {
-        id: '003',
-        pessoa: 'João Silva',
-        itens: [
-            { nome: 'Camisa Dry Fit', quantidade: 1, tamanho: 'G', precoUnitario: 99.90, subtotal: 99.90 },
-            { nome: 'Short Compressão', quantidade: 1, tamanho: 'M', precoUnitario: 119.90, subtotal: 119.90 }
-        ],
-        data: '20/12/2023',
-        pago: true,
-        total: 219.80,
-        observacoes: 'Cor preferida: Preto',
-        status: 'reservado'
-    }
-];
 
 
 // COMPONENTE PRINCIPAL

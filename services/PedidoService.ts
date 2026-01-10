@@ -17,17 +17,15 @@ import { estoqueService } from "./estoqueService";
 export const pedidoService = {
   // Criar pedido
   async criarPedido(pedido: Omit<Pedido, "id">): Promise<string> {
-    try {
-      const docRef = await addDoc(collection(db, "pedidos"), {
-        ...pedido,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error('Erro ao criar pedido:', error);
-      throw error;
-    }
+    const docRef = await addDoc(collection(db, "pedidos"), {
+      ...pedido,
+      status: pedido.status ?? 'pendente',
+      pago: pedido.pago ?? false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    return docRef.id;
   },
 
   // Buscar todos os pedidos
@@ -42,14 +40,19 @@ export const pedidoService = {
         const data = doc.data();
         pedidos.push({
           id: doc.id,
+          usuarioId: data.usuarioId,
           pessoa: data.pessoa,
           itens: data.itens || [],
           data: data.data,
           dataTimestamp: data.dataTimestamp,
           pago: data.pago || false,
           total: data.total || 0,
-          observacoes: data.observacoes || ''
+          observacoes: data.observacoes || '',
+          status: data.status || 'pendente',
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt
         } as Pedido);
+
       });
 
       return pedidos;
@@ -152,7 +155,8 @@ export const pedidoService = {
         }
       }
 
-      await this.atualizarPedido(id, { pago: true });
+      await this.atualizarPedido(id, { pago: true, status: 'entregue' });
+
 
     } catch (error) {
       console.error('Erro ao marcar pedido como pago:', error);
@@ -183,14 +187,19 @@ export const pedidoService = {
         const data = pedidoSnap.data();
         return {
           id: pedidoSnap.id,
+          usuarioId: data.usuarioId,
           pessoa: data.pessoa,
           itens: data.itens || [],
           data: data.data,
           dataTimestamp: data.dataTimestamp,
           pago: data.pago || false,
           total: data.total || 0,
-          observacoes: data.observacoes || ''
+          observacoes: data.observacoes || '',
+          status: data.status || 'pendente',
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt
         } as Pedido;
+
       } else {
         return null;
       }
