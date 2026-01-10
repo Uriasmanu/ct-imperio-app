@@ -19,7 +19,7 @@ export interface ItemPedido {
 export interface Pedido {
   id: string;
   usuarioId?: string;
-  pessoa?: string;
+  pessoa: string;
   itens: ItemPedido[];
   data: string;
   dataTimestamp: number;

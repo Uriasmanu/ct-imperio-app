@@ -19,6 +19,7 @@ export const pedidoService = {
   async criarPedido(pedido: Omit<Pedido, "id">): Promise<string> {
     const docRef = await addDoc(collection(db, "pedidos"), {
       ...pedido,
+      usuarioId: pedido.usuarioId ?? "",
       status: pedido.status ?? 'pendente',
       pago: pedido.pago ?? false,
       createdAt: new Date(),
