@@ -55,50 +55,98 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
     const totalPresencas = presencasDoSemestre.length;
     const presencasConfirmadas = presencasDoSemestre.filter(r => r.confirmada).length;
 
-    // Calcular porcentagem por semestre
+    // Calcular porcentagem por semestre - SEMPRE em relação ao semestre INTEIRO
     const getPorcentagemPresenca = () => {
         const hoje = new Date();
         const currentMonth = hoje.getMonth();
 
         let inicioSemestre: Date;
         let fimSemestre: Date;
+        let diasUteisTotalSemestre: number;
 
         if (currentMonth >= 0 && currentMonth <= 5) {
-            // Primeiro semestre: janeiro a junho
-            inicioSemestre = new Date(currentYear, 0, 2); // 2 de janeiro
-            fimSemestre = new Date(currentYear, 5, 30); // 30 de junho
+            // Primeiro semestre: 5 de janeiro a 30 de junho
+            inicioSemestre = new Date(currentYear, 0, 5);
+            fimSemestre = new Date(currentYear, 5, 30);
+            diasUteisTotalSemestre = 152; // FIXO para 2026
         } else {
-            // Segundo semestre: julho a dezembro
-            inicioSemestre = new Date(currentYear, 6, 1); // 1 de julho
-            fimSemestre = new Date(currentYear, 11, 31); // 31 de dezembro
+            // Segundo semestre: 1 de julho a 31 de dezembro
+            inicioSemestre = new Date(currentYear, 6, 1);
+            fimSemestre = new Date(currentYear, 11, 31);
+            // Calcular dinamicamente para qualquer ano
+            diasUteisTotalSemestre = calcularDiasUteis(inicioSemestre, fimSemestre);
         }
 
-        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
-        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
+        // CORREÇÃO: Usar presenças confirmadas
+        const presencasValidas = presencasDoSemestre.filter(r => r.confirmada).length;
 
-        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+        if (diasUteisTotalSemestre === 0) return 0;
 
-        if (diasUteisNoSemestre === 0) return 0;
-        return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+        // SEMPRE calcular em relação ao total do semestre
+        const porcentagem = Math.round((presencasValidas / diasUteisTotalSemestre) * 100);
+
+        // Se for início do ano e ainda não começou o semestre
+        if (hoje < inicioSemestre) {
+            return 0;
+        }
+
+        console.log('DEBUG Porcentagem FINAL:', {
+            ano: currentYear,
+            semestre: currentMonth <= 5 ? '1º Semestre' : '2º Semestre',
+            presencasConfirmadas: presencasValidas,
+            diasUteisTotalSemestre: diasUteisTotalSemestre,
+            porcentagemCalculada: porcentagem,
+            formula: `(${presencasValidas} / ${diasUteisTotalSemestre}) * 100 = ${porcentagem}%`
+        });
+
+        return porcentagem > 100 ? 100 : porcentagem; // Limitar a 100%
     };
 
+    // Cálculo de dias úteis corrigido
     const calcularDiasUteis = (inicio: Date, fim: Date): number => {
         let count = 0;
         const current = new Date(inicio);
+        const fimDate = new Date(fim);
 
-        while (current <= fim) {
-            // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
+        // Array para armazenar datas (opcional, para debug)
+        const datasUteis: string[] = [];
+
+        // Normalizar horas
+        current.setHours(0, 0, 0, 0);
+        fimDate.setHours(0, 0, 0, 0);
+
+        console.log('DEBUG calcularDiasUteis - INÍCIO:', {
+            inicio: inicio.toLocaleDateString('pt-BR'),
+            fim: fim.toLocaleDateString('pt-BR'),
+            inicioISO: inicio.toISOString(),
+            fimISO: fim.toISOString()
+        });
+
+        while (current <= fimDate) {
             const day = current.getDay();
-            const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
+            const dataFormatada = current.toLocaleDateString('pt-BR');
+            const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][day];
 
-            if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
+            // Conta apenas de segunda (1) a sábado (6)
+            if (day >= 1 && day <= 6) {
                 count++;
+                datasUteis.push(`${dataFormatada} (${diaSemana})`);
+            } else {
+                console.log(`  ${dataFormatada} (${diaSemana}) - DOMINGO - não conta`);
             }
+
             current.setDate(current.getDate() + 1);
         }
+
+        console.log('DEBUG calcularDiasUteis - RESULTADO:', {
+            totalDiasContados: count,
+            periodo: `${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}`,
+            diasUteis: datasUteis.slice(0, 10), // Mostra só os primeiros 10 dias
+            totalPeriodoDias: Math.ceil((fimDate.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        });
+
         return count;
     };
-
 
     const handleCheckIn = async () => {
         // Só permite marcar se for um novo dia OU se nunca marcou

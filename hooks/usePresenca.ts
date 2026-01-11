@@ -359,30 +359,27 @@ export const usePresenca = (userId?: string) => {
     // Calcular porcentagem baseada em dias úteis POR SEMESTRE
     const calcularPorcentagemPresenca = (totalPresencas: number): number => {
         const hoje = new Date();
-        const currentMonth = hoje.getMonth(); // 0-11 (janeiro=0, dezembro=11)
+        const currentMonth = hoje.getMonth();
 
-        // Definir semestres
         let inicioSemestre: Date;
         let fimSemestre: Date;
 
         if (currentMonth >= 0 && currentMonth <= 5) {
-            // Primeiro semestre: janeiro a junho
-            inicioSemestre = new Date(currentYear, 0, 2); // 2 de janeiro
-            fimSemestre = new Date(currentYear, 5, 30); // 30 de junho
+            inicioSemestre = new Date(currentYear, 0, 2);  // 2 jan
+            fimSemestre = new Date(currentYear, 5, 30);    // 30 jun
         } else {
-            // Segundo semestre: julho a dezembro
-            inicioSemestre = new Date(currentYear, 6, 1); // 1 de julho
-            fimSemestre = new Date(currentYear, 11, 31); // 31 de dezembro
+            inicioSemestre = new Date(currentYear, 6, 1);  // 1 jul
+            fimSemestre = new Date(currentYear, 11, 31);   // 31 dez
         }
 
-        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
-        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
-
-        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, fimSemestre);
 
         if (diasUteisNoSemestre === 0) return 0;
+
         return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+
     };
+
 
     // Calcular dias úteis (segunda a sábado)
     const calcularDiasUteis = (inicio: Date, fim: Date): number => {
