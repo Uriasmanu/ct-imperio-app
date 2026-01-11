@@ -3,7 +3,9 @@
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
 import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
 import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
+import { auth } from '@/config/firebaseConfig';
 import { estoqueService } from '@/services/estoqueService';
+import { pedidoService } from '@/services/PedidoService';
 import { ItemEstoque } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
@@ -28,7 +30,7 @@ export default function ProdutosScreen() {
     const [produtoSelecionado, setProdutoSelecionado] = useState<ItemEstoque | null>(null);
     const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([]);
     const [observacoes, setObservacoes] = useState('');
-    const [pedidosUsuario, setPedidosUsuario] = useState<any[]>([]); // Estado para pedidos do usuário
+    const [pedidosUsuario, setPedidosUsuario] = useState<any[]>([]); 
 
     useEffect(() => {
         const carregarProdutos = async () => {
@@ -65,23 +67,24 @@ export default function ProdutosScreen() {
 
     const carregarPedidosUsuario = async () => {
         try {
-            // TODO: Aqui você precisará implementar a lógica para carregar
-            // os pedidos do usuário atual. Você pode precisar:
-            // 1. Obter o ID do usuário logado (via autenticação)
-            // 2. Buscar pedidos com esse usuarioId no banco de dados
-            // 3. Atualizar o estado pedidosUsuario
-            
-            // Exemplo:
-            // const usuarioId = await obterUsuarioId(); // Implemente essa função
-            // const pedidos = await pedidoService.getPedidosPorUsuario(usuarioId);
-            // setPedidosUsuario(pedidos);
-            
-            // Por enquanto, vamos deixar vazio
-            setPedidosUsuario([]);
+            const usuarioLogado = auth.currentUser;
+
+            if (!usuarioLogado) {
+                setPedidosUsuario([]);
+                return;
+            }
+
+            const pedidos = await pedidoService.getPedidosPorUsuario(
+                usuarioLogado.uid
+            );
+
+            setPedidosUsuario(pedidos);
         } catch (error) {
-            console.error('Erro ao carregar pedidos:', error);
+            console.error("Erro ao carregar pedidos do usuário:", error);
+            setPedidosUsuario([]);
         }
     };
+
 
     const filtrarProdutos = (texto: string) => {
         setBusca(texto);

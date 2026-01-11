@@ -177,6 +177,48 @@ export const pedidoService = {
     }
   },
 
+  async getPedidosPorUsuario(usuarioId: string): Promise<Pedido[]> {
+    try {
+      if (!usuarioId) {
+        console.warn('ID do usuário não fornecido');
+        return [];
+      }
+
+      const pedidosRef = collection(db, "pedidos");
+      const q = query(
+        pedidosRef,
+        where("usuarioId", "==", usuarioId),
+        orderBy("dataTimestamp", "desc")
+      );
+
+      const querySnapshot = await getDocs(q);
+      const pedidos: Pedido[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        pedidos.push({
+          id: doc.id,
+          usuarioId: data.usuarioId,
+          pessoa: data.pessoa,
+          itens: data.itens || [],
+          data: data.data,
+          dataTimestamp: data.dataTimestamp,
+          pago: data.pago || false,
+          total: data.total || 0,
+          observacoes: data.observacoes || '',
+          status: data.status || 'pendente',
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt
+        } as Pedido);
+      });
+
+      return pedidos;
+    } catch (error) {
+      console.error('Erro ao buscar pedidos do usuário:', error);
+      throw error;
+    }
+  },
+
   // Buscar pedido por ID
   async getPedidoById(id: string): Promise<Pedido | null> {
     try {
