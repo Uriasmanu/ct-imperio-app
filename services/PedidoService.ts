@@ -156,7 +156,7 @@ export const pedidoService = {
         }
       }
 
-      await this.atualizarPedido(id, { pago: true, status: 'entregue' });
+      await this.atualizarPedido(id, { pago: true, status: 'pago' });
 
 
     } catch (error) {

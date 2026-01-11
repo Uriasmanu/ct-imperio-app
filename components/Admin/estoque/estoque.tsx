@@ -491,7 +491,7 @@ export const Estoque: React.FC = () => {
                                                 styles.statusTexto,
                                                 { color: pedido.pago ? "#22C55E" : "#EF4444" }
                                             ]}>
-                                                {pedido.pago ? "Recebido" : "Pendente"}
+                                                {pedido.pago ? "Pago" : "Pendente"}
                                             </Text>
                                         </View>
                                     </View>
