@@ -2,11 +2,12 @@
 
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
 import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
+import { PedidoCard } from '@/components/telaProdutos/PedidoCard';
 import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
 import { auth } from '@/config/firebaseConfig';
 import { estoqueService } from '@/services/estoqueService';
 import { pedidoService } from '@/services/PedidoService';
-import { ItemEstoque } from '@/types/estoque';
+import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
 import {
@@ -30,7 +31,7 @@ export default function ProdutosScreen() {
     const [produtoSelecionado, setProdutoSelecionado] = useState<ItemEstoque | null>(null);
     const [itensCarrinho, setItensCarrinho] = useState<ItemCarrinho[]>([]);
     const [observacoes, setObservacoes] = useState('');
-    const [pedidosUsuario, setPedidosUsuario] = useState<any[]>([]); 
+    const [pedidosUsuario, setPedidosUsuario] = useState<Pedido[]>([]);
 
     useEffect(() => {
         const carregarProdutos = async () => {
@@ -252,10 +253,10 @@ export default function ProdutosScreen() {
                     {pedidosUsuario.length > 0 ? (
                         <View style={styles.pedidosContainer}>
                             {pedidosUsuario.map((pedido) => (
-                                <View key={pedido.id} style={styles.pedidoCard}>
-                                    {/* TODO: Implementar o card de pedido real aqui */}
-                                    <Text style={styles.pedidoText}>Pedido #{pedido.id}</Text>
-                                </View>
+                                <PedidoCard
+                                    key={pedido.id}
+                                    pedido={pedido}
+                                />
                             ))}
                         </View>
                     ) : (
