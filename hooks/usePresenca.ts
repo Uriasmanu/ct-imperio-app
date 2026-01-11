@@ -228,7 +228,20 @@ export const usePresenca = (userId?: string) => {
                 if (isFirstJanuary()) {
                     setPresencaRecords([]);
                 } else {
-                    setPresencaRecords(records);
+                    const recordsFiltrados = records.filter(record => {
+                        const date = new Date(record.date + 'T00:00:00');
+
+                        // somente ano atual
+                        if (date.getFullYear() !== currentYear) return false;
+
+                        // remover 1º de janeiro
+                        if (date.getMonth() === 0 && date.getDate() === 1) return false;
+
+                        return true;
+                    });
+
+                    setPresencaRecords(recordsFiltrados);
+
                 }
                 setLoading(false);
             },
@@ -240,7 +253,7 @@ export const usePresenca = (userId?: string) => {
         );
 
         return () => unsubscribe();
-    }, [currentUserId, userId, isChild, usuario?.id]); 
+    }, [currentUserId, userId, isChild, usuario?.id]);
 
     const isPresencaCheckedInToday = presencaRecords.some(
         record => record.date === todayString

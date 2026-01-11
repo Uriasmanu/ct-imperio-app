@@ -34,9 +34,26 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
 
     const [showCalendar, setShowCalendar] = useState(false);
 
+    const hoje = new Date();
+
+    const presencasDoSemestre = presencaRecords.filter(record => {
+        const data = new Date(record.date + 'T00:00:00');
+        const anoCorreto = data.getFullYear() === currentYear;
+
+        const mes = data.getMonth();
+        const noPrimeiroSemestre = mes >= 0 && mes <= 5;
+        const noSegundoSemestre = mes >= 6 && mes <= 11;
+
+        return anoCorreto && (
+            (hoje.getMonth() <= 5 && noPrimeiroSemestre) ||
+            (hoje.getMonth() > 5 && noSegundoSemestre)
+        );
+    });
+
+
     // Estatísticas de presença
-    const totalPresencas = presencaRecords.length;
-    const presencasConfirmadas = presencaRecords.filter(record => record.confirmada).length;
+    const totalPresencas = presencasDoSemestre.length;
+    const presencasConfirmadas = presencasDoSemestre.filter(r => r.confirmada).length;
 
     // Calcular porcentagem por semestre
     const getPorcentagemPresenca = () => {
@@ -183,7 +200,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                         style={[
                             styles.checkInButton,
                             isNewDay()
-                                ? styles.availableButton 
+                                ? styles.availableButton
                                 : isPresencaCheckedInToday
                                     ? (isPresencaConfirmadaToday ? styles.confirmedButton : styles.checkedInButton)
                                     : styles.availableButton
