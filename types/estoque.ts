@@ -26,7 +26,7 @@ export interface Pedido {
   pago: boolean;
   total: number;
   observacoes?: string;
-  status: 'pendente' | 'reservado' | 'entregue';
+  status: 'pendente' | 'reservado'| 'pago' | 'entregue';
   createdAt?: Date;
   updatedAt?: Date;
 }

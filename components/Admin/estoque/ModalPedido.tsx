@@ -40,7 +40,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [pago, setPago] = useState(false);
-  const [status, setStatus] = useState<'pendente' | 'reservado' | 'entregue'>('pendente');
+  const [status, setStatus] = useState<'pendente' | 'reservado' | 'pago' | 'entregue'>('pendente');
   const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState<Usuario | null>(null);
   const [usuarioId, setUsuarioId] = useState<string>('');
@@ -53,15 +53,16 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       setItensPedido(pedidoEditando.itens);
       setObservacoes(pedidoEditando.observacoes || '');
       setStatus(pedidoEditando.status);
+      setPago(pedidoEditando.pago);
       setUsuarioId(pedidoEditando.usuarioId || '');
-      
+
       // Se houver alunos na lista, tente encontrar o aluno correspondente
       if (alunos.length > 0 && pessoa) {
         const alunoEncontrado = alunos.find(aluno => {
           if (!aluno || !aluno.nome) return false;
           return aluno.nome.toLowerCase() === pessoa.toLowerCase();
         });
-        
+
         if (alunoEncontrado) {
           setAlunoSelecionado(alunoEncontrado);
         } else {
@@ -81,11 +82,11 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   }, [pedidoEditando, visible, alunos]);
 
   // Filtrar alunos com base na busca
-  const alunosFiltrados = buscaAluno.trim() === '' 
-    ? alunos 
-    : alunos.filter(aluno => 
-        aluno.nome.toLowerCase().includes(buscaAluno.toLowerCase())
-      );
+  const alunosFiltrados = buscaAluno.trim() === ''
+    ? alunos
+    : alunos.filter(aluno =>
+      aluno.nome.toLowerCase().includes(buscaAluno.toLowerCase())
+    );
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
@@ -341,7 +342,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const handleSalvar = () => {
     // Garantir que pessoaFinal nunca seja undefined
     let pessoaFinal = nomePessoa.trim();
-    
+
     if (!pessoaFinal) {
       Alert.alert('Erro', 'Por favor, informe o nome da pessoa ou selecione um aluno');
       return;
@@ -361,20 +362,22 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
       // Editar pedido existente
       const pedidoAtualizado: Partial<Pedido> = {
         pessoa: pessoaFinal,
-        usuarioId: usuarioId,
+        usuarioId,
         itens: itensPedido,
         total: calcularTotal(),
         observacoes: observacoes.trim(),
-        pago: pago,
+        pago,
+        status,
         updatedAt: new Date()
       };
+
 
       onAtualizarPedido(pedidoEditando.id, pedidoAtualizado);
     } else {
       // Criar novo pedido
       const pedido: Omit<Pedido, 'id'> = {
         pessoa: pessoaFinal,
-        usuarioId: usuarioId,
+        usuarioId,
         itens: itensPedido,
         data: new Date().toLocaleDateString('pt-BR'),
         dataTimestamp: Date.now(),
@@ -384,6 +387,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         observacoes: observacoes.trim(),
         createdAt: new Date(),
       };
+
 
       onSalvarPedido(pedido);
     }
@@ -447,7 +451,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           {/* Informações do Cliente */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações do Cliente</Text>
-            
+
             {/* Seletor de Aluno */}
             <View style={styles.alunoSelectorContainer}>
               <TouchableOpacity
@@ -455,19 +459,19 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                 onPress={() => alunos.length > 0 && setMostrarListaAlunos(true)}
                 disabled={alunos.length === 0}
               >
-                <Ionicons 
-                  name="person" 
-                  size={20} 
-                  color={alunos.length === 0 ? "#666" : "#B8860B"} 
+                <Ionicons
+                  name="person"
+                  size={20}
+                  color={alunos.length === 0 ? "#666" : "#B8860B"}
                 />
                 <Text style={[
                   styles.alunoSelectorText,
                   alunos.length === 0 && styles.alunoSelectorTextDisabled
                 ]}>
-                  {alunos.length === 0 
-                    ? 'Nenhum aluno cadastrado' 
-                    : alunoSelecionado 
-                      ? 'Aluno selecionado' 
+                  {alunos.length === 0
+                    ? 'Nenhum aluno cadastrado'
+                    : alunoSelecionado
+                      ? 'Aluno selecionado'
                       : 'Selecionar aluno da lista'
                   }
                 </Text>
@@ -475,7 +479,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                   <Ionicons name="chevron-down" size={20} color="#B8860B" />
                 )}
               </TouchableOpacity>
-              
+
               {alunoSelecionado && (
                 <View style={styles.alunoSelecionadoContainer}>
                   <View style={styles.alunoSelecionadoInfo}>
@@ -523,32 +527,31 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               numberOfLines={3}
             />
 
-            {pedidoEditando && (
-              <TouchableOpacity
-                style={[
-                  styles.statusButton,
-                  pago ? styles.statusPago : styles.statusPendente
-                ]}
-                onPress={() => setPago(!pago)}
-              >
-                <Ionicons
-                  name={pago ? "checkmark-circle" : "time"}
-                  size={20}
-                  color={pago ? "#22C55E" : "#EF4444"}
-                />
-                <Text style={[
-                  styles.statusButtonText,
-                  { color: pago ? "#22C55E" : "#EF4444" }
-                ]}>
-                  {pago ? "Pedido Pago" : "Pedido Pendente"}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={pago ? "#22C55E" : "#EF4444"}
-                />
-              </TouchableOpacity>
-            )}
+            <View style={styles.statusContainer}>
+              {(['pendente', 'pago', 'entregue'] as const).map(item => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.statusOption,
+                    status === item && styles.statusOptionActive
+                  ]}
+                  onPress={() => {
+                    setStatus(item);
+                    setPago(item === 'pago' || item === 'entregue');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.statusOptionText,
+                      status === item && styles.statusOptionTextActive
+                    ]}
+                  >
+                    {item.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
           </View>
 
           {/* Itens do Pedido */}
@@ -699,7 +702,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           <View style={styles.modalAlunosContainer}>
             <View style={styles.modalAlunosHeader}>
               <Text style={styles.modalAlunosTitle}>Selecione um Aluno</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => {
                   setMostrarListaAlunos(false);
                   setBuscaAluno('');
@@ -727,7 +730,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                 </TouchableOpacity>
               ) : null}
             </View>
-            
+
             <ScrollView style={styles.modalAlunosLista}>
               {alunosFiltrados.length > 0 ? (
                 alunosFiltrados.map((aluno) => (
@@ -757,7 +760,7 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
                     {buscaAluno ? 'Nenhum aluno encontrado' : 'Nenhum aluno cadastrado'}
                   </Text>
                   {buscaAluno && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.limparBuscaButton}
                       onPress={() => setBuscaAluno('')}
                     >
@@ -1170,4 +1173,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  statusContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+
+  statusOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+
+  statusOptionActive: {
+    backgroundColor: '#1e40af', // azul padrão
+    borderColor: '#1e40af',
+  },
+
+  statusOptionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+
+  statusOptionTextActive: {
+    color: '#fff',
+  },
+
 });
