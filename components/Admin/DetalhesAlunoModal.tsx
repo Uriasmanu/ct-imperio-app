@@ -37,6 +37,14 @@ interface PresencaState {
   isConfirmed: boolean;
 }
 
+interface FrequenciaInfo {
+  total: number;
+  ultimoMes: number;
+  porcentagemSemestre: number;
+  semestreNome: string;
+  semestrePeriodo: string;
+}
+
 // Função para formatar datas
 const formatarData = (data: string | Date) => {
   if (!data) return 'Não informado';
@@ -52,60 +60,115 @@ const formatarData = (data: string | Date) => {
   });
 };
 
-// Função para calcular informações do semestre
-const getSemestreInfo = () => {
-  const hoje = new Date();
-  const currentMonth = hoje.getMonth();
-  const isPrimeiroSemestre = currentMonth >= 0 && currentMonth <= 5;
-
-  return {
-    isPrimeiroSemestre,
-    nome: isPrimeiroSemestre ? '1º Semestre' : '2º Semestre',
-    periodo: isPrimeiroSemestre ? 'Jan-Jun' : 'Jul-Dez'
-  };
-};
-
-// Função para calcular dias úteis
-const calcularDiasUteis = (inicio: Date, fim: Date): number => {
-  let count = 0;
-  const current = new Date(inicio);
-
-  while (current <= fim) {
-    const day = current.getDay();
-    const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
-
-    if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
-      count++;
-    }
-    current.setDate(current.getDate() + 1);
-  }
-  return count;
-};
-
-// Função para calcular porcentagem
-const calcularPorcentagemPresenca = (totalPresencas: number): number => {
+// Função utilitária para calcular frequência
+const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo => {
   const hoje = new Date();
   const currentYear = hoje.getFullYear();
   const currentMonth = hoje.getMonth();
 
+  // Total de presenças (todos os registros)
+  const total = presencaArray.length;
+
+  // Presenças no último mês
+  const ultimoMes = presencaArray.filter(dateString => {
+    try {
+      const dataPresenca = new Date(dateString);
+      const umMesAtras = new Date();
+      umMesAtras.setMonth(umMesAtras.getMonth() - 1);
+      return dataPresenca >= umMesAtras;
+    } catch {
+      return false;
+    }
+  }).length;
+
+  // Filtrar presenças do semestre atual (igual ao hook)
+  const presencasDoSemestre = presencaArray.filter(dateString => {
+    try {
+      const data = new Date(dateString + 'T00:00:00');
+      const anoCorreto = data.getFullYear() === currentYear;
+
+      const mes = data.getMonth();
+      const noPrimeiroSemestre = mes >= 0 && mes <= 5;
+      const noSegundoSemestre = mes >= 6 && mes <= 11;
+
+      return anoCorreto && (
+        (hoje.getMonth() <= 5 && noPrimeiroSemestre) ||
+        (hoje.getMonth() > 5 && noSegundoSemestre)
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  // IMPORTANTE: No hook, ele filtra apenas as presenças confirmadas
+  // Como nossas presenças são strings, assumimos que todas estão confirmadas
+  const presencasValidas = presencasDoSemestre.length; // Todas estão confirmadas
+
+  // Calcular dias úteis (função auxiliar) - MESMA do hook
+  const calcularDiasUteis = (inicio: Date, fim: Date): number => {
+    let count = 0;
+    const current = new Date(inicio);
+    const fimDate = new Date(fim);
+
+    current.setHours(0, 0, 0, 0);
+    fimDate.setHours(0, 0, 0, 0);
+
+    while (current <= fimDate) {
+      const day = current.getDay();
+      if (day >= 1 && day <= 6) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count;
+  };
+
+  // Definir datas do semestre - MESMAS do hook
   let inicioSemestre: Date;
   let fimSemestre: Date;
+  let diasUteisTotalSemestre: number;
 
   if (currentMonth >= 0 && currentMonth <= 5) {
-    inicioSemestre = new Date(currentYear, 0, 2);
+    // Primeiro semestre: 5 de janeiro a 30 de junho
+    inicioSemestre = new Date(currentYear, 0, 5);
     fimSemestre = new Date(currentYear, 5, 30);
+    diasUteisTotalSemestre = 152; // FIXO para 2026
   } else {
+    // Segundo semestre: 1 de julho a 31 de dezembro
     inicioSemestre = new Date(currentYear, 6, 1);
     fimSemestre = new Date(currentYear, 11, 31);
+    // Calcular dias úteis dinamicamente
+    diasUteisTotalSemestre = calcularDiasUteis(inicioSemestre, fimSemestre);
   }
 
-  const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
-  const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
+  // Calcular porcentagem - MESMA lógica do hook
+  let porcentagemSemestre = 0;
+  if (diasUteisTotalSemestre > 0) {
+    porcentagemSemestre = Math.round((presencasValidas / diasUteisTotalSemestre) * 100);
 
-  if (diasUteisNoSemestre === 0) return 0;
-  return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
+    // Limitar a 100% como no hook
+    if (porcentagemSemestre > 100) porcentagemSemestre = 100;
+  }
+
+  // Se for início do ano e ainda não começou o semestre - MESMA lógica do hook
+  if (hoje < inicioSemestre) {
+    porcentagemSemestre = 0;
+  }
+
+  // Determinar informações do semestre - MESMAS do hook
+  const semestreInfo = currentMonth <= 5
+    ? { nome: "1º Semestre", periodo: "Jan-Jun" }
+    : { nome: "2º Semestre", periodo: "Jul-Dez" };
+
+  return {
+    total,
+    ultimoMes,
+    porcentagemSemestre,
+    semestreNome: semestreInfo.nome,
+    semestrePeriodo: semestreInfo.periodo
+  };
 };
-
 // Componente para Gerenciar Pagamento do ADMIN
 const GerenciarPagamentoAdmin: React.FC<{
   item: UsuarioCompleto | any;
@@ -119,7 +182,7 @@ const GerenciarPagamentoAdmin: React.FC<{
     processando,
     handleConfirmarPagamento,
     handleReverterPagamento,
-    formatarData,
+    formatarData: formatarDataPagamento,
     getStatusInfo,
     dataUltimoPagamento
   } = usePagamentoAdmin({
@@ -195,7 +258,7 @@ const GerenciarPagamentoAdmin: React.FC<{
                 <View style={styles.dataInfo}>
                   <Ionicons name="calendar" size={16} color="#666" />
                   <Text style={styles.pagamentoData}>
-                    Último pagamento: {formatarData(dataUltimoPagamento)}
+                    Último pagamento: {formatarDataPagamento(dataUltimoPagamento)}
                   </Text>
                 </View>
               )}
@@ -725,43 +788,54 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     return professores.filter(prof => professorIds.includes(prof.id));
   };
 
+  // FUNÇÃO CORRIGIDA PARA OBTER ARRAY DE PRESENÇA
   const obterArrayPresenca = (dados: any, filho?: any): string[] => {
     try {
+      let presencaData: any[];
+
       if (filho) {
-        return Array.isArray(filho.Presenca) ? filho.Presenca :
+        // Se for um filho, busca na propriedade do filho
+        presencaData = Array.isArray(filho.Presenca) ? filho.Presenca :
           Array.isArray(filho.presenca) ? filho.presenca :
             Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
       } else {
-        return Array.isArray(dados.Presenca) ? dados.Presenca :
+        // Se for o usuário principal
+        presencaData = Array.isArray(dados.Presenca) ? dados.Presenca :
           Array.isArray(dados.presenca) ? dados.presenca :
             Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
       }
+
+      // Se os dados já estão no formato correto (objetos com date e confirmada)
+      if (presencaData.length > 0 && typeof presencaData[0] === 'object' && 'date' in presencaData[0]) {
+        // Extrai apenas as strings de data dos objetos
+        return presencaData
+          .map((item: any) => item.date)
+          .filter((date: string) => date && typeof date === 'string');
+      }
+
+      // Se já são strings, retorna direto
+      return presencaData.filter((item: any) => typeof item === 'string');
+
     } catch {
       return [];
     }
   };
 
-  const calcularFrequencia = (presencaArray: string[] = []) => {
-    const totalPresencas = presencaArray.length;
+  const calcularFrequencia = (presencaArray: string[] = []): FrequenciaInfo => {
+    return calcularFrequenciaSimples(presencaArray);
+  };
 
-    const ultimoMes = presencaArray.filter(dataPresencaStr => {
-      try {
-        const dataPresenca = new Date(dataPresencaStr);
-        const umMesAtras = new Date();
-        umMesAtras.setMonth(umMesAtras.getMonth() - 1);
-        return dataPresenca >= umMesAtras;
-      } catch {
-        return false;
-      }
-    }).length;
-
-    const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
-
-    return {
-      total: totalPresencas,
-      ultimoMes,
-      porcentagemSemestre
+  const calcularEExibirFrequencia = (): FrequenciaInfo => {
+    if (!usuarioEditado) return {
+      total: 0,
+      ultimoMes: 0,
+      porcentagemSemestre: 0,
+      semestreNome: '',
+      semestrePeriodo: ''
     };
+
+    const presencaUsuario = obterArrayPresenca(usuarioEditado);
+    return calcularFrequencia(presencaUsuario);
   };
 
   const getPorcentagemColor = (porcentagem: number): string => {
@@ -796,7 +870,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
 
     return editando ? (
       <View style={styles.modalidadesEditContainer}>
-
         <MultiModalidadeSelector
           modalidades={usuarioEditado.modalidades || []}
           onModalidadesChange={(modalidades) => {
@@ -879,12 +952,9 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
     );
   };
 
-  const semestreInfo = getSemestreInfo();
-
   if (!usuario || !usuarioEditado) return null;
 
-  const presencaUsuario = obterArrayPresenca(usuarioEditado);
-  const frequenciaUsuario = calcularFrequencia(presencaUsuario);
+  const frequenciaUsuario = calcularEExibirFrequencia();
 
   return (
     <Modal
@@ -894,320 +964,320 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onClose}>
-            <Ionicons name="arrow-back" size={24} color="#B8860B" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detalhes do Aluno</Text>
-          <View style={styles.headerActions}>
-            {!editando ? (
-              <>
-                <TouchableOpacity
-                  style={styles.editHeaderButton}
-                  onPress={() => setEditando(true)}
-                >
-                  <Ionicons name="create-outline" size={20} color="#B8860B" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={confirmarDelecao}
-                  disabled={deletando}
-                >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={onClose}>
+              <Ionicons name="arrow-back" size={24} color="#B8860B" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Detalhes do Aluno</Text>
+            <View style={styles.headerActions}>
+              {!editando ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.editHeaderButton}
+                    onPress={() => setEditando(true)}
+                  >
+                    <Ionicons name="create-outline" size={20} color="#B8860B" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={confirmarDelecao}
+                    disabled={deletando}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={20}
+                      color={deletando ? "#666" : "#ef4444"}
+                    />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={styles.editModeActions}>
+                  <TouchableOpacity
+                    style={styles.cancelEditButton}
+                    onPress={handleCancelarEdicao}
+                    disabled={salvando}
+                  >
+                    <Ionicons name="close" size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.saveEditButton}
+                    onPress={handleSalvarAlteracoes}
+                    disabled={salvando}
+                  >
+                    {salvando ? (
+                      <ActivityIndicator size="small" color="#000" />
+                    ) : (
+                      <Ionicons name="checkmark" size={20} color="#22c55e" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <Modal
+            visible={modalDeleteVisible}
+            animationType="fade"
+            transparent={true}
+            onRequestClose={() => !deletando && setModalDeleteVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Confirmar Exclusão</Text>
+                  <TouchableOpacity
+                    onPress={() => !deletando && setModalDeleteVisible(false)}
+                    disabled={deletando}
+                  >
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.deleteContent}>
+                  <Ionicons name="warning" size={48} color="#ef4444" />
+                  <Text style={styles.deleteTitle}>Atenção!</Text>
+                  <Text style={styles.deleteText}>
+                    Esta ação irá excluir permanentemente o usuário {'"'}
+                    <Text style={styles.deleteUserName}>{usuario?.nome}</Text>
+                    {'"'}, todos os seus dados, histórico de pagamentos e presenças.
+                  </Text>
+                  <Text style={styles.deleteWarning}>
+                    ⚠️ Esta ação não pode ser desfeita!
+                  </Text>
+                </View>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => setModalDeleteVisible(false)}
+                    disabled={deletando}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.deleteConfirmButton]}
+                    onPress={handleDeletarUsuario}
+                    disabled={deletando}
+                  >
+                    {deletando ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Text style={styles.deleteConfirmButtonText}>Excluir Permanentemente</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          <ScrollView style={styles.content}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+              <View style={styles.infoCard}>
+                {renderInfoField("Nome", usuarioEditado.nome || "", true, "nome")}
+                {renderInfoField("Email", usuarioEditado.email || "", true, "email")}
+                {renderInfoField("Telefone", usuarioEditado.telefone || "", true, "telefone")}
+                {renderInfoField("Observação", usuarioEditado.observacao || "", true, "observacao")}
+                <View style={styles.infoFieldContainer}>
+                  <Text style={styles.infoLabel}>Data de Registro:</Text>
+                  <Text style={styles.infoValue}>
+                    {formatarData(usuarioEditado.dataDeRegistro)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Status do Pagamento</Text>
+              <View style={styles.pagamentoSectionCard}>
+                <View style={styles.pagamentoInfoHeader}>
                   <Ionicons
-                    name="trash-outline"
-                    size={20}
-                    color={deletando ? "#666" : "#ef4444"}
+                    name={usuarioEditado.pagamento ? "checkmark-circle" : "alert-circle"}
+                    size={24}
+                    color={usuarioEditado.pagamento ? "#22c55e" : "#ef4444"}
                   />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View style={styles.editModeActions}>
-                <TouchableOpacity
-                  style={styles.cancelEditButton}
-                  onPress={handleCancelarEdicao}
-                  disabled={salvando}
-                >
-                  <Ionicons name="close" size={20} color="#ef4444" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveEditButton}
-                  onPress={handleSalvarAlteracoes}
-                  disabled={salvando}
-                >
-                  {salvando ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <Ionicons name="checkmark" size={20} color="#22c55e" />
-                  )}
-                </TouchableOpacity>
+                  <View style={styles.pagamentoInfoText}>
+                    <Text style={styles.pagamentoStatus}>
+                      {usuarioEditado.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
+                    </Text>
+                    <Text style={styles.pagamentoData}>
+                      Dia de pagamento: {usuarioEditado.dataPagamento ?
+                        new Date(usuarioEditado.dataPagamento).getDate() : '-'} de cada mês
+                    </Text>
+                  </View>
+                </View>
+
+                <GerenciarPagamentoAdmin
+                  item={usuarioEditado}
+                  tipo="usuario"
+                  onPagamentoAtualizado={handlePagamentoAtualizado}
+                />
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Modalidades</Text>
+              <View style={styles.infoCard}>
+                {renderModalidadesEditaveis()}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Professores</Text>
+              <View style={styles.infoCard}>
+                {renderProfessoresEditaveis()}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Frequência - {frequenciaUsuario.semestreNome}</Text>
+              <View style={styles.frequenciaCard}>
+                <View style={styles.frequenciaItem}>
+                  <Text style={styles.frequenciaNumber}>
+                    {frequenciaUsuario.total}
+                  </Text>
+                  <Text style={styles.frequenciaLabel}>Total de aulas</Text>
+                </View>
+                <View style={styles.frequenciaItem}>
+                  <Text style={[
+                    styles.frequenciaNumber,
+                    { color: getPorcentagemColor(frequenciaUsuario.porcentagemSemestre) }
+                  ]}>
+                    {frequenciaUsuario.porcentagemSemestre}%
+                  </Text>
+                  <Text style={styles.frequenciaLabel}>No semestre</Text>
+                  <Text style={styles.semestreInfo}>
+                    {frequenciaUsuario.semestrePeriodo}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {usuarioEditado.modalidades?.some(m => m.ativo) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Marcar Presença</Text>
+                <View style={styles.presencaCard}>
+                  <View>
+                    <Text style={styles.presencaNome}>{usuarioEditado.nome}</Text>
+                  </View>
+                  <BotaoMarcarPresencaUsuario
+                    usuario={usuarioEditado}
+                    estadoUsuario={presencaStates[usuarioEditado.id] || { hasPresenca: false, isConfirmed: false }}
+                    loading={loading}
+                    marcandoPresenca={marcandoPresenca}
+                    onMarcarPresenca={handleMarcarPresenca}
+                  />
+                </View>
               </View>
             )}
-          </View>
-        </View>
 
-        <Modal
-          visible={modalDeleteVisible}
-          animationType="fade"
-          transparent={true}
-          onRequestClose={() => !deletando && setModalDeleteVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Confirmar Exclusão</Text>
-                <TouchableOpacity
-                  onPress={() => !deletando && setModalDeleteVisible(false)}
-                  disabled={deletando}
-                >
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
+            {usuarioEditado.filhos && usuarioEditado.filhos.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Alunos Dependentes</Text>
+                <View style={styles.filhosList}>
+                  {usuarioEditado.filhos.map((filho, index) => {
+                    const presencaFilho = obterArrayPresenca(usuarioEditado, filho);
+                    const frequenciaFilho = calcularFrequencia(presencaFilho);
 
-              <View style={styles.deleteContent}>
-                <Ionicons name="warning" size={48} color="#ef4444" />
-                <Text style={styles.deleteTitle}>Atenção!</Text>
-                <Text style={styles.deleteText}>
-                  Esta ação irá excluir permanentemente o usuário {'"'}
-                  <Text style={styles.deleteUserName}>{usuario?.nome}</Text>
-                  {'"'}, todos os seus dados, histórico de pagamentos e presenças.
-                </Text>
-                <Text style={styles.deleteWarning}>
-                  ⚠️ Esta ação não pode ser desfeita!
-                </Text>
-              </View>
-
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setModalDeleteVisible(false)}
-                  disabled={deletando}
-                >
-                  <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.deleteConfirmButton]}
-                  onPress={handleDeletarUsuario}
-                  disabled={deletando}
-                >
-                  {deletando ? (
-                    <ActivityIndicator size="small" color="#FFF" />
-                  ) : (
-                    <Text style={styles.deleteConfirmButtonText}>Excluir Permanentemente</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        <ScrollView style={styles.content}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Informações Pessoais</Text>
-            <View style={styles.infoCard}>
-              {renderInfoField("Nome", usuarioEditado.nome || "", true, "nome")}
-              {renderInfoField("Email", usuarioEditado.email || "", true, "email")}
-              {renderInfoField("Telefone", usuarioEditado.telefone || "", true, "telefone")}
-              {renderInfoField("Observação", usuarioEditado.observacao || "", true, "observacao")}
-              <View style={styles.infoFieldContainer}>
-                <Text style={styles.infoLabel}>Data de Registro:</Text>
-                <Text style={styles.infoValue}>
-                  {formatarData(usuarioEditado.dataDeRegistro)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Status do Pagamento</Text>
-            <View style={styles.pagamentoSectionCard}>
-              <View style={styles.pagamentoInfoHeader}>
-                <Ionicons
-                  name={usuarioEditado.pagamento ? "checkmark-circle" : "alert-circle"}
-                  size={24}
-                  color={usuarioEditado.pagamento ? "#22c55e" : "#ef4444"}
-                />
-                <View style={styles.pagamentoInfoText}>
-                  <Text style={styles.pagamentoStatus}>
-                    {usuarioEditado.pagamento ? 'Pagamento em dia' : 'Pagamento pendente'}
-                  </Text>
-                  <Text style={styles.pagamentoData}>
-                    Dia de pagamento: {usuarioEditado.dataPagamento ?
-                      new Date(usuarioEditado.dataPagamento).getDate() : '-'} de cada mês
-                  </Text>
-                </View>
-              </View>
-
-              <GerenciarPagamentoAdmin
-                item={usuarioEditado}
-                tipo="usuario"
-                onPagamentoAtualizado={handlePagamentoAtualizado}
-              />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Modalidades</Text>
-            <View style={styles.infoCard}>
-              {renderModalidadesEditaveis()}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Professores</Text>
-            <View style={styles.infoCard}>
-              {renderProfessoresEditaveis()}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Frequência - {semestreInfo.nome}</Text>
-            <View style={styles.frequenciaCard}>
-              <View style={styles.frequenciaItem}>
-                <Text style={styles.frequenciaNumber}>
-                  {frequenciaUsuario.total}
-                </Text>
-                <Text style={styles.frequenciaLabel}>Total de aulas</Text>
-              </View>
-              <View style={styles.frequenciaItem}>
-                <Text style={[
-                  styles.frequenciaNumber,
-                  { color: getPorcentagemColor(frequenciaUsuario.porcentagemSemestre) }
-                ]}>
-                  {frequenciaUsuario.porcentagemSemestre}%
-                </Text>
-                <Text style={styles.frequenciaLabel}>No semestre</Text>
-                <Text style={styles.semestreInfo}>
-                  {semestreInfo.periodo}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {usuarioEditado.modalidades?.some(m => m.ativo) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Marcar Presença</Text>
-              <View style={styles.presencaCard}>
-                <View>
-                  <Text style={styles.presencaNome}>{usuarioEditado.nome}</Text>
-                </View>
-                <BotaoMarcarPresencaUsuario
-                  usuario={usuarioEditado}
-                  estadoUsuario={presencaStates[usuarioEditado.id] || { hasPresenca: false, isConfirmed: false }}
-                  loading={loading}
-                  marcandoPresenca={marcandoPresenca}
-                  onMarcarPresenca={handleMarcarPresenca}
-                />
-              </View>
-            </View>
-          )}
-
-          {usuarioEditado.filhos && usuarioEditado.filhos.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Alunos Dependentes</Text>
-              <View style={styles.filhosList}>
-                {usuarioEditado.filhos.map((filho, index) => {
-                  const presencaFilho = obterArrayPresenca(usuarioEditado, filho);
-                  const frequenciaFilho = calcularFrequencia(presencaFilho);
-
-                  return (
-                    <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
-                      <View style={styles.filhoHeader}>
-                        <View style={styles.filhoInfo}>
-                          <Text style={styles.filhoNome}>{filho.nome}</Text>
-                          {filho.idade && (
-                            <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
-                          )}
+                    return (
+                      <View key={filho.id || `filho-${index}`} style={styles.filhoCard}>
+                        <View style={styles.filhoHeader}>
+                          <View style={styles.filhoInfo}>
+                            <Text style={styles.filhoNome}>{filho.nome}</Text>
+                            {filho.idade && (
+                              <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
+                            )}
+                          </View>
+                          <TouchableOpacity
+                            style={styles.editarFilhoButton}
+                            onPress={() => handleEditarFilho(filho)}
+                          >
+                            <Ionicons name="create-outline" size={18} color="#B8860B" />
+                          </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                          style={styles.editarFilhoButton}
-                          onPress={() => handleEditarFilho(filho)}
-                        >
-                          <Ionicons name="create-outline" size={18} color="#B8860B" />
-                        </TouchableOpacity>
-                      </View>
 
-                      <View style={styles.filhoPagamentoSection}>
-                        <GerenciarPagamentoAdmin
-                          item={filho}
-                          tipo="filho"
-                          usuarioId={usuarioEditado.id}
-                          onPagamentoAtualizado={handlePagamentoAtualizado}
-                        />
-                      </View>
-
-                      {filho.modalidades && filho.modalidades.length > 0 && (
-                        <View style={styles.filhoModalidades}>
-                          {filho.modalidades.map((modalidade, idx) => (
-                            <View key={idx} style={styles.filhoModalidadeItem}>
-                              <Text style={styles.filhoModalidadeNome}>
-                                {modalidade.modalidade}
-                              </Text>
-                              <Text style={styles.filhoModalidadeGraduacao}>
-                                {formatarGraduacao(modalidade.graduacao, modalidade.modalidade)}
-                              </Text>
-                            </View>
-                          ))}
+                        <View style={styles.filhoPagamentoSection}>
+                          <GerenciarPagamentoAdmin
+                            item={filho}
+                            tipo="filho"
+                            usuarioId={usuarioEditado.id}
+                            onPagamentoAtualizado={handlePagamentoAtualizado}
+                          />
                         </View>
-                      )}
 
-                      {filho.professores && filho.professores.length > 0 && (
-                        <View style={styles.filhoProfessoresSection}>
-                          <Text style={styles.filhoSectionLabel}>Professores:</Text>
-                          <View style={styles.filhoProfessoresList}>
-                            {obterProfessoresCompletos(filho.professores).map((professor) => (
-                              <View key={professor.id} style={styles.filhoProfessorChip}>
-                                <Text style={styles.filhoProfessorChipText}>
-                                  {professor.nome}
+                        {filho.modalidades && filho.modalidades.length > 0 && (
+                          <View style={styles.filhoModalidades}>
+                            {filho.modalidades.map((modalidade, idx) => (
+                              <View key={idx} style={styles.filhoModalidadeItem}>
+                                <Text style={styles.filhoModalidadeNome}>
+                                  {modalidade.modalidade}
+                                </Text>
+                                <Text style={styles.filhoModalidadeGraduacao}>
+                                  {formatarGraduacao(modalidade.graduacao, modalidade.modalidade)}
                                 </Text>
                               </View>
                             ))}
                           </View>
-                        </View>
-                      )}
+                        )}
 
-                      <View style={styles.filhoFrequencia}>
-                        <View style={styles.frequenciaRow}>
-                          <Text style={styles.frequenciaLabel}>
-                            Total: {frequenciaFilho.total} aulas
-                          </Text>
-                          <Text style={[
-                            styles.frequenciaPorcentagem,
-                            { color: getPorcentagemColor(frequenciaFilho.porcentagemSemestre) }
-                          ]}>
-                            {frequenciaFilho.porcentagemSemestre}% no semestre
-                          </Text>
+                        {filho.professores && filho.professores.length > 0 && (
+                          <View style={styles.filhoProfessoresSection}>
+                            <Text style={styles.filhoSectionLabel}>Professores:</Text>
+                            <View style={styles.filhoProfessoresList}>
+                              {obterProfessoresCompletos(filho.professores).map((professor) => (
+                                <View key={professor.id} style={styles.filhoProfessorChip}>
+                                  <Text style={styles.filhoProfessorChipText}>
+                                    {professor.nome}
+                                  </Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        )}
+
+                        <View style={styles.filhoFrequencia}>
+                          <View style={styles.frequenciaRow}>
+                            <Text style={styles.frequenciaLabel}>
+                              Total: {frequenciaFilho.total} aulas
+                            </Text>
+                            <Text style={[
+                              styles.frequenciaPorcentagem,
+                              { color: getPorcentagemColor(frequenciaFilho.porcentagemSemestre) }
+                            ]}>
+                              {frequenciaFilho.porcentagemSemestre}% no semestre
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.filhoPresencaSection}>
+                          <BotaoMarcarPresencaFilho
+                            filho={filho}
+                            usuario={usuarioEditado}
+                            estadoFilho={presencaStates[filho.id] || { hasPresenca: false, isConfirmed: false }}
+                            loading={loading}
+                            marcandoPresenca={marcandoPresenca}
+                            onMarcarPresenca={handleMarcarPresenca}
+                          />
                         </View>
                       </View>
-
-                      <View style={styles.filhoPresencaSection}>
-                        <BotaoMarcarPresencaFilho
-                          filho={filho}
-                          usuario={usuarioEditado}
-                          estadoFilho={presencaStates[filho.id] || { hasPresenca: false, isConfirmed: false }}
-                          loading={loading}
-                          marcandoPresenca={marcandoPresenca}
-                          onMarcarPresenca={handleMarcarPresenca}
-                        />
-                      </View>
-                    </View>
-                  );
-                })}
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          )}
-        </ScrollView>
+            )}
+          </ScrollView>
 
-        {/* Modal de Edição de Filho */}
-        <ModalEditarFilho
-          visible={modalFilhoVisible}
-          filho={filhoEditando}
-          onClose={handleCancelarEdicaoFilho}
-          onSalvar={handleSalvarEdicaoFilho}
-          salvando={salvandoFilho}
-        />
-      </View>
+          {/* Modal de Edição de Filho */}
+          <ModalEditarFilho
+            visible={modalFilhoVisible}
+            filho={filhoEditando}
+            onClose={handleCancelarEdicaoFilho}
+            onSalvar={handleSalvarEdicaoFilho}
+            salvando={salvandoFilho}
+          />
+        </View>
       </SafeAreaView>
     </Modal>
   );
