@@ -1,4 +1,5 @@
 import { usePresenca } from '@/hooks/usePresenca';
+import { usePresencaCalculo } from '@/hooks/usePresencaCalculo';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
@@ -32,121 +33,17 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
         getSemestreInfo
     } = usePresenca(userId);
 
-    const [showCalendar, setShowCalendar] = useState(false);
-
-    const hoje = new Date();
-
-    const presencasDoSemestre = presencaRecords.filter(record => {
-        const data = new Date(record.date + 'T00:00:00');
-        const anoCorreto = data.getFullYear() === currentYear;
-
-        const mes = data.getMonth();
-        const noPrimeiroSemestre = mes >= 0 && mes <= 5;
-        const noSegundoSemestre = mes >= 6 && mes <= 11;
-
-        return anoCorreto && (
-            (hoje.getMonth() <= 5 && noPrimeiroSemestre) ||
-            (hoje.getMonth() > 5 && noSegundoSemestre)
-        );
+    // Usando o hook de cálculo
+    const {
+        totalPresencas,
+        presencasConfirmadas,
+        porcentagemPresenca,
+    } = usePresencaCalculo({
+        presencaRecords,
+        currentYear
     });
 
-
-    // Estatísticas de presença
-    const totalPresencas = presencasDoSemestre.length;
-    const presencasConfirmadas = presencasDoSemestre.filter(r => r.confirmada).length;
-
-    // Calcular porcentagem por semestre - SEMPRE em relação ao semestre INTEIRO
-    const getPorcentagemPresenca = () => {
-        const hoje = new Date();
-        const currentMonth = hoje.getMonth();
-
-        let inicioSemestre: Date;
-        let fimSemestre: Date;
-        let diasUteisTotalSemestre: number;
-
-        if (currentMonth >= 0 && currentMonth <= 5) {
-            // Primeiro semestre: 5 de janeiro a 30 de junho
-            inicioSemestre = new Date(currentYear, 0, 5);
-            fimSemestre = new Date(currentYear, 5, 30);
-            diasUteisTotalSemestre = 152; // FIXO para 2026
-        } else {
-            // Segundo semestre: 1 de julho a 31 de dezembro
-            inicioSemestre = new Date(currentYear, 6, 1);
-            fimSemestre = new Date(currentYear, 11, 31);
-            // Calcular dinamicamente para qualquer ano
-            diasUteisTotalSemestre = calcularDiasUteis(inicioSemestre, fimSemestre);
-        }
-
-        // CORREÇÃO: Usar presenças confirmadas
-        const presencasValidas = presencasDoSemestre.filter(r => r.confirmada).length;
-
-        if (diasUteisTotalSemestre === 0) return 0;
-
-        // SEMPRE calcular em relação ao total do semestre
-        const porcentagem = Math.round((presencasValidas / diasUteisTotalSemestre) * 100);
-
-        // Se for início do ano e ainda não começou o semestre
-        if (hoje < inicioSemestre) {
-            return 0;
-        }
-
-        console.log('DEBUG Porcentagem FINAL:', {
-            ano: currentYear,
-            semestre: currentMonth <= 5 ? '1º Semestre' : '2º Semestre',
-            presencasConfirmadas: presencasValidas,
-            diasUteisTotalSemestre: diasUteisTotalSemestre,
-            porcentagemCalculada: porcentagem,
-            formula: `(${presencasValidas} / ${diasUteisTotalSemestre}) * 100 = ${porcentagem}%`
-        });
-
-        return porcentagem > 100 ? 100 : porcentagem; // Limitar a 100%
-    };
-
-    // Cálculo de dias úteis corrigido
-    const calcularDiasUteis = (inicio: Date, fim: Date): number => {
-        let count = 0;
-        const current = new Date(inicio);
-        const fimDate = new Date(fim);
-
-        // Array para armazenar datas (opcional, para debug)
-        const datasUteis: string[] = [];
-
-        // Normalizar horas
-        current.setHours(0, 0, 0, 0);
-        fimDate.setHours(0, 0, 0, 0);
-
-        console.log('DEBUG calcularDiasUteis - INÍCIO:', {
-            inicio: inicio.toLocaleDateString('pt-BR'),
-            fim: fim.toLocaleDateString('pt-BR'),
-            inicioISO: inicio.toISOString(),
-            fimISO: fim.toISOString()
-        });
-
-        while (current <= fimDate) {
-            const day = current.getDay();
-            const dataFormatada = current.toLocaleDateString('pt-BR');
-            const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][day];
-
-            // Conta apenas de segunda (1) a sábado (6)
-            if (day >= 1 && day <= 6) {
-                count++;
-                datasUteis.push(`${dataFormatada} (${diaSemana})`);
-            } else {
-                console.log(`  ${dataFormatada} (${diaSemana}) - DOMINGO - não conta`);
-            }
-
-            current.setDate(current.getDate() + 1);
-        }
-
-        console.log('DEBUG calcularDiasUteis - RESULTADO:', {
-            totalDiasContados: count,
-            periodo: `${inicio.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')}`,
-            diasUteis: datasUteis.slice(0, 10), // Mostra só os primeiros 10 dias
-            totalPeriodoDias: Math.ceil((fimDate.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        });
-
-        return count;
-    };
+    const [showCalendar, setShowCalendar] = useState(false);
 
     const handleCheckIn = async () => {
         // Só permite marcar se for um novo dia OU se nunca marcou
@@ -176,8 +73,6 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
             </View>
         );
     }
-
-    const porcentagem = getPorcentagemPresenca();
     const semestreInfo = getSemestreInfo();
 
     return (
@@ -211,7 +106,7 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                             <Text style={styles.statLabel}>Confirmadas</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={styles.statNumber}>{porcentagem}%</Text>
+                             <Text style={styles.statNumber}>{porcentagemPresenca}%</Text>
                             <Text style={styles.statLabel}>Frequência</Text>
                         </View>
                     </View>
@@ -222,12 +117,12 @@ export const PresencaSection: React.FC<PresencaSectionProps> = ({
                             <View
                                 style={[
                                     styles.progressFill,
-                                    { width: `${Math.min(porcentagem, 100)}%` }
+                                    { width: `${Math.min(porcentagemPresenca, 100)}%` }
                                 ]}
                             />
                         </View>
                         <Text style={styles.progressText}>
-                            {porcentagem}% de frequência no {semestreInfo.nome.toLowerCase()}
+                            {porcentagemPresenca}% de frequência no {semestreInfo.nome.toLowerCase()}
                         </Text>
                     </View>
 
