@@ -122,7 +122,7 @@ export const Estoque: React.FC = () => {
     // Função para marcar pedido como entregue (usando atualizarPedido)
     const handleMarcarEntregue = async (pedidoId: string) => {
         try {
-            await pedidoService.atualizarPedido(pedidoId, { 
+            await pedidoService.atualizarPedido(pedidoId, {
                 status: 'entregue'
             });
             await carregarPedidos();
@@ -315,7 +315,7 @@ export const Estoque: React.FC = () => {
     // Função para marcar como reservado
     const handleMarcarReservado = async (pedidoId: string) => {
         try {
-            await pedidoService.atualizarPedido(pedidoId, { 
+            await pedidoService.atualizarPedido(pedidoId, {
                 status: 'reservado'
             });
             await carregarPedidos();
@@ -578,6 +578,18 @@ export const Estoque: React.FC = () => {
                                             ))}
                                         </View>
 
+                                        {pedido.observacoes && (
+                                            <View style={styles.observacoesContainer}>
+                                                <View style={styles.observacoesHeader}>
+                                                    <Ionicons name="document-text-outline" size={16} color="#B8860B" />
+                                                    <Text style={styles.observacoesLabel}>Observações:</Text>
+                                                </View>
+                                                <Text style={styles.observacoesTexto}>
+                                                    {pedido.observacoes}
+                                                </Text>
+                                            </View>
+                                        )}
+
                                         {/* Rodapé e Ações */}
                                         <View style={styles.pedidoFooter}>
                                             <View style={styles.pedidoTotalContainer}>
@@ -617,7 +629,7 @@ export const Estoque: React.FC = () => {
                                                     onPress={() => {
                                                         setPedidoEditando({
                                                             ...pedido,
-                                                            usuarioId: pedido.usuarioId || '' 
+                                                            usuarioId: pedido.usuarioId || ''
                                                         });
                                                         setMostrarModalPedido(true);
                                                     }}
@@ -656,7 +668,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
         paddingTop: 20,
         paddingBottom: 16,
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
         borderBottomWidth: 1,
         borderBottomColor: "#333",
     },
@@ -700,7 +712,7 @@ const styles = StyleSheet.create({
         color: '#000',
     },
     acoesContainer: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#333',
@@ -712,7 +724,7 @@ const styles = StyleSheet.create({
         gap: 8,
         backgroundColor: '#B8860B',
         paddingVertical: 14,
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
         borderRadius: 12,
     },
     botaoAdicionarTexto: {
@@ -722,7 +734,7 @@ const styles = StyleSheet.create({
     },
     conteudo: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: 2,
         paddingTop: 20,
     },
     estoqueContainer: {
@@ -969,7 +981,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
         flexWrap: 'wrap',
-        justifyContent: 'center', // Alterado de 'flex-end' para 'center'
+        justifyContent: 'center',
     },
     botaoAcao: {
         flexDirection: 'row',
@@ -1005,4 +1017,31 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#EF4444',
     },
+    observacoesContainer: {
+        backgroundColor: '#2a2a2a',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#333',
+        marginTop: 8,
+    },
+    observacoesHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
+    observacoesLabel: {
+        fontSize: 14,
+        color: '#B8860B',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    observacoesTexto: {
+        fontSize: 14,
+        color: '#CCC',
+        lineHeight: 20,
+    },
+
 });
