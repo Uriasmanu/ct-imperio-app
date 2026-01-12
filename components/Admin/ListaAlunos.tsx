@@ -1,5 +1,5 @@
 // components/Admin/ListaAlunos.tsx
-import { usePresencaCalculo } from '@/hooks/usePresencaCalculo'; // Importar o hook
+import { usePresencaCalculo } from '@/hooks/usePresencaCalculo';
 import { UsuarioCompleto, professores } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -20,8 +20,178 @@ interface ListaAlunosProps {
     onRefresh: () => void;
 }
 
+// Componente para renderizar UM usuário com frequência calculada
+const UsuarioCardComFrequencia: React.FC<{
+    usuario: UsuarioCompleto;
+    onAbrirDetalhes: (usuario: UsuarioCompleto) => void;
+    formatarUltimoPagamento: (data: string) => string;
+    obterNomeProfessor: (id: string) => string;
+    currentYear: number;
+}> = ({ usuario, onAbrirDetalhes, formatarUltimoPagamento, obterNomeProfessor, currentYear }) => {
+
+    // Obter array de presenças - VERSÃO CORRIGIDA
+    const presencaRecords = React.useMemo(() => {
+        try {
+
+            // Tenta encontrar o array de presenças em diferentes propriedades
+            let presencaArray: any[] = [];
+
+            if (Array.isArray((usuario as any).Presenca)) {
+                presencaArray = (usuario as any).Presenca;
+            } else if (Array.isArray((usuario as any).presenca)) {
+                presencaArray = (usuario as any).presenca;
+            } else if (Array.isArray((usuario as any).avisaPresenca)) {
+                presencaArray = (usuario as any).avisaPresenca;
+            } else {
+                return [];
+            }
+
+            // Se os dados já estão no formato correto, retorna direto
+            // Verifica se o primeiro item tem a estrutura correta
+            if (presencaArray.length > 0 && typeof presencaArray[0] === 'object' && 'date' in presencaArray[0]) {
+                return presencaArray.map((item: any) => ({
+                    date: item.date,
+                    confirmada: item.confirmada !== false // Garante que seja booleano
+                }));
+            }
+
+            // Se chegou aqui, os dados estão em um formato diferente
+            return [];
+
+        } catch (error) {
+            return [];
+        }
+    }, [usuario]);
+
+    // Usar o hook CORRETAMENTE (dentro do componente)
+    const {
+        porcentagemPresenca,
+        totalPresencas
+    } = usePresencaCalculo({
+        presencaRecords,
+        currentYear
+    });
+
+    const modalidadesAtivas = (usuario.modalidades || []).filter(m => m?.ativo);
+    const possuiFilhos = usuario.filhos && usuario.filhos.length > 0;
+
+    return (
+        <TouchableOpacity
+            key={usuario.id}
+            style={styles.alunoCard}
+            onPress={() => onAbrirDetalhes(usuario)}
+        >
+            {/* CABEÇALHO DO CARD */}
+            <View style={styles.cardHeader}>
+                <View style={styles.alunoInfo}>
+                    <Text style={styles.alunoNome}>{usuario.nome || 'Nome não informado'}</Text>
+                    <View style={styles.statusRow}>
+                        <Ionicons
+                            name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
+                            size={16}
+                            color={usuario.pagamento ? "#22c55e" : "#ef4444"}
+                        />
+                        <Text style={[
+                            styles.statusPagamento,
+                            { color: usuario.pagamento ? "#22c55e" : "#ef4444" }
+                        ]}>
+                            {usuario.pagamento ? 'Em dia' : 'Pendente'}
+                        </Text>
+                    </View>
+                </View>
+
+                <Ionicons name="chevron-forward" size={20} color="#B8860B" />
+            </View>
+
+            {/* INFORMAÇÕES PRINCIPAIS */}
+            <View style={styles.cardContent}>
+                {/* FREQUÊNCIA */}
+                <View style={styles.infoItem}>
+                    <Ionicons name="calendar" size={16} color="#B8860B" />
+                    <Text style={styles.infoLabel}>Frequência:</Text>
+                    <View style={styles.frequenciaContainer}>
+                        <Text style={styles.frequenciaPorcentagem}>
+                            {porcentagemPresenca}%
+                        </Text>
+                        <View style={styles.barraFrequencia}>
+                            <View
+                                style={[
+                                    styles.barraPreenchimento,
+                                    {
+                                        width: `${porcentagemPresenca}%`,
+                                        backgroundColor:
+                                            porcentagemPresenca >= 80 ? '#22c55e' :
+                                                porcentagemPresenca >= 60 ? '#eab308' : '#ef4444'
+                                    }
+                                ]}
+                            />
+                        </View>
+                    </View>
+                </View>
+
+                {/* ÚLTIMO PAGAMENTO */}
+                <View style={styles.infoItem}>
+                    <Ionicons name="cash" size={16} color="#B8860B" />
+                    <Text style={styles.infoLabel}>Último pagamento:</Text>
+                    <Text style={styles.infoValue}>
+                        {formatarUltimoPagamento(usuario.dataUltimoPagamento)}
+                    </Text>
+                </View>
+
+                {/* MODALIDADES E PROFESSORES */}
+                <View style={styles.infoItem}>
+                    <Ionicons name="fitness" size={16} color="#B8860B" />
+                    <Text style={styles.infoLabel}>Modalidades:</Text>
+                    <View style={styles.modalidadesContainer}>
+                        {modalidadesAtivas.length > 0 ? (
+                            modalidadesAtivas.map((modalidade, index) => (
+                                <View
+                                    key={index}
+                                    style={styles.modalidadeCompleta}
+                                >
+                                    <View
+                                        style={[
+                                            styles.modalidadeBadge,
+                                            {
+                                                backgroundColor:
+                                                    modalidade?.modalidade === "Muay Thai" ? "#dc2626" :
+                                                        modalidade?.modalidade === "Jiu-Jitsu" ? "#1e40af" :
+                                                            modalidade?.modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                                            }
+                                        ]}
+                                    >
+                                        <Text style={styles.modalidadeBadgeText}>
+                                            {modalidade?.modalidade || 'Desconhecida'}
+                                        </Text>
+                                    </View>
+                                    {modalidade && 'professor' in modalidade && modalidade.professor && (
+                                        <Text style={styles.professorTexto}>
+                                            com {obterNomeProfessor(modalidade.professor)}
+                                        </Text>
+                                    )}
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.infoValue}>Nenhuma modalidade</Text>
+                        )}
+                    </View>
+                </View>
+
+                {/* FILHOS */}
+                <View style={styles.infoItem}>
+                    <Ionicons name="people" size={16} color="#B8860B" />
+                    <Text style={styles.infoLabel}>Filhos Registrados:</Text>
+                    <Text style={styles.infoValue}>
+                        {possuiFilhos ? `${usuario.filhos!.length} aluno(s)` : 'Nenhum'}
+                    </Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+};
+
 export const ListaAlunos: React.FC<ListaAlunosProps> = ({
-    usuarios = [], 
+    usuarios = [],
     onAbrirDetalhes,
     refreshing,
     onRefresh,
@@ -33,61 +203,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
 
     const hoje = new Date();
     const currentYear = hoje.getFullYear();
-
-    const obterArrayPresenca = (dados: any, filho?: any): any[] => {
-        try {
-            if (filho) {
-                // Para filhos, tentar diferentes possíveis nomes de campo
-                return Array.isArray(filho.Presenca) ? filho.Presenca :
-                    Array.isArray(filho.presenca) ? filho.presenca :
-                        Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
-            } else {
-                // Para usuário principal, tentar diferentes possíveis nomes de campo
-                return Array.isArray(dados.Presenca) ? dados.Presenca :
-                    Array.isArray(dados.presenca) ? dados.presenca :
-                        Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
-            }
-        } catch {
-            return [];
-        }
-    };
-
-    // Função para converter array de strings para array de PresencaRecord
-    const converterParaPresencaRecords = (presencaArray: any[]): any[] => {
-        if (!Array.isArray(presencaArray)) return [];
-        
-        return presencaArray.map(item => {
-            // Se for string, criar objeto básico
-            if (typeof item === 'string') {
-                return {
-                    date: item,
-                    confirmada: true // Assumir confirmada se for string
-                };
-            }
-            // Se for objeto, usar como está
-            return item;
-        });
-    };
-
-    const calcularFrequencia = (usuario: UsuarioCompleto) => {
-        const presencaArray = obterArrayPresenca(usuario);
-        const presencaRecords = converterParaPresencaRecords(presencaArray);
-        
-        // Usar o hook de cálculo
-        const { 
-            porcentagemPresenca,
-            totalPresencas,
-            presencasConfirmadas 
-        } = usePresencaCalculo({
-            presencaRecords,
-            currentYear
-        });
-
-        return {
-            total: totalPresencas,
-            porcentagem: porcentagemPresenca
-        };
-    };
 
     // Função para formatar data do último pagamento
     const formatarUltimoPagamento = (dataUltimoPagamento: string) => {
@@ -155,13 +270,13 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         if (filtroProfessor !== 'todos') {
             // Verificar usuário principal
             const usuarioTemProfessor =
-                (usuario as any).professor === filtroProfessor || 
-                usuario.professores?.some(p => p === filtroProfessor) || false; 
+                (usuario as any).professor === filtroProfessor ||
+                usuario.professores?.some(p => p === filtroProfessor) || false;
 
             // Verificar filhos
             const filhosTemProfessor = usuario.filhos?.some(filho =>
                 (filho as any).professor === filtroProfessor ||
-                filho.professores?.some(p => p === filtroProfessor) 
+                filho.professores?.some(p => p === filtroProfessor)
             ) || false;
 
             if (!usuarioTemProfessor && !filhosTemProfessor) {
@@ -312,122 +427,15 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
                     usuariosFiltrados.map((usuario) => {
                         if (!usuario) return null;
 
-                        const frequencia = calcularFrequencia(usuario);
-                        const modalidadesAtivas = (usuario.modalidades || []).filter(m => m?.ativo);
-                        const possuiFilhos = usuario.filhos && usuario.filhos.length > 0;
-
                         return (
-                            <TouchableOpacity
+                            <UsuarioCardComFrequencia
                                 key={usuario.id}
-                                style={styles.alunoCard}
-                                onPress={() => onAbrirDetalhes(usuario)}
-                            >
-                                {/* CABEÇALHO DO CARD */}
-                                <View style={styles.cardHeader}>
-                                    <View style={styles.alunoInfo}>
-                                        <Text style={styles.alunoNome}>{usuario.nome || 'Nome não informado'}</Text>
-                                        <View style={styles.statusRow}>
-                                            <Ionicons
-                                                name={usuario.pagamento ? "checkmark-circle" : "alert-circle"}
-                                                size={16}
-                                                color={usuario.pagamento ? "#22c55e" : "#ef4444"}
-                                            />
-                                            <Text style={[
-                                                styles.statusPagamento,
-                                                { color: usuario.pagamento ? "#22c55e" : "#ef4444" }
-                                            ]}>
-                                                {usuario.pagamento ? 'Em dia' : 'Pendente'}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    <Ionicons name="chevron-forward" size={20} color="#B8860B" />
-                                </View>
-
-                                {/* INFORMAÇÕES PRINCIPAIS */}
-                                <View style={styles.cardContent}>
-                                    {/* FREQUÊNCIA */}
-                                    <View style={styles.infoItem}>
-                                        <Ionicons name="calendar" size={16} color="#B8860B" />
-                                        <Text style={styles.infoLabel}>Frequência:</Text>
-                                        <View style={styles.frequenciaContainer}>
-                                            <Text style={styles.frequenciaPorcentagem}>
-                                                {frequencia.porcentagem}%
-                                            </Text>
-                                            <View style={styles.barraFrequencia}>
-                                                <View
-                                                    style={[
-                                                        styles.barraPreenchimento,
-                                                        {
-                                                            width: `${frequencia.porcentagem}%`,
-                                                            backgroundColor:
-                                                                frequencia.porcentagem >= 80 ? '#22c55e' :
-                                                                    frequencia.porcentagem >= 60 ? '#eab308' : '#ef4444'
-                                                        }
-                                                    ]}
-                                                />
-                                            </View>
-                                        </View>
-                                    </View>
-
-                                    {/* ÚLTIMO PAGAMENTO */}
-                                    <View style={styles.infoItem}>
-                                        <Ionicons name="cash" size={16} color="#B8860B" />
-                                        <Text style={styles.infoLabel}>Último pagamento:</Text>
-                                        <Text style={styles.infoValue}>
-                                            {formatarUltimoPagamento(usuario.dataUltimoPagamento)}
-                                        </Text>
-                                    </View>
-
-                                    {/* MODALIDADES E PROFESSORES */}
-                                    <View style={styles.infoItem}>
-                                        <Ionicons name="fitness" size={16} color="#B8860B" />
-                                        <Text style={styles.infoLabel}>Modalidades:</Text>
-                                        <View style={styles.modalidadesContainer}>
-                                            {modalidadesAtivas.length > 0 ? (
-                                                modalidadesAtivas.map((modalidade, index) => (
-                                                    <View
-                                                        key={index}
-                                                        style={styles.modalidadeCompleta}
-                                                    >
-                                                        <View
-                                                            style={[
-                                                                styles.modalidadeBadge,
-                                                                {
-                                                                    backgroundColor:
-                                                                        modalidade?.modalidade === "Muay Thai" ? "#dc2626" :
-                                                                            modalidade?.modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                                                                                modalidade?.modalidade === "Boxe" ? "#059669" : "#7c3aed",
-                                                                }
-                                                            ]}
-                                                        >
-                                                            <Text style={styles.modalidadeBadgeText}>
-                                                                {modalidade?.modalidade || 'Desconhecida'}
-                                                            </Text>
-                                                        </View>
-                                                        {modalidade && 'professor' in modalidade && modalidade.professor && (
-                                                            <Text style={styles.professorTexto}>
-                                                                com {obterNomeProfessor(modalidade.professor)}
-                                                            </Text>
-                                                        )}
-                                                    </View>
-                                                ))
-                                            ) : (
-                                                <Text style={styles.infoValue}>Nenhuma modalidade</Text>
-                                            )}
-                                        </View>
-                                    </View>
-
-                                    {/* FILHOS */}
-                                    <View style={styles.infoItem}>
-                                        <Ionicons name="people" size={16} color="#B8860B" />
-                                        <Text style={styles.infoLabel}>Filhos Registrados:</Text>
-                                        <Text style={styles.infoValue}>
-                                            {possuiFilhos ? `${usuario.filhos!.length} aluno(s)` : 'Nenhum'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
+                                usuario={usuario}
+                                onAbrirDetalhes={onAbrirDetalhes}
+                                formatarUltimoPagamento={formatarUltimoPagamento}
+                                obterNomeProfessor={obterNomeProfessor}
+                                currentYear={currentYear}
+                            />
                         );
                     })
                 ) : (
