@@ -9,6 +9,7 @@ import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
     Alert,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -452,63 +453,87 @@ export const Estoque: React.FC = () => {
                         ) : (
                             estoque.map((item) => (
                                 <View key={item.id} style={styles.itemCard}>
-                                    <View style={styles.itemHeader}>
-                                        <Text style={styles.itemNome}>{item.nome}</Text>
-                                        <View style={styles.itemPrecoContainer}>
-                                            <Text style={styles.itemPreco}>
-                                                R$ {item.preco.toFixed(2)}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    <View style={styles.itemInfo}>
-                                        <View style={styles.quantidadeContainer}>
-                                            <Ionicons name="pricetag" size={16} color="#B8860B" />
-                                            <Text style={styles.quantidadeTexto}>
-                                                Estoque: {item.quantidade} unidades
-                                            </Text>
-                                        </View>
-
-                                        {Object.keys(item.tamanhos).length > 0 && (
-                                            <View style={styles.tamanhosContainer}>
-                                                <Text style={styles.tamanhosTitulo}>Tamanhos:</Text>
-                                                <View style={styles.tamanhosLista}>
-                                                    {Object.entries(item.tamanhos).map(([tamanho, qtd]) => (
-                                                        <View key={tamanho} style={styles.tamanhoItem}>
-                                                            <Text style={styles.tamanhoTexto}>
-                                                                {tamanho}: {qtd}
-                                                            </Text>
-                                                        </View>
-                                                    ))}
-                                                </View>
+                                    {/* IMAGEM GRANDE NO TOPO */}
+                                    <View style={styles.imagemContainer}>
+                                        {item.imagem ? (
+                                            <Image
+                                                source={{ uri: item.imagem }}
+                                                style={styles.itemImagemGrande}
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <View style={[styles.itemImagemGrande, styles.itemImagemPlaceholder]}>
+                                                <Ionicons name="cube-outline" size={48} color="#666" />
+                                                <Text style={styles.placeholderTexto}>Sem imagem</Text>
                                             </View>
                                         )}
                                     </View>
 
-                                    <View style={styles.itemAcoes}>
-                                        <TouchableOpacity
-                                            style={styles.botaoEditar}
-                                            onPress={() => handleEditarProduto(item)}
-                                        >
-                                            <Ionicons name="create" size={16} color="#B8860B" />
-                                            <Text style={styles.botaoEditarTexto}>Editar</Text>
-                                        </TouchableOpacity>
+                                    {/* INFORMAÇÕES ABAIXO DA IMAGEM */}
+                                    <View style={styles.conteudoCard}>
+                                        {/* CABEÇALHO COM NOME E PREÇO */}
+                                        <View style={styles.itemHeader}>
+                                            <Text style={styles.itemNome} numberOfLines={2}>
+                                                {item.nome}
+                                            </Text>
+                                            <View style={styles.itemPrecoContainer}>
+                                                <Text style={styles.itemPreco}>
+                                                    R$ {item.preco.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                        </View>
 
-                                        <TouchableOpacity
-                                            style={styles.botaoVender}
-                                            onPress={() => handleAbrirVenda(item)}
-                                        >
-                                            <Ionicons name="cart" size={16} color="#FFF" />
-                                            <Text style={styles.botaoVenderTexto}>Vender</Text>
-                                        </TouchableOpacity>
+                                        {/* INFORMAÇÕES DO PRODUTO */}
+                                        <View style={styles.itemInfo}>
+                                            <View style={styles.quantidadeContainer}>
+                                                <Ionicons name="pricetag" size={16} color="#B8860B" />
+                                                <Text style={styles.quantidadeTexto}>
+                                                    Estoque: {item.quantidade} unidades
+                                                </Text>
+                                            </View>
 
-                                        <TouchableOpacity
-                                            style={styles.botaoDeletar}
-                                            onPress={() => handleDeletarProduto(item)}
-                                        >
-                                            <Ionicons name="trash" size={16} color="#FFF" />
-                                            <Text style={styles.botaoDeletarTexto}>Excluir</Text>
-                                        </TouchableOpacity>
+                                            {Object.keys(item.tamanhos).length > 0 && (
+                                                <View style={styles.tamanhosContainer}>
+                                                    <Text style={styles.tamanhosTitulo}>Tamanhos disponíveis:</Text>
+                                                    <View style={styles.tamanhosLista}>
+                                                        {Object.entries(item.tamanhos).map(([tamanho, qtd]) => (
+                                                            <View key={tamanho} style={styles.tamanhoItem}>
+                                                                <Text style={styles.tamanhoTexto}>
+                                                                    {tamanho}: {qtd}
+                                                                </Text>
+                                                            </View>
+                                                        ))}
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </View>
+
+                                        {/* AÇÕES */}
+                                        <View style={styles.itemAcoes}>
+                                            <TouchableOpacity
+                                                style={styles.botaoEditar}
+                                                onPress={() => handleEditarProduto(item)}
+                                            >
+                                                <Ionicons name="create" size={16} color="#B8860B" />
+                                                <Text style={styles.botaoEditarTexto}>Editar</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={styles.botaoVender}
+                                                onPress={() => handleAbrirVenda(item)}
+                                            >
+                                                <Ionicons name="cart" size={16} color="#FFF" />
+                                                <Text style={styles.botaoVenderTexto}>Vender</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={styles.botaoDeletar}
+                                                onPress={() => handleDeletarProduto(item)}
+                                            >
+                                                <Ionicons name="trash" size={16} color="#FFF" />
+                                                <Text style={styles.botaoDeletarTexto}>Excluir</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                 </View>
                             ))
@@ -734,11 +759,11 @@ const styles = StyleSheet.create({
     },
     conteudo: {
         flex: 1,
-        paddingHorizontal: 2,
+        paddingHorizontal: 8,
         paddingTop: 20,
     },
     estoqueContainer: {
-        gap: 16,
+        gap: 20, // Aumentei o gap entre os cards
         paddingBottom: 40,
     },
     pedidosContainer: {
@@ -773,8 +798,30 @@ const styles = StyleSheet.create({
     itemCard: {
         backgroundColor: '#1a1a1a',
         borderRadius: 16,
+        overflow: 'hidden', // Para a imagem respeitar o border radius
+    },
+    imagemContainer: {
+        width: '100%',
+        height: 350, // Altura da imagem grande
+        backgroundColor: '#2a2a2a',
+    },
+    itemImagemGrande: {
+        width: '100%',
+        height: '100%',
+    },
+    itemImagemPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2a2a2a',
+    },
+    placeholderTexto: {
+        color: '#666',
+        fontSize: 12,
+        marginTop: 8,
+    },
+    conteudoCard: {
         padding: 16,
-        gap: 12,
+        gap: 16,
     },
     itemHeader: {
         flexDirection: 'row',
@@ -786,20 +833,23 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#FFF',
         flex: 1,
+        marginRight: 12,
     },
     itemPrecoContainer: {
         backgroundColor: '#B8860B',
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 8,
         borderRadius: 8,
+        minWidth: 80,
+        alignItems: 'center',
     },
     itemPreco: {
         color: '#000',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
     },
     itemInfo: {
-        gap: 8,
+        gap: 12,
     },
     quantidadeContainer: {
         flexDirection: 'row',
@@ -817,6 +867,7 @@ const styles = StyleSheet.create({
         color: '#888',
         fontSize: 12,
         fontWeight: '500',
+        marginBottom: 4,
     },
     tamanhosLista: {
         flexDirection: 'row',
@@ -836,7 +887,7 @@ const styles = StyleSheet.create({
     itemAcoes: {
         flexDirection: 'row',
         gap: 8,
-        marginTop: 8,
+        marginTop: 4,
     },
     botaoEditar: {
         flex: 1,
@@ -845,7 +896,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         backgroundColor: '#2a2a2a',
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#B8860B',
@@ -862,7 +913,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         backgroundColor: '#22C55E',
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 8,
     },
     botaoVenderTexto: {
@@ -877,7 +928,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
         backgroundColor: '#EF4444',
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 8,
     },
     botaoDeletarTexto: {
@@ -885,6 +936,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
+    // ... mantém os estilos dos pedidos abaixo (não alterados)
     pedidoCard: {
         backgroundColor: '#1a1a1a',
         borderRadius: 16,
@@ -955,18 +1007,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     pedidoFooter: {
-        flexDirection: 'column', // Alterado de 'row' para 'column'
+        flexDirection: 'column',
         justifyContent: 'space-between',
-        alignItems: 'stretch', // Alterado de 'center' para 'stretch'
+        alignItems: 'stretch',
         paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: '#2a2a2a',
-        gap: 12, // Adicionado gap entre os elementos
+        gap: 12,
     },
     pedidoTotalContainer: {
-        flexDirection: 'row', // Adicionado
-        justifyContent: 'space-between', // Adicionado
-        alignItems: 'center', // Adicionado
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     totalLabel: {
         color: '#888',
@@ -999,13 +1051,13 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     botaoReservar: {
-        backgroundColor: '#F59E0B', // Laranja
+        backgroundColor: '#F59E0B',
     },
     botaoPagar: {
-        backgroundColor: '#22C55E', // Verde
+        backgroundColor: '#22C55E',
     },
     botaoEntregue: {
-        backgroundColor: '#3B82F6', // Azul
+        backgroundColor: '#3B82F6',
     },
     botaoEditarPedido: {
         backgroundColor: '#2a2a2a',
@@ -1043,5 +1095,4 @@ const styles = StyleSheet.create({
         color: '#CCC',
         lineHeight: 20,
     },
-
 });
