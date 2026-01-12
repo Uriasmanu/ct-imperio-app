@@ -1,3 +1,4 @@
+
 import { registerUser } from '@/config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useRootNavigationState, useRouter } from 'expo-router';
