@@ -1,4 +1,5 @@
 // components/Admin/ListaAlunos.tsx
+import { usePresencaCalculo } from '@/hooks/usePresencaCalculo'; // Importar o hook
 import { UsuarioCompleto, professores } from '@/types/admin';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
@@ -30,7 +31,10 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
     const [filtroProfessor, setFiltroProfessor] = useState('todos');
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-    const obterArrayPresenca = (dados: any, filho?: any): string[] => {
+    const hoje = new Date();
+    const currentYear = hoje.getFullYear();
+
+    const obterArrayPresenca = (dados: any, filho?: any): any[] => {
         try {
             if (filho) {
                 // Para filhos, tentar diferentes possíveis nomes de campo
@@ -48,60 +52,41 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         }
     };
 
+    // Função para converter array de strings para array de PresencaRecord
+    const converterParaPresencaRecords = (presencaArray: any[]): any[] => {
+        if (!Array.isArray(presencaArray)) return [];
+        
+        return presencaArray.map(item => {
+            // Se for string, criar objeto básico
+            if (typeof item === 'string') {
+                return {
+                    date: item,
+                    confirmada: true // Assumir confirmada se for string
+                };
+            }
+            // Se for objeto, usar como está
+            return item;
+        });
+    };
+
     const calcularFrequencia = (usuario: UsuarioCompleto) => {
         const presencaArray = obterArrayPresenca(usuario);
-        const totalPresencas = presencaArray.length;
-        const porcentagemSemestre = calcularPorcentagemPresenca(totalPresencas);
+        const presencaRecords = converterParaPresencaRecords(presencaArray);
+        
+        // Usar o hook de cálculo
+        const { 
+            porcentagemPresenca,
+            totalPresencas,
+            presencasConfirmadas 
+        } = usePresencaCalculo({
+            presencaRecords,
+            currentYear
+        });
 
         return {
             total: totalPresencas,
-            porcentagem: porcentagemSemestre
+            porcentagem: porcentagemPresenca
         };
-    };
-
-    const calcularDiasUteis = (inicio: Date, fim: Date): number => {
-        let count = 0;
-        const current = new Date(inicio);
-
-        while (current <= fim) {
-            const day = current.getDay();
-            const isPrimeiroJaneiro = current.getMonth() === 0 && current.getDate() === 1;
-
-            // Conta apenas de segunda (1) a sábado (6), exceto 1º de janeiro
-            if (day >= 1 && day <= 6 && !isPrimeiroJaneiro) {
-                count++;
-            }
-            current.setDate(current.getDate() + 1);
-        }
-        return count;
-    };
-
-    const calcularPorcentagemPresenca = (totalPresencas: number): number => {
-        const hoje = new Date();
-        const currentYear = hoje.getFullYear();
-        const currentMonth = hoje.getMonth();
-
-        // Definir semestres
-        let inicioSemestre: Date;
-        let fimSemestre: Date;
-
-        if (currentMonth >= 0 && currentMonth <= 5) {
-            // Primeiro semestre: janeiro a junho
-            inicioSemestre = new Date(currentYear, 0, 2);
-            fimSemestre = new Date(currentYear, 5, 30);
-        } else {
-            // Segundo semestre: julho a dezembro
-            inicioSemestre = new Date(currentYear, 6, 1);
-            fimSemestre = new Date(currentYear, 11, 31);
-        }
-
-        // Se hoje estiver antes do fim do semestre, usar a data atual como limite
-        const dataLimite = hoje < fimSemestre ? hoje : fimSemestre;
-
-        const diasUteisNoSemestre = calcularDiasUteis(inicioSemestre, dataLimite);
-
-        if (diasUteisNoSemestre === 0) return 0;
-        return Math.round((totalPresencas / diasUteisNoSemestre) * 100);
     };
 
     // Função para formatar data do último pagamento
@@ -133,7 +118,6 @@ export const ListaAlunos: React.FC<ListaAlunosProps> = ({
         const professor = professores.find(p => p.id === professorId);
         return professor ? professor.nome : 'Professor não encontrado';
     };
-
 
     // Filtrar usuários com validações - VERSÃO COMPLETA COM FILHOS
     const usuariosFiltrados = usuarios.filter(usuario => {
