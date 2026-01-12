@@ -59,8 +59,6 @@ const formatarData = (data: string | Date) => {
     year: 'numeric'
   });
 };
-
-// Função utilitária para calcular frequência
 const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo => {
   const hoje = new Date();
   const currentYear = hoje.getFullYear();
@@ -76,12 +74,11 @@ const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo
       const umMesAtras = new Date();
       umMesAtras.setMonth(umMesAtras.getMonth() - 1);
       return dataPresenca >= umMesAtras;
-    } catch {
+    } catch (error) {
       return false;
     }
   }).length;
 
-  // Filtrar presenças do semestre atual (igual ao hook)
   const presencasDoSemestre = presencaArray.filter(dateString => {
     try {
       const data = new Date(dateString + 'T00:00:00');
@@ -91,20 +88,19 @@ const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo
       const noPrimeiroSemestre = mes >= 0 && mes <= 5;
       const noSegundoSemestre = mes >= 6 && mes <= 11;
 
-      return anoCorreto && (
+      const resultado = anoCorreto && (
         (hoje.getMonth() <= 5 && noPrimeiroSemestre) ||
         (hoje.getMonth() > 5 && noSegundoSemestre)
       );
-    } catch {
+      return resultado;
+    } catch (error) {
+
       return false;
     }
   });
 
-  // IMPORTANTE: No hook, ele filtra apenas as presenças confirmadas
-  // Como nossas presenças são strings, assumimos que todas estão confirmadas
-  const presencasValidas = presencasDoSemestre.length; // Todas estão confirmadas
+  const presencasValidas = presencasDoSemestre.length;
 
-  // Calcular dias úteis (função auxiliar) - MESMA do hook
   const calcularDiasUteis = (inicio: Date, fim: Date): number => {
     let count = 0;
     const current = new Date(inicio);
@@ -124,7 +120,6 @@ const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo
     return count;
   };
 
-  // Definir datas do semestre - MESMAS do hook
   let inicioSemestre: Date;
   let fimSemestre: Date;
   let diasUteisTotalSemestre: number;
@@ -138,36 +133,34 @@ const calcularFrequenciaSimples = (presencaArray: string[] = []): FrequenciaInfo
     // Segundo semestre: 1 de julho a 31 de dezembro
     inicioSemestre = new Date(currentYear, 6, 1);
     fimSemestre = new Date(currentYear, 11, 31);
-    // Calcular dias úteis dinamicamente
     diasUteisTotalSemestre = calcularDiasUteis(inicioSemestre, fimSemestre);
   }
 
-  // Calcular porcentagem - MESMA lógica do hook
   let porcentagemSemestre = 0;
   if (diasUteisTotalSemestre > 0) {
     porcentagemSemestre = Math.round((presencasValidas / diasUteisTotalSemestre) * 100);
 
-    // Limitar a 100% como no hook
     if (porcentagemSemestre > 100) porcentagemSemestre = 100;
   }
 
-  // Se for início do ano e ainda não começou o semestre - MESMA lógica do hook
+  // Se for início do ano e ainda não começou o semestre
   if (hoje < inicioSemestre) {
     porcentagemSemestre = 0;
   }
 
-  // Determinar informações do semestre - MESMAS do hook
+  // Determinar informações do semestre
   const semestreInfo = currentMonth <= 5
     ? { nome: "1º Semestre", periodo: "Jan-Jun" }
     : { nome: "2º Semestre", periodo: "Jul-Dez" };
 
-  return {
+  const resultado = {
     total,
     ultimoMes,
     porcentagemSemestre,
     semestreNome: semestreInfo.nome,
     semestrePeriodo: semestreInfo.periodo
   };
+  return resultado;
 };
 // Componente para Gerenciar Pagamento do ADMIN
 const GerenciarPagamentoAdmin: React.FC<{
@@ -613,7 +606,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
         );
       }
     } catch (error: any) {
-      console.error('Erro ao deletar usuário:', error);
       Alert.alert(
         'Erro',
         `Não foi possível deletar o usuário: ${error.message || 'Tente novamente.'}`
@@ -680,7 +672,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       setEditando(false);
       onUsuarioAtualizado?.();
     } catch (error) {
-      console.error(error);
       Alert.alert("Erro", "Não foi possível salvar as alterações.");
     } finally {
       setSalvando(false);
@@ -721,7 +712,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       setFilhoEditando(null);
       onUsuarioAtualizado?.();
     } catch (error) {
-      console.error(error);
       Alert.alert("Erro", "Não foi possível atualizar o aluno dependente.");
     } finally {
       setSalvandoFilho(false);
@@ -764,7 +754,6 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Erro ao marcar presença:', error);
     } finally {
       setMarcandoPresenca(null);
     }
@@ -794,29 +783,37 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
       let presencaData: any[];
 
       if (filho) {
-        // Se for um filho, busca na propriedade do filho
         presencaData = Array.isArray(filho.Presenca) ? filho.Presenca :
           Array.isArray(filho.presenca) ? filho.presenca :
             Array.isArray(filho.avisaPresenca) ? filho.avisaPresenca : [];
       } else {
-        // Se for o usuário principal
         presencaData = Array.isArray(dados.Presenca) ? dados.Presenca :
           Array.isArray(dados.presenca) ? dados.presenca :
             Array.isArray(dados.avisaPresenca) ? dados.avisaPresenca : [];
       }
+      if (presencaData.length > 0) {
+      }
 
       // Se os dados já estão no formato correto (objetos com date e confirmada)
       if (presencaData.length > 0 && typeof presencaData[0] === 'object' && 'date' in presencaData[0]) {
-        // Extrai apenas as strings de data dos objetos
-        return presencaData
-          .map((item: any) => item.date)
-          .filter((date: string) => date && typeof date === 'string');
+        const result = presencaData
+          .map((item: any) => {
+            return item.date;
+          })
+          .filter((date: string) => {
+            const isValid = date && typeof date === 'string';
+            return isValid;
+          });
+        return result;
       }
-
       // Se já são strings, retorna direto
-      return presencaData.filter((item: any) => typeof item === 'string');
+      const result = presencaData.filter((item: any) => {
+        const isString = typeof item === 'string';
+        return isString;
+      });
+      return result;
 
-    } catch {
+    } catch (error) {
       return [];
     }
   };
@@ -1179,6 +1176,11 @@ export const DetalhesAlunoModal: React.FC<DetalhesAlunoModalProps> = ({
                 <View style={styles.filhosList}>
                   {usuarioEditado.filhos.map((filho, index) => {
                     const presencaFilho = obterArrayPresenca(usuarioEditado, filho);
+                    // Verificar cada item do array
+                    if (presencaFilho && Array.isArray(presencaFilho)) {
+                      presencaFilho.forEach((item, idx) => {
+                      });
+                    }
                     const frequenciaFilho = calcularFrequencia(presencaFilho);
 
                     return (
