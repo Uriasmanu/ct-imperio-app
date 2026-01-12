@@ -11,10 +11,11 @@ import {
 interface PedidoCardProps {
   pedido: Pedido;
   onPress?: () => void;
+  onMarcarPago?: (pedido: Pedido) => void;
   onMarcarEntregue?: (pedido: Pedido) => void;
 }
 
-export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProps) {
+export function PedidoCard({ pedido, onPress, onMarcarPago, onMarcarEntregue }: PedidoCardProps) {
 
   const getStatusColor = (status: Pedido['status']) => {
     switch (status) {
@@ -26,7 +27,6 @@ export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProp
     }
   };
 
-
   const getStatusIcon = (status: Pedido['status']) => {
     switch (status) {
       case 'pendente': return 'time-outline';
@@ -37,17 +37,49 @@ export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProp
     }
   };
 
-
   const getStatusText = (status: Pedido['status']) => {
     switch (status) {
       case 'pendente': return 'Pendente';
       case 'reservado': return 'Reservado';
-      case 'pago': return 'Pago (aguardando entrega)';
+      case 'pago': return 'Pago';
       case 'entregue': return 'Entregue';
       default: return 'Desconhecido';
     }
   };
 
+  const renderActionButton = () => {
+    if (pedido.status === 'pendente' && onMarcarPago) {
+      return (
+        <TouchableOpacity
+          style={[styles.actionButton, styles.pagarButton]}
+          onPress={() => onMarcarPago(pedido)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="checkmark-circle-outline" size={16} color="#FFF" />
+          <Text style={styles.actionButtonText}>
+            Marcar como pago
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (pedido.status === 'pago' && onMarcarEntregue) {
+      return (
+        <TouchableOpacity
+          style={[styles.actionButton, styles.entregarButton]}
+          onPress={() => onMarcarEntregue(pedido)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="cube-outline" size={16} color="#FFF" />
+          <Text style={styles.actionButtonText}>
+            Marcar como entregue
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <TouchableOpacity style={styles.pedidoCard} onPress={onPress} activeOpacity={0.7}>
@@ -96,7 +128,7 @@ export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProp
         )}
       </View>
 
-      <View style={styles.pedidoResumo}>
+      <View style={styles.pedidoFooter}>
         <View style={styles.pedidoTotalContainer}>
           <Text style={styles.pedidoTotalLabel}>Total</Text>
           <Text style={styles.pedidoTotalValor}>
@@ -104,20 +136,7 @@ export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProp
           </Text>
         </View>
 
-        {pedido.status === 'pago' && (
-          <TouchableOpacity
-            style={styles.entregarButton}
-            onPress={() => onMarcarEntregue?.(pedido)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="cube-outline" size={14} color="#FFF" />
-            <Text style={styles.entregarButtonText}>
-              Marcar como entregue
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.pedidoPagamentoContainer}>
+        <View style={styles.pedidoInfoContainer}>
           <View
             style={[
               styles.pagamentoBadge,
@@ -129,22 +148,22 @@ export function PedidoCard({ pedido, onPress, onMarcarEntregue }: PedidoCardProp
               size={12}
               color="#FFF"
             />
-            
             <Text style={styles.pagamentoTexto}>
               {pedido.pago ? 'Pago' : 'Pendente'}
             </Text>
-
-        </View>
-
-        {pedido.observacoes && (
-          <View style={styles.observacoesBadge}>
-            <Ionicons name="document-text" size={12} color="#888" />
-            <Text style={styles.observacoesTexto}>Obs</Text>
           </View>
-        )}
+
+          {pedido.observacoes && (
+            <View style={styles.observacoesBadge}>
+              <Ionicons name="document-text" size={12} color="#888" />
+              <Text style={styles.observacoesTexto}>Obs</Text>
+            </View>
+          )}
+        </View>
       </View>
-    </View>
-    </TouchableOpacity >
+
+      {renderActionButton()}
+    </TouchableOpacity>
   );
 }
 
@@ -218,10 +237,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  pedidoResumo: {
+  pedidoFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   pedidoTotalContainer: {
     flexDirection: 'row',
@@ -237,7 +257,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#B8860B',
   },
-  pedidoPagamentoContainer: {
+  pedidoInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -280,21 +300,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#888',
   },
-  entregarButton: {
+  actionButton: {
     marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
+    gap: 8,
+    paddingVertical: 12,
     borderRadius: 12,
+  },
+  pagarButton: {
+    backgroundColor: '#10B981',
+  },
+  entregarButton: {
     backgroundColor: '#6366F1',
   },
-
-  entregarButtonText: {
+  actionButtonText: {
     color: '#FFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
-
 });

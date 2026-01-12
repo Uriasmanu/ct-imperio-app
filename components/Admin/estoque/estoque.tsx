@@ -119,6 +119,20 @@ export const Estoque: React.FC = () => {
         }
     };
 
+    // Função para marcar pedido como entregue (usando atualizarPedido)
+    const handleMarcarEntregue = async (pedidoId: string) => {
+        try {
+            await pedidoService.atualizarPedido(pedidoId, { 
+                status: 'entregue'
+            });
+            await carregarPedidos();
+            Alert.alert('Sucesso', 'Pedido marcado como entregue!');
+        } catch (error) {
+            console.error('Erro ao marcar pedido como entregue:', error);
+            Alert.alert('Erro', 'Não foi possível marcar o pedido como entregue');
+        }
+    };
+
     // Função para deletar pedido
     const handleDeletarPedido = async (pedido: Pedido) => {
         Alert.alert(
@@ -259,6 +273,57 @@ export const Estoque: React.FC = () => {
         // Se não encontrar, busca no estoque
         const itemEstoque = estoque.find(i => i.id === itemId);
         return itemEstoque?.nome || "Item não encontrado";
+    };
+
+    // Função para obter o texto do status
+    const getStatusTexto = (pedido: Pedido): string => {
+        return pedido.status.charAt(0).toUpperCase() + pedido.status.slice(1);
+    };
+
+    // Função para obter a cor do status
+    const getStatusCor = (pedido: Pedido): string => {
+        switch (pedido.status) {
+            case 'entregue': return "#3B82F6"; // Azul
+            case 'pago': return "#22C55E"; // Verde
+            case 'reservado': return "#F59E0B"; // Laranja
+            case 'pendente': return "#EF4444"; // Vermelho
+            default: return "#6B7280"; // Cinza
+        }
+    };
+
+    // Função para obter o ícone do status
+    const getStatusIcone = (pedido: Pedido): string => {
+        switch (pedido.status) {
+            case 'entregue': return "checkmark-done";
+            case 'pago': return "checkmark-circle";
+            case 'reservado': return "time-outline";
+            case 'pendente': return "alert-circle";
+            default: return "help-circle";
+        }
+    };
+
+    // Função para determinar se o botão de pagamento deve ser mostrado
+    const mostrarBotaoPagar = (pedido: Pedido): boolean => {
+        return pedido.status === 'pendente' || pedido.status === 'reservado';
+    };
+
+    // Função para determinar se o botão de entregue deve ser mostrado
+    const mostrarBotaoEntregue = (pedido: Pedido): boolean => {
+        return pedido.status === 'pago';
+    };
+
+    // Função para marcar como reservado
+    const handleMarcarReservado = async (pedidoId: string) => {
+        try {
+            await pedidoService.atualizarPedido(pedidoId, { 
+                status: 'reservado'
+            });
+            await carregarPedidos();
+            Alert.alert('Sucesso', 'Pedido marcado como reservado!');
+        } catch (error) {
+            console.error('Erro ao marcar pedido como reservado:', error);
+            Alert.alert('Erro', 'Não foi possível marcar o pedido como reservado');
+        }
     };
 
     return (
@@ -468,94 +533,112 @@ export const Estoque: React.FC = () => {
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            pedidos.map((pedido) => (
-                                <View key={pedido.id} style={styles.pedidoCard}>
-                                    {/* Cabeçalho */}
-                                    <View style={styles.pedidoHeader}>
-                                        <View>
-                                            <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
-                                            <Text style={styles.pedidoData}>
-                                                <Ionicons name="calendar-outline" size={12} /> {pedido.data}
-                                            </Text>
-                                        </View>
-                                        <View style={[
-                                            styles.statusBadge,
-                                            pedido.pago ? styles.statusBadgePago : styles.statusBadgePendente
-                                        ]}>
-                                            <Ionicons
-                                                name={pedido.pago ? "checkmark-circle" : "alert-circle"}
-                                                size={14}
-                                                color={pedido.pago ? "#22C55E" : "#EF4444"}
-                                            />
-                                            <Text style={[
-                                                styles.statusTexto,
-                                                { color: pedido.pago ? "#22C55E" : "#EF4444" }
-                                            ]}>
-                                                {pedido.pago ? "Pago" : "Pendente"}
-                                            </Text>
-                                        </View>
-                                    </View>
+                            pedidos.map((pedido) => {
+                                const statusCor = getStatusCor(pedido);
+                                const statusTexto = getStatusTexto(pedido);
+                                const statusIcone = getStatusIcone(pedido);
 
-                                    {/* Lista de Itens */}
-                                    <View style={styles.pedidoItens}>
-                                        {pedido.itens.map((itemPedido, index) => (
-                                            <View key={index} style={styles.pedidoItem}>
-                                                <View style={styles.pedidoItemBadge}>
-                                                    <Text style={styles.pedidoItemQuantidade}>{itemPedido.quantidade}x</Text>
-                                                </View>
-                                                <Text style={styles.pedidoItemNome} numberOfLines={1}>
-                                                    {itemPedido.nome || obterNomeItem(itemPedido.itemId)}
-                                                    {itemPedido.tamanho ? ` (${itemPedido.tamanho})` : ''}
-                                                </Text>
-                                                <Text style={styles.pedidoItemPreco}>
-                                                    R$ {itemPedido.subtotal.toFixed(2)}
+                                return (
+                                    <View key={pedido.id} style={styles.pedidoCard}>
+                                        {/* Cabeçalho */}
+                                        <View style={styles.pedidoHeader}>
+                                            <View>
+                                                <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
+                                                <Text style={styles.pedidoData}>
+                                                    <Ionicons name="calendar-outline" size={12} /> {pedido.data}
                                                 </Text>
                                             </View>
-                                        ))}
-                                    </View>
-
-                                    {/* Rodapé e Ações */}
-                                    <View style={styles.pedidoFooter}>
-                                        <View style={styles.pedidoTotalContainer}>
-                                            <Text style={styles.totalLabel}>Total do Pedido</Text>
-                                            <Text style={styles.pedidoTotal}>
-                                                R$ {calcularTotalPedido(pedido).toFixed(2)}
-                                            </Text>
+                                            <View style={[styles.statusBadge, { borderColor: statusCor }]}>
+                                                <Ionicons
+                                                    name={statusIcone as any}
+                                                    size={14}
+                                                    color={statusCor}
+                                                />
+                                                <Text style={[styles.statusTexto, { color: statusCor }]}>
+                                                    {statusTexto}
+                                                </Text>
+                                            </View>
                                         </View>
 
-                                        <View style={styles.pedidoAcoes}>
-                                            {!pedido.pago && (
+                                        {/* Lista de Itens */}
+                                        <View style={styles.pedidoItens}>
+                                            {pedido.itens.map((itemPedido, index) => (
+                                                <View key={index} style={styles.pedidoItem}>
+                                                    <View style={styles.pedidoItemBadge}>
+                                                        <Text style={styles.pedidoItemQuantidade}>{itemPedido.quantidade}x</Text>
+                                                    </View>
+                                                    <Text style={styles.pedidoItemNome} numberOfLines={1}>
+                                                        {itemPedido.nome || obterNomeItem(itemPedido.itemId)}
+                                                        {itemPedido.tamanho ? ` (${itemPedido.tamanho})` : ''}
+                                                    </Text>
+                                                    <Text style={styles.pedidoItemPreco}>
+                                                        R$ {itemPedido.subtotal.toFixed(2)}
+                                                    </Text>
+                                                </View>
+                                            ))}
+                                        </View>
+
+                                        {/* Rodapé e Ações */}
+                                        <View style={styles.pedidoFooter}>
+                                            <View style={styles.pedidoTotalContainer}>
+                                                <Text style={styles.totalLabel}>Total do Pedido</Text>
+                                                <Text style={styles.pedidoTotal}>
+                                                    R$ {calcularTotalPedido(pedido).toFixed(2)}
+                                                </Text>
+                                            </View>
+
+                                            <View style={styles.pedidoAcoes}>
+
+                                                {/* Botão de Pagar - aparece apenas se pendente ou reservado */}
+                                                {mostrarBotaoPagar(pedido) && (
+                                                    <TouchableOpacity
+                                                        style={[styles.botaoAcao, styles.botaoPagar]}
+                                                        onPress={() => handleMarcarPago(pedido.id)}
+                                                    >
+                                                        <Ionicons name="cash-outline" size={16} color="#FFF" />
+                                                        <Text style={styles.botaoAcaoTexto}>Pagar</Text>
+                                                    </TouchableOpacity>
+                                                )}
+
+                                                {/* Botão de Entregue - aparece apenas se pago */}
+                                                {mostrarBotaoEntregue(pedido) && (
+                                                    <TouchableOpacity
+                                                        style={[styles.botaoAcao, styles.botaoEntregue]}
+                                                        onPress={() => handleMarcarEntregue(pedido.id)}
+                                                    >
+                                                        <Ionicons name="checkmark-done-outline" size={16} color="#FFF" />
+                                                        <Text style={styles.botaoAcaoTexto}>Entregue</Text>
+                                                    </TouchableOpacity>
+                                                )}
+
+                                                {/* Botão Editar */}
                                                 <TouchableOpacity
-                                                    style={[styles.botaoAcaoIcone, styles.botaoAcaoPagar]}
-                                                    onPress={() => handleMarcarPago(pedido.id)}
+                                                    style={[styles.botaoAcao, styles.botaoEditarPedido]}
+                                                    onPress={() => {
+                                                        setPedidoEditando({
+                                                            ...pedido,
+                                                            usuarioId: pedido.usuarioId || '' 
+                                                        });
+                                                        setMostrarModalPedido(true);
+                                                    }}
                                                 >
-                                                    <Ionicons name="cash-outline" size={20} color="#FFF" />
+                                                    <Ionicons name="create-outline" size={16} color="#B8860B" />
+                                                    <Text style={styles.botaoAcaoTexto}>Editar</Text>
                                                 </TouchableOpacity>
-                                            )}
 
-                                            <TouchableOpacity
-                                                style={styles.botaoAcaoIcone}
-                                                onPress={() => {
-                                                    setPedidoEditando({
-                                                        ...pedido,
-                                                        usuarioId: pedido.usuarioId || '' 
-                                                    });
-                                                    setMostrarModalPedido(true);
-                                                }}
-                                            >
-                                                <Ionicons name="create-outline" size={20} color="#B8860B" />
-                                            </TouchableOpacity>
-
-                                            <TouchableOpacity
-                                                style={styles.botaoAcaoIcone}
-                                                onPress={() => handleDeletarPedido(pedido)}
-                                            >
-                                                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                            </TouchableOpacity>
+                                                {/* Botão Excluir */}
+                                                <TouchableOpacity
+                                                    style={[styles.botaoAcao, styles.botaoExcluirPedido]}
+                                                    onPress={() => handleDeletarPedido(pedido)}
+                                                >
+                                                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                                                    <Text style={styles.botaoAcaoTexto}>Excluir</Text>
+                                                </TouchableOpacity>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                            ))
+                                );
+                            })
                         )}
                     </View>
                 )}
@@ -819,14 +902,7 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 20,
         backgroundColor: '#2a2a2a',
-    },
-    statusBadgePago: {
         borderWidth: 1,
-        borderColor: '#22C55E',
-    },
-    statusBadgePendente: {
-        borderWidth: 1,
-        borderColor: '#EF4444',
     },
     statusTexto: {
         fontSize: 12,
@@ -867,15 +943,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     pedidoFooter: {
-        flexDirection: 'row',
+        flexDirection: 'column', // Alterado de 'row' para 'column'
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'stretch', // Alterado de 'center' para 'stretch'
         paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: '#2a2a2a',
+        gap: 12, // Adicionado gap entre os elementos
     },
     pedidoTotalContainer: {
-        gap: 4,
+        flexDirection: 'row', // Adicionado
+        justifyContent: 'space-between', // Adicionado
+        alignItems: 'center', // Adicionado
     },
     totalLabel: {
         color: '#888',
@@ -889,16 +968,41 @@ const styles = StyleSheet.create({
     pedidoAcoes: {
         flexDirection: 'row',
         gap: 8,
+        flexWrap: 'wrap',
+        justifyContent: 'center', // Alterado de 'flex-end' para 'center'
     },
-    botaoAcaoIcone: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#2a2a2a',
+    botaoAcao: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        minWidth: 80,
     },
-    botaoAcaoPagar: {
-        backgroundColor: '#22C55E',
+    botaoAcaoTexto: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#FFF',
+    },
+    botaoReservar: {
+        backgroundColor: '#F59E0B', // Laranja
+    },
+    botaoPagar: {
+        backgroundColor: '#22C55E', // Verde
+    },
+    botaoEntregue: {
+        backgroundColor: '#3B82F6', // Azul
+    },
+    botaoEditarPedido: {
+        backgroundColor: '#2a2a2a',
+        borderWidth: 1,
+        borderColor: '#B8860B',
+    },
+    botaoExcluirPedido: {
+        backgroundColor: '#2a2a2a',
+        borderWidth: 1,
+        borderColor: '#EF4444',
     },
 });
