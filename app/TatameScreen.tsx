@@ -104,7 +104,7 @@ export default function Rules() {
 
         <Text style={styles.title}>Regras do Tatame</Text>
         <Text style={styles.subtitle}>
-          {rules.length} regras fundamentais para o dojô
+          {rules.length} regras fundamentais para o tatame
         </Text>
       </Animated.View>
 
