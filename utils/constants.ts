@@ -62,6 +62,11 @@ export const faqItems: FAQItem[] = [
       "Os valores variam conforme a quantidade de aulas por semana: 1x — R$90, 2x — R$100, 3x — R$110, 4x — R$130, 5x — R$150. O plano Passe Free permite treinar em qualquer horário e modalidade por R$190.",
   },
   {
+    question: "Vocês aceitam  qual forma de pagamento da mensalidade. Cartão, PIX ou Gympass?",
+    answer:
+      "Aceitamos cartões, PIX, dinheiro, Gympass e TotalPass.",
+  },
+  {
     question: "Vocês oferecem horários flexíveis?",
     answer:
       "Sim! Temos turmas pela manhã e noite durante a semana, além de aulas aos sábados pela manhã.",
@@ -99,11 +104,6 @@ export const faqItems: FAQItem[] = [
   {
     question: "Quanto tempo dura cada treino?",
     answer: "A duração média das aulas é de 1 hora, variando conforme a modalidade.",
-  },
-  {
-    question: "Vocês aceitam cartão, PIX ou Gympass?",
-    answer:
-      "Aceitamos cartões, PIX, dinheiro, Gympass e TotalPass.",
   },
   {
     question: "Existe taxa de matrícula?",
