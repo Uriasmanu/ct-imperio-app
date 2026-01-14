@@ -1,4 +1,5 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
+import { globalStyles } from '@/styles/globalStyles';
 import React, { useEffect, useState } from 'react';
 import {
   Animated,
@@ -104,7 +105,7 @@ export default function aulasScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       {/* Header FIXO no topo */}
       <View style={styles.header}>
         <Text style={styles.title}>Quadro de Aulas</Text>
@@ -224,10 +225,6 @@ export default function aulasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   header: {
     padding: theme.spacing.lg,
     paddingBottom: theme.spacing.md,

@@ -1,3 +1,4 @@
+import { globalStyles } from "@/styles/globalStyles";
 import { faqItems } from "@/utils/constants";
 import { AntDesign } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
@@ -118,7 +119,7 @@ export default function FAQ() {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       {/* Header com efeito de parallax */}
       <Animated.View
         style={[
@@ -280,10 +281,6 @@ export default function FAQ() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   scrollView: {
     flex: 1,
   },

@@ -1,3 +1,4 @@
+import { globalStyles } from '@/styles/globalStyles';
 import { Notice } from '@/types/Notice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -177,14 +178,14 @@ export default function AvisosScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[globalStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={COLOR_SYSTEM.fightYellow} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       <View style={styles.header}>
         <Text style={styles.mainTitle}>
           MURAL <Text style={styles.yellowText}>CT IMPERIO</Text>
@@ -250,10 +251,6 @@ export default function AvisosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLOR_SYSTEM.arenaBlack 
-  },
   header: { 
     padding: 16, 
     borderBottomWidth: 4, 

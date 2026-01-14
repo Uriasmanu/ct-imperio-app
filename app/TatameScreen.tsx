@@ -1,3 +1,4 @@
+import { globalStyles } from "@/styles/globalStyles";
 import { ShieldCheck } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
@@ -137,7 +138,7 @@ export default function Rules() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       {/* Header com efeito de parallax */}
       <Animated.View 
         style={[
@@ -243,10 +244,6 @@ export default function Rules() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   header: {
     alignItems: "center",
     paddingTop: screenHeight * 0.00,

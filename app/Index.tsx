@@ -1,4 +1,5 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
+import { globalStyles } from '@/styles/globalStyles';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Clock, User } from 'lucide-react-native';
@@ -170,7 +171,7 @@ export default function IndexScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
+      <ScrollView style={globalStyles.container} contentContainerStyle={styles.container}>
         {/* Banner Principal */}
         <Image
           source={require('@/assets/images/banner.jpeg')}
@@ -372,10 +373,6 @@ export default function IndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     paddingBottom: 40,
   },

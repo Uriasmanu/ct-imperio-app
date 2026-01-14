@@ -7,6 +7,7 @@ import { ProdutoCard } from '@/components/telaProdutos/ProdutoCard';
 import { auth } from '@/config/firebaseConfig';
 import { estoqueService } from '@/services/estoqueService';
 import { pedidoService } from '@/services/PedidoService';
+import { globalStyles } from '@/styles/globalStyles';
 import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from "react";
@@ -286,7 +287,7 @@ export default function ProdutosScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={globalStyles.container}>
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <Ionicons
@@ -391,10 +392,7 @@ export default function ProdutosScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#000",
-    },
+
     header: {
         backgroundColor: '#000',
         paddingTop: 10,

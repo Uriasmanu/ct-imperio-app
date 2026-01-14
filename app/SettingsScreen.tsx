@@ -13,6 +13,7 @@ import AccountSection from '@/components/Settings/AccountSection';
 import LoginModal from '@/components/Settings/LoginModal';
 import { useUser } from '@/contexts/UserContext';
 import { useLogin } from '@/hooks/useLogin';
+import { globalStyles } from '@/styles/globalStyles';
 import { appConfig, gymData } from './../utils/constants';
 
 
@@ -68,7 +69,7 @@ const settingsScreen = () => {
 
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={globalStyles.container}>
       <AccountSection
         isLoggedIn={!!usuario}
         user={usuario}
@@ -193,10 +194,7 @@ const settingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
+
   userMembership: {
     fontSize: 12,
     color: '#B8860B',
