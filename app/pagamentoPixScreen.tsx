@@ -1,3 +1,5 @@
+import { ESTABELECIMENTO_PIX, gerarPayloadExato } from '@/services/pix/pix.constants';
+import { theme } from '@/styles/theme';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
@@ -12,101 +14,15 @@ import {
 } from "react-native";
 import QRCode from 'react-native-qrcode-svg';
 
-const theme = {
-    colors: {
-        primary: "#d4af37",
-        primaryDark: "#b8860b",
-        background: "#0b0b0b",
-        card: "#1a1a1a",
-        cardActive: "#2a2a2a",
-        text: {
-            primary: "#d4af37",
-            secondary: "#e0e0e0",
-            muted: "#a0a0a0"
-        },
-        border: "#b8860b",
-        success: "#10b981",
-        error: "#ef4444"
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32
-    },
-    typography: {
-        title: 28,
-        subtitle: 18,
-        body: 14,
-        caption: 12
-    }
-};
-
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-const ESTABELECIMENTO = {
-    nome: "WILLIAN IZARIAS DE OLIVEIRA",
-    chavePix: "37553172000100",
-    cidade: "SAO PAULO",
-    banco: "MERCADO PAGO IP LTDA",
-    urlMercadoPago: "pix-qr.mercadopago.com/instore/ol/v2/3Z8a9gKGCN2yC43PXxcS3f"
-};
 
 export default function PagamentoPixScreen() {
     const [copied, setCopied] = useState(false);
 
-    const calcularCRC16 = (str: string) => {
-        let crc = 0xFFFF;
-        for (let i = 0; i < str.length; i++) {
-            crc ^= str.charCodeAt(i) << 8;
-            for (let j = 0; j < 8; j++) {
-                crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
-            }
-        }
-        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-    };
-
-    const gerarPayloadPix = () => {
-
-        const cnpjPix = ESTABELECIMENTO.chavePix.replace(/\D/g, '');
-
-        const payload = [
-
-            '000201',
-            '010212',
-            '26',
-            '81',
-            '0014',
-            'br.gov.bcb.pix',
-            '2559',
-            ESTABELECIMENTO.urlMercadoPago,
-            '52040000',
-            '5303986',
-            '5802BR',
-            '59' + ESTABELECIMENTO.nome.length.toString().padStart(2, '0') + ESTABELECIMENTO.nome,
-            '60' + ESTABELECIMENTO.cidade.length.toString().padStart(2, '0') + ESTABELECIMENTO.cidade,
-            '6208',
-            '0504',
-            'mpis',
-            '6304'
-        ].join('');
-
-        const payloadSemCRC = payload.slice(0, -4);
-        const crc = calcularCRC16(payloadSemCRC);
-
-        return payloadSemCRC + crc;
-    };
-
-
-    const gerarPayloadExato = () => {
-        return "00020101021126810014BR.GOV.BCB.PIX2559pix-qr.mercadopago.com/instore/ol/v2/3Z8a9gKGCN2yC43PXxcS3f5204000053039865802BR5925WILLIAM IZARIAS DE OLIVEI6009SAO PAULO62080504mpis6304ACA4";
-    };
-
     const copiarChavePix = async () => {
         try {
 
-            const cnpjFormatado = ESTABELECIMENTO.chavePix.replace(
+            const cnpjFormatado = ESTABELECIMENTO_PIX.chavePix.replace(
                 /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
                 '$1.$2.$3/$4-$5'
             );
@@ -124,15 +40,6 @@ export default function PagamentoPixScreen() {
         } catch (error) {
             Alert.alert("Erro", "Não foi possível copiar o CNPJ");
         }
-    };
-
-
-    const testarPayload = () => {
-        const payload = gerarPayloadExato();
-        const payloadSemCRC = payload.slice(0, -4);
-        const crcCalculado = calcularCRC16(payloadSemCRC);
-
-        return payload;
     };
 
     return (
