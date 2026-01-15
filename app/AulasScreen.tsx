@@ -1,5 +1,6 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
 import { globalStyles } from '@/styles/globalStyles';
+import { aulasTheme } from '@/styles/theme';
 import React, { useEffect, useState } from 'react';
 import {
   Animated,
@@ -9,34 +10,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-
-// Sistema de tema
-const theme = {
-  colors: {
-    primary: '#FFD700',
-    primaryDark: '#B8860B',
-    background: '#000000',
-    card: '#1A1A1A',
-    cardActive: '#2A2A2A',
-    text: {
-      primary: '#FFFFFF',
-      secondary: '#E5E5E5',
-      muted: '#888888',
-      accent: '#FFD700'
-    },
-    status: {
-      current: '#FFD700',
-      upcoming: '#4ADE80',
-      finished: '#6B7280'
-    }
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16
-  }
-};
 
 const daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
@@ -226,31 +199,31 @@ export default function aulasScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    padding: aulasTheme.spacing.lg,
+    paddingBottom: aulasTheme.spacing.md,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
+    color: aulasTheme.colors.text.primary,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: theme.colors.text.muted,
+    color: aulasTheme.colors.text.muted,
     marginBottom: 4,
   },
   tabsScrollView: {
     maxHeight: 50,
   },
   tabsContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: aulasTheme.spacing.lg,
   },
   tab: {
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
+    paddingVertical: aulasTheme.spacing.xs,
+    paddingHorizontal: aulasTheme.spacing.md,
     borderRadius: 8,
-    backgroundColor: theme.colors.card,
+    backgroundColor: aulasTheme.colors.card,
     marginRight: 6,
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,14 +232,14 @@ const styles = StyleSheet.create({
     height: 32,
   },
   tabActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: aulasTheme.colors.primary,
   },
   tabToday: {
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: aulasTheme.colors.primary,
   },
   tabText: {
-    color: theme.colors.text.muted,
+    color: aulasTheme.colors.text.muted,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -275,91 +248,91 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   tabTextToday: {
-    color: theme.colors.primary,
+    color: aulasTheme.colors.primary,
   },
   todayDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: aulasTheme.colors.primary,
     marginLeft: 4,
   },
   contentContainer: {
     flex: 1,
   },
   scheduleList: {
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
+    padding: aulasTheme.spacing.lg,
+    paddingTop: aulasTheme.spacing.md,
   },
   noClassCard: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
+    padding: aulasTheme.spacing.lg,
+    backgroundColor: aulasTheme.colors.card,
     borderRadius: 16,
     alignItems: 'center',
-    marginTop: theme.spacing.lg,
+    marginTop: aulasTheme.spacing.lg,
   },
   noClassEmoji: {
     fontSize: 36,
-    marginBottom: theme.spacing.md,
+    marginBottom: aulasTheme.spacing.md,
   },
   noClassTitle: {
-    color: theme.colors.text.primary,
+    color: aulasTheme.colors.text.primary,
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: theme.spacing.sm,
+    marginBottom: aulasTheme.spacing.sm,
     textAlign: 'center',
   },
   noClassText: {
-    color: theme.colors.text.muted,
+    color: aulasTheme.colors.text.muted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
   },
   classCard: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: aulasTheme.colors.card,
     borderRadius: 16,
-    marginBottom: theme.spacing.md,
+    marginBottom: aulasTheme.spacing.md,
     overflow: 'hidden',
     flexDirection: 'row',
   },
   currentClassCard: {
     backgroundColor: '#2A2A1A',
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.status.current,
+    borderLeftColor: aulasTheme.colors.status.current,
   },
   finishedClassCard: {
     opacity: 0.7,
   },
   statusIndicator: {
     width: 4,
-    backgroundColor: theme.colors.status.finished,
+    backgroundColor: aulasTheme.colors.status.finished,
   },
   statusCurrent: {
-    backgroundColor: theme.colors.status.current,
+    backgroundColor: aulasTheme.colors.status.current,
   },
   statusUpcoming: {
-    backgroundColor: theme.colors.status.upcoming,
+    backgroundColor: aulasTheme.colors.status.upcoming,
   },
   statusFinished: {
-    backgroundColor: theme.colors.status.finished,
+    backgroundColor: aulasTheme.colors.status.finished,
   },
   classContent: {
     flex: 1,
-    padding: theme.spacing.lg,
+    padding: aulasTheme.spacing.lg,
   },
   classHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
+    marginBottom: aulasTheme.spacing.sm,
   },
   classTime: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text.accent,
+    color: aulasTheme.colors.text.accent,
   },
   classBadge: {
-    backgroundColor: theme.colors.cardActive,
+    backgroundColor: aulasTheme.colors.cardActive,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -367,14 +340,14 @@ const styles = StyleSheet.create({
   classBadgeText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: theme.colors.text.muted,
+    color: aulasTheme.colors.text.muted,
     textTransform: 'uppercase',
   },
   classTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.md,
+    color: aulasTheme.colors.text.primary,
+    marginBottom: aulasTheme.spacing.md,
   },
   classDetails: {
     flexDirection: 'row',
@@ -384,13 +357,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 12,
-    color: theme.colors.text.muted,
+    color: aulasTheme.colors.text.muted,
     marginBottom: 2,
     textTransform: 'uppercase',
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text.secondary,
+    color: aulasTheme.colors.text.secondary,
   },
 });

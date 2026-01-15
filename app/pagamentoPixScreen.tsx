@@ -1,5 +1,5 @@
 import { ESTABELECIMENTO_PIX, gerarPayloadExato } from '@/services/pix/pix.constants';
-import { theme } from '@/styles/theme';
+import { pixTatameTheme } from '@/styles/theme';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
@@ -51,7 +51,7 @@ export default function PagamentoPixScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.iconContainer}>
-                        <FontAwesome5 name="qrcode" size={32} color={theme.colors.primary} />
+                        <FontAwesome5 name="qrcode" size={32} color={pixTatameTheme.colors.primary} />
                     </View>
                     <Text style={styles.title}>PAGAMENTO PIX</Text>
                 </View>
@@ -65,7 +65,7 @@ export default function PagamentoPixScreen() {
                             <QRCode
                                 value={gerarPayloadExato()}
                                 size={screenWidth * 0.6}
-                                color={theme.colors.background}
+                                color={pixTatameTheme.colors.background}
                                 backgroundColor="#FFFFFF"
                                 logoSize={60}
                                 logoMargin={10}
@@ -92,7 +92,7 @@ export default function PagamentoPixScreen() {
                             <MaterialIcons
                                 name="person"
                                 size={20}
-                                color={theme.colors.text.muted}
+                                color={pixTatameTheme.colors.text.muted}
                                 style={styles.infoIcon}
                             />
                             <View style={styles.infoContent}>
@@ -105,7 +105,7 @@ export default function PagamentoPixScreen() {
                             <MaterialIcons
                                 name="business"
                                 size={20}
-                                color={theme.colors.text.muted}
+                                color={pixTatameTheme.colors.text.muted}
                                 style={styles.infoIcon}
                             />
                             <View style={styles.infoContent}>
@@ -133,14 +133,14 @@ export default function PagamentoPixScreen() {
                             >
                                 {copied ? (
                                     <>
-                                        <MaterialIcons name="check" size={20} color={theme.colors.success} />
-                                        <Text style={[styles.copyButtonText, { color: theme.colors.success }]}>
+                                        <MaterialIcons name="check" size={20} color={pixTatameTheme.colors.success} />
+                                        <Text style={[styles.copyButtonText, { color: pixTatameTheme.colors.success }]}>
                                             Copiado!
                                         </Text>
                                     </>
                                 ) : (
                                     <>
-                                        <MaterialIcons name="content-copy" size={20} color={theme.colors.primary} />
+                                        <MaterialIcons name="content-copy" size={20} color={pixTatameTheme.colors.primary} />
                                         <Text style={styles.copyButtonText}>Copiar</Text>
                                     </>
                                 )}
@@ -156,60 +156,60 @@ export default function PagamentoPixScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: pixTatameTheme.colors.background,
     },
     scrollContent: {
-        paddingBottom: theme.spacing.xl,
+        paddingBottom: pixTatameTheme.spacing.xl,
     },
     header: {
         alignItems: "center",
         paddingTop: screenHeight * 0.02,
-        paddingBottom: theme.spacing.lg,
-        backgroundColor: theme.colors.background,
+        paddingBottom: pixTatameTheme.spacing.lg,
+        backgroundColor: pixTatameTheme.colors.background,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
+        borderBottomColor: pixTatameTheme.colors.border,
     },
     iconContainer: {
-        padding: theme.spacing.md,
+        padding: pixTatameTheme.spacing.md,
         borderWidth: 2,
-        borderColor: theme.colors.border,
+        borderColor: pixTatameTheme.colors.border,
         borderRadius: 50,
-        marginBottom: theme.spacing.md,
+        marginBottom: pixTatameTheme.spacing.md,
         backgroundColor: 'rgba(184, 134, 11, 0.1)',
     },
     title: {
-        fontSize: theme.typography.title,
+        fontSize: pixTatameTheme.typography.title,
         fontWeight: "800",
-        color: theme.colors.text.primary,
+        color: pixTatameTheme.colors.text.primary,
         textTransform: "uppercase",
         textAlign: "center",
-        marginBottom: theme.spacing.xs,
+        marginBottom: pixTatameTheme.spacing.xs,
     },
     subtitle: {
-        fontSize: theme.typography.caption,
-        color: theme.colors.text.muted,
+        fontSize: pixTatameTheme.typography.caption,
+        color: pixTatameTheme.colors.text.muted,
         textAlign: "center",
     },
     card: {
-        backgroundColor: theme.colors.card,
-        marginHorizontal: theme.spacing.md,
+        backgroundColor: pixTatameTheme.colors.card,
+        marginHorizontal: pixTatameTheme.spacing.md,
         borderRadius: 16,
-        padding: theme.spacing.lg,
-        marginTop: theme.spacing.md,
+        padding: pixTatameTheme.spacing.lg,
+        marginTop: pixTatameTheme.spacing.md,
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor: pixTatameTheme.colors.border,
     },
     qrCodeContainer: {
         alignItems: 'center',
-        marginBottom: theme.spacing.lg,
+        marginBottom: pixTatameTheme.spacing.lg,
     },
     qrCodeWrapper: {
         backgroundColor: '#FFFFFF',
-        padding: theme.spacing.md,
+        padding: pixTatameTheme.spacing.md,
         borderRadius: 12,
-        marginBottom: theme.spacing.md,
+        marginBottom: pixTatameTheme.spacing.md,
         position: 'relative',
-        shadowColor: theme.colors.primary,
+        shadowColor: pixTatameTheme.colors.primary,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -239,30 +239,30 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     qrCodeInstruction: {
-        color: theme.colors.text.secondary,
+        color: pixTatameTheme.colors.text.secondary,
         textAlign: 'center',
-        fontSize: theme.typography.caption,
-        marginTop: theme.spacing.sm,
+        fontSize: pixTatameTheme.typography.caption,
+        marginTop: pixTatameTheme.spacing.sm,
     },
     testButtonText: {
-        color: theme.colors.text.muted,
-        fontSize: theme.typography.caption,
+        color: pixTatameTheme.colors.text.muted,
+        fontSize: pixTatameTheme.typography.caption,
     },
     chavePixSection: {
-        marginBottom: theme.spacing.lg,
+        marginBottom: pixTatameTheme.spacing.lg,
     },
     sectionTitle: {
-        color: theme.colors.text.muted,
-        fontSize: theme.typography.caption,
+        color: pixTatameTheme.colors.text.muted,
+        fontSize: pixTatameTheme.typography.caption,
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: 1,
-        marginBottom: theme.spacing.sm,
+        marginBottom: pixTatameTheme.spacing.sm,
     },
     chavePixContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderRadius: 12,
-        padding: theme.spacing.md,
+        padding: pixTatameTheme.spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -270,72 +270,72 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(212, 175, 55, 0.3)',
     },
     chavePixText: {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.body,
+        color: pixTatameTheme.colors.text.secondary,
+        fontSize: pixTatameTheme.typography.body,
         fontFamily: 'monospace',
         flex: 1,
-        marginRight: theme.spacing.sm,
+        marginRight: pixTatameTheme.spacing.sm,
         letterSpacing: 1,
     },
     copyButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.md,
+        paddingVertical: pixTatameTheme.spacing.sm,
+        paddingHorizontal: pixTatameTheme.spacing.md,
         backgroundColor: 'rgba(212, 175, 55, 0.1)',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: theme.colors.border,
-        gap: theme.spacing.xs,
+        borderColor: pixTatameTheme.colors.border,
+        gap: pixTatameTheme.spacing.xs,
     },
     copyButtonActive: {
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        borderColor: theme.colors.success,
+        borderColor: pixTatameTheme.colors.success,
     },
     copyButtonText: {
-        color: theme.colors.primary,
+        color: pixTatameTheme.colors.primary,
         fontWeight: '600',
-        fontSize: theme.typography.caption,
+        fontSize: pixTatameTheme.typography.caption,
     },
     chavePixDescription: {
-        color: theme.colors.text.muted,
-        fontSize: theme.typography.caption,
-        marginTop: theme.spacing.sm,
+        color: pixTatameTheme.colors.text.muted,
+        fontSize: pixTatameTheme.typography.caption,
+        marginTop: pixTatameTheme.spacing.sm,
         fontStyle: 'italic',
     },
     stepNumber: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: pixTatameTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 2,
     },
     stepNumberText: {
-        color: theme.colors.background,
+        color: pixTatameTheme.colors.background,
         fontSize: 12,
         fontWeight: 'bold',
     },
     instructionText: {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.body,
+        color: pixTatameTheme.colors.text.secondary,
+        fontSize: pixTatameTheme.typography.body,
         flex: 1,
         lineHeight: 20,
     },
     infoSection: {
         backgroundColor: 'rgba(212, 175, 55, 0.05)',
         borderRadius: 12,
-        padding: theme.spacing.md,
-        marginBottom: theme.spacing.lg,
+        padding: pixTatameTheme.spacing.md,
+        marginBottom: pixTatameTheme.spacing.lg,
         borderWidth: 1,
         borderColor: 'rgba(212, 175, 55, 0.2)',
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: theme.spacing.sm,
-        gap: theme.spacing.sm,
+        marginBottom: pixTatameTheme.spacing.sm,
+        gap: pixTatameTheme.spacing.sm,
     },
     infoIcon: {
         marginTop: 2,
@@ -345,14 +345,14 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
     },
     infoLabel: {
-        color: theme.colors.text.muted,
-        fontSize: theme.typography.caption,
+        color: pixTatameTheme.colors.text.muted,
+        fontSize: pixTatameTheme.typography.caption,
         fontWeight: '500',
         marginBottom: 2,
     },
     infoValue: {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.body,
+        color: pixTatameTheme.colors.text.secondary,
+        fontSize: pixTatameTheme.typography.body,
         flex: 1,
         lineHeight: 20,
     },

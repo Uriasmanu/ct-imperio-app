@@ -1,4 +1,5 @@
 import { globalStyles } from "@/styles/globalStyles";
+import { faqTheme } from "@/styles/theme";
 import { faqItems } from "@/utils/constants";
 import { AntDesign } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
@@ -14,44 +15,6 @@ import {
   View
 } from "react-native";
 
-// Sistema de tema unificado
-const theme = {
-  colors: {
-    primary: "#D4AF37",
-    primaryLight: "#E0C96D",
-    background: "#000",
-    card: "#2B2B2B",
-    cardActive: "#3A3A3A",
-    text: {
-      primary: "#D4AF37",
-      secondary: "#E0C96D",
-      body: "#ddd",
-      muted: "#ccc",
-      dark: "#1C1C1C"
-    },
-    border: "#333",
-    success: "#4CAF50"
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32
-  },
-  typography: {
-    title: 36,
-    subtitle: 18,
-    body: 16,
-    caption: 14,
-    small: 12
-  },
-  borderRadius: {
-    sm: 6,
-    md: 12,
-    lg: 25
-  }
-};
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -139,7 +102,7 @@ export default function FAQ() {
         <TextInput
           style={styles.searchInput}
           placeholder="Digite sua dúvida..."
-          placeholderTextColor={theme.colors.text.muted}
+          placeholderTextColor={faqTheme.colors.text.muted}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -179,7 +142,7 @@ export default function FAQ() {
                     <AntDesign
                       name="up"
                       size={18}
-                      color={theme.colors.primary}
+                      color={faqTheme.colors.primary}
                       style={styles.icon}
                     />
                   </Animated.View>
@@ -224,7 +187,7 @@ export default function FAQ() {
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Agende sua Aula Experimental</Text>
-            <AntDesign name="arrow-right" size={16} color={theme.colors.text.dark} style={styles.buttonIcon} />
+            <AntDesign name="arrow-right" size={16} color={faqTheme.colors.text.dark} style={styles.buttonIcon} />
           </TouchableOpacity>
         </View>
 
@@ -246,7 +209,7 @@ export default function FAQ() {
                 style={styles.modalClose}
                 onPress={() => setShowModal(false)}
               >
-                <AntDesign name="close" size={20} color={theme.colors.text.muted} />
+                <AntDesign name="close" size={20} color={faqTheme.colors.text.muted} />
               </TouchableOpacity>
             </View>
 
@@ -285,56 +248,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: theme.spacing.xl * 2,
+    paddingBottom: faqTheme.spacing.xl * 2,
   },
   header: {
     alignItems: "center",
     paddingTop: screenHeight * 0.00,
-    paddingBottom: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
+    paddingBottom: faqTheme.spacing.lg,
+    paddingHorizontal: faqTheme.spacing.lg,
+    backgroundColor: faqTheme.colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: faqTheme.colors.border,
   },
   title: {
-    fontSize: theme.typography.title,
+    fontSize: faqTheme.typography.title,
     fontWeight: "800",
-    color: theme.colors.text.primary,
+    color: faqTheme.colors.text.primary,
     textAlign: "center",
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   subtitle: {
-    fontSize: theme.typography.subtitle,
-    color: theme.colors.text.secondary,
-    marginTop: theme.spacing.sm,
+    fontSize: faqTheme.typography.subtitle,
+    color: faqTheme.colors.text.secondary,
+    marginTop: faqTheme.spacing.sm,
     textAlign: "center",
     fontWeight: "600",
   },
   desc: {
-    color: theme.colors.text.muted,
+    color: faqTheme.colors.text.muted,
     textAlign: "center",
-    marginTop: theme.spacing.md,
+    marginTop: faqTheme.spacing.md,
     lineHeight: 20,
-    fontSize: theme.typography.caption,
+    fontSize: faqTheme.typography.caption,
     maxWidth: 400,
   },
   faqContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    paddingHorizontal: faqTheme.spacing.lg,
+    marginBottom: faqTheme.spacing.lg,
   },
   item: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.sm,
+    backgroundColor: faqTheme.colors.card,
+    borderRadius: faqTheme.borderRadius.md,
+    marginBottom: faqTheme.spacing.sm,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "transparent",
   },
   itemActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.cardActive,
-    shadowColor: theme.colors.primary,
+    borderColor: faqTheme.colors.primary,
+    backgroundColor: faqTheme.colors.cardActive,
+    shadowColor: faqTheme.colors.primary,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -347,68 +310,68 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
+    padding: faqTheme.spacing.lg,
+    paddingVertical: faqTheme.spacing.lg,
   },
   questionText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.typography.body,
+    color: faqTheme.colors.text.secondary,
+    fontSize: faqTheme.typography.body,
     fontWeight: "600",
     flex: 1,
-    paddingRight: theme.spacing.md,
+    paddingRight: faqTheme.spacing.md,
     lineHeight: 22,
   },
   icon: {
-    marginLeft: theme.spacing.sm,
+    marginLeft: faqTheme.spacing.sm,
   },
   answerContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.lg,
+    paddingHorizontal: faqTheme.spacing.lg,
+    paddingBottom: faqTheme.spacing.lg,
   },
   answer: {
-    color: theme.colors.text.body,
+    color: faqTheme.colors.text.body,
     lineHeight: 22,
-    fontSize: theme.typography.caption,
+    fontSize: faqTheme.typography.caption,
     textAlign: "justify",
   },
   footer: {
     alignItems: "center",
-    marginTop: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.lg,
+    marginTop: faqTheme.spacing.xl,
+    paddingTop: faqTheme.spacing.xl,
+    paddingHorizontal: faqTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    marginHorizontal: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    borderTopColor: faqTheme.colors.border,
+    marginHorizontal: faqTheme.spacing.lg,
+    backgroundColor: faqTheme.colors.card,
+    borderRadius: faqTheme.borderRadius.md,
+    padding: faqTheme.spacing.lg,
+    marginBottom: faqTheme.spacing.lg,
   },
   footerTitle: {
-    color: theme.colors.text.primary,
-    fontSize: theme.typography.body,
+    color: faqTheme.colors.text.primary,
+    fontSize: faqTheme.typography.body,
     fontWeight: "700",
-    marginBottom: theme.spacing.sm,
+    marginBottom: faqTheme.spacing.sm,
     textAlign: "center",
   },
   footerText: {
-    color: theme.colors.text.muted,
+    color: faqTheme.colors.text.muted,
     textAlign: "center",
-    marginBottom: theme.spacing.lg,
-    fontSize: theme.typography.caption,
+    marginBottom: faqTheme.spacing.lg,
+    fontSize: faqTheme.typography.caption,
     lineHeight: 20,
     maxWidth: 400,
   },
   button: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: faqTheme.colors.primary,
+    paddingVertical: faqTheme.spacing.lg,
+    paddingHorizontal: faqTheme.spacing.xl,
+    borderRadius: faqTheme.borderRadius.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     minWidth: 250,
-    shadowColor: theme.colors.primary,
+    shadowColor: faqTheme.colors.primary,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -418,13 +381,13 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   buttonText: {
-    color: theme.colors.text.dark,
+    color: faqTheme.colors.text.dark,
     fontWeight: "700",
-    fontSize: theme.typography.body,
+    fontSize: faqTheme.typography.body,
     textAlign: "center",
   },
   buttonIcon: {
-    marginLeft: theme.spacing.sm,
+    marginLeft: faqTheme.spacing.sm,
   },
   bottomSpacer: {
     height: screenHeight * 0.1,
@@ -434,49 +397,49 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.8)",
     justifyContent: "center",
     alignItems: "center",
-    padding: theme.spacing.lg,
+    padding: faqTheme.spacing.lg,
   },
   modalBox: {
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.xl,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: faqTheme.colors.card,
+    padding: faqTheme.spacing.xl,
+    borderRadius: faqTheme.borderRadius.md,
     width: "100%",
     maxWidth: 400,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: faqTheme.colors.border,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    marginBottom: faqTheme.spacing.lg,
   },
   modalTitle: {
-    color: theme.colors.text.primary,
+    color: faqTheme.colors.text.primary,
     fontSize: 20,
     fontWeight: "700",
     flex: 1,
   },
   modalClose: {
-    padding: theme.spacing.xs,
+    padding: faqTheme.spacing.xs,
   },
   modalDesc: {
-    color: theme.colors.text.body,
-    marginBottom: theme.spacing.xl,
+    color: faqTheme.colors.text.body,
+    marginBottom: faqTheme.spacing.xl,
     lineHeight: 22,
-    fontSize: theme.typography.caption,
+    fontSize: faqTheme.typography.caption,
   },
   modalButtons: {
-    gap: theme.spacing.md,
+    gap: faqTheme.spacing.md,
   },
   modalButton: {
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    paddingVertical: faqTheme.spacing.lg,
+    paddingHorizontal: faqTheme.spacing.lg,
+    borderRadius: faqTheme.borderRadius.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: theme.spacing.sm,
+    gap: faqTheme.spacing.sm,
   },
   whatsappButton: {
     backgroundColor: "#25D366",
@@ -487,40 +450,40 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: faqTheme.colors.border,
   },
   whatsappText: {
     color: "#FFF",
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: faqTheme.typography.body,
   },
   phoneText: {
     color: "#FFF",
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: faqTheme.typography.body,
   },
   closeText: {
-    color: theme.colors.text.body,
+    color: faqTheme.colors.text.body,
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: faqTheme.typography.body,
   },
   searchInput: {
-    backgroundColor: theme.colors.cardActive,
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    color: theme.colors.text.body,
-    marginTop: theme.spacing.md,
+    backgroundColor: faqTheme.colors.cardActive,
+    borderRadius: faqTheme.borderRadius.md,
+    paddingVertical: faqTheme.spacing.sm,
+    paddingHorizontal: faqTheme.spacing.md,
+    color: faqTheme.colors.text.body,
+    marginTop: faqTheme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    fontSize: theme.typography.body,
+    borderColor: faqTheme.colors.border,
+    fontSize: faqTheme.typography.body,
     width: "100%",
     maxWidth: 400,
   },
   noResults: {
   textAlign: "center",
-  color: theme.colors.text.muted,
-  marginTop: theme.spacing.xl,
-  fontSize: theme.typography.caption,
+  color: faqTheme.colors.text.muted,
+  marginTop: faqTheme.spacing.xl,
+  fontSize: faqTheme.typography.caption,
 },
 });

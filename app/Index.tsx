@@ -1,5 +1,6 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
 import { globalStyles } from '@/styles/globalStyles';
+import { carouselImages } from '@/utils/constants';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Clock, User } from 'lucide-react-native';
@@ -67,17 +68,7 @@ export default function IndexScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
 
-  const carouselImages = [
-    require('@/assets/images/Muay.jpeg'),
-    require('@/assets/images/boxe.jpeg'),
-    require('@/assets/images/jiu-feminino.jpeg'),
-    require('@/assets/images/jiu-misto.jpeg'),
-    require('@/assets/images/jiu-baby.jpeg'),
-    require('@/assets/images/no-gi.jpeg'),
-    require('@/assets/images/jiu-mirim.jpeg'),
-    require('@/assets/images/muay-kids.jpeg'),
-    require('@/assets/images/jiu-infantil.jpeg'),
-  ];
+
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;

@@ -1,4 +1,5 @@
 import { globalStyles } from '@/styles/globalStyles';
+import { avisosTheme } from '@/styles/theme';
 import { Notice } from '@/types/Notice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -14,28 +15,6 @@ import {
 } from 'react-native';
 import { listenToNotices } from '../services/noticesService';
 
-// Sistema de cores otimizado
-const COLOR_SYSTEM = {
-  backgrounds: {
-    yellow: '#FFD700',
-    gray: '#4B5563',
-    red: '#DC2626',
-    green: '#059669',
-  },
-  texts: {
-    onYellow: '#000000',
-    onDark: '#FFFFFF',
-  },
-  accents: {
-    yellowBadge: '#000000',
-    darkBadge: '#FFD700',
-  },
-  fightYellow: '#FFD700',
-  arenaBlack: '#1a1a1a',
-  gray400: '#9ca3af',
-  gray300: '#d1d5db',
-};
-
 // Componente para quando não há avisos
 const EmptyNotices = () => {
   return (
@@ -43,7 +22,7 @@ const EmptyNotices = () => {
       <MaterialCommunityIcons 
         name="clipboard-text-outline" 
         size={64} 
-        color={COLOR_SYSTEM.gray400} 
+        color={avisosTheme.colors.gray400} 
       />
       <Text style={styles.emptyTitle}>Nenhum aviso no momento</Text>
       <Text style={styles.emptySubtitle}>
@@ -57,42 +36,42 @@ const getColorStyle = (color: Notice['color']) => {
   switch (color) {
     case 'bg-fight-yellow':
       return {
-        backgroundColor: COLOR_SYSTEM.backgrounds.yellow,
-        textColor: COLOR_SYSTEM.texts.onYellow,
-        badgeColor: COLOR_SYSTEM.accents.yellowBadge,
-        badgeTextColor: COLOR_SYSTEM.backgrounds.yellow,
+        backgroundColor: avisosTheme.colors.backgrounds.yellow,
+        textColor: avisosTheme.colors.texts.onYellow,
+        badgeColor: avisosTheme.colors.accents.yellowBadge,
+        badgeTextColor: avisosTheme.colors.backgrounds.yellow,
         detailColor: '#6B7280',
       };
     case 'bg-gray-700':
       return {
-        backgroundColor: COLOR_SYSTEM.backgrounds.gray,
-        textColor: COLOR_SYSTEM.texts.onDark,
-        badgeColor: COLOR_SYSTEM.accents.darkBadge,
-        badgeTextColor: COLOR_SYSTEM.backgrounds.gray,
+        backgroundColor: avisosTheme.colors.backgrounds.gray,
+        textColor: avisosTheme.colors.texts.onDark,
+        badgeColor: avisosTheme.colors.accents.darkBadge,
+        badgeTextColor: avisosTheme.colors.backgrounds.gray,
         detailColor: '#D1D5DB',
       };
     case 'bg-punch-red':
       return {
-        backgroundColor: COLOR_SYSTEM.backgrounds.red,
-        textColor: COLOR_SYSTEM.texts.onDark,
-        badgeColor: COLOR_SYSTEM.accents.darkBadge,
-        badgeTextColor: COLOR_SYSTEM.backgrounds.red,
+        backgroundColor: avisosTheme.colors.backgrounds.red,
+        textColor: avisosTheme.colors.texts.onDark,
+        badgeColor: avisosTheme.colors.accents.darkBadge,
+        badgeTextColor: avisosTheme.colors.backgrounds.red,
         detailColor: '#FECACA',
       };
     case 'bg-green-500':
       return {
-        backgroundColor: COLOR_SYSTEM.backgrounds.green,
-        textColor: COLOR_SYSTEM.texts.onDark,
-        badgeColor: COLOR_SYSTEM.accents.darkBadge,
-        badgeTextColor: COLOR_SYSTEM.backgrounds.green,
+        backgroundColor: avisosTheme.colors.backgrounds.green,
+        textColor: avisosTheme.colors.texts.onDark,
+        badgeColor: avisosTheme.colors.accents.darkBadge,
+        badgeTextColor: avisosTheme.colors.backgrounds.green,
         detailColor: '#A7F3D0',
       };
     default:
       return {
-        backgroundColor: COLOR_SYSTEM.backgrounds.gray,
-        textColor: COLOR_SYSTEM.texts.onDark,
-        badgeColor: COLOR_SYSTEM.accents.darkBadge,
-        badgeTextColor: COLOR_SYSTEM.backgrounds.gray,
+        backgroundColor: avisosTheme.colors.backgrounds.gray,
+        textColor: avisosTheme.colors.texts.onDark,
+        badgeColor: avisosTheme.colors.accents.darkBadge,
+        badgeTextColor: avisosTheme.colors.backgrounds.gray,
         detailColor: '#D1D5DB',
       };
   }
@@ -179,7 +158,7 @@ export default function AvisosScreen() {
   if (loading) {
     return (
       <View style={[globalStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={COLOR_SYSTEM.fightYellow} />
+        <ActivityIndicator size="large" color={avisosTheme.colors.fightYellow} />
       </View>
     );
   }
@@ -254,7 +233,7 @@ const styles = StyleSheet.create({
   header: { 
     padding: 16, 
     borderBottomWidth: 4, 
-    borderBottomColor: COLOR_SYSTEM.fightYellow 
+    borderBottomColor: avisosTheme.colors.fightYellow 
   },
   mainTitle: { 
     fontSize: 36, 
@@ -263,10 +242,10 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
   yellowText: { 
-    color: COLOR_SYSTEM.fightYellow 
+    color: avisosTheme.colors.fightYellow 
   },
   subtitle: { 
-    color: COLOR_SYSTEM.gray400, 
+    color: avisosTheme.colors.texts.onDark, 
     textAlign: 'center', 
     marginTop: 4 
   },
@@ -341,9 +320,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.8)' 
   },
   modalView: { 
-    backgroundColor: COLOR_SYSTEM.arenaBlack, 
+    backgroundColor: avisosTheme.colors.arenaBlack, 
     borderWidth: 2, 
-    borderColor: COLOR_SYSTEM.fightYellow, 
+    borderColor: avisosTheme.colors.fightYellow, 
     borderRadius: 8, 
     padding: 24, 
     margin: 20,
@@ -357,7 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: 16 
   },
   modalDescription: { 
-    color: COLOR_SYSTEM.gray300,
+    color: avisosTheme.colors.texts.onDark,
     fontSize: 16,
     lineHeight: 24,
   },
@@ -375,13 +354,13 @@ const styles = StyleSheet.create({
   emptyTitle: { 
     fontSize: 20, 
     fontWeight: 'bold', 
-    color: COLOR_SYSTEM.gray300, 
+    color: avisosTheme.colors.texts.onDark, 
     marginTop: 16,
     textAlign: 'center',
   },
   emptySubtitle: { 
     fontSize: 16, 
-    color: COLOR_SYSTEM.gray400, 
+    color: avisosTheme.colors.texts.onDark, 
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 22,

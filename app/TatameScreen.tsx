@@ -1,4 +1,5 @@
 import { globalStyles } from "@/styles/globalStyles";
+import { pixTatameTheme } from "@/styles/theme";
 import { rules } from "@/utils/constants";
 import { ShieldCheck } from "lucide-react-native";
 import React, { useRef, useState } from "react";
@@ -11,36 +12,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-
-// Sistema de tema unificado
-const theme = {
-  colors: {
-    primary: "#d4af37",
-    primaryDark: "#b8860b",
-    background: "#0b0b0b",
-    card: "#1a1a1a",
-    cardActive: "#2a2a2a",
-    text: {
-      primary: "#d4af37",
-      secondary: "#e0e0e0",
-      muted: "#a0a0a0"
-    },
-    border: "#b8860b"
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32
-  },
-  typography: {
-    title: 28,
-    subtitle: 18,
-    body: 14,
-    caption: 12
-  }
-};
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -97,7 +68,7 @@ export default function Rules() {
           onPress={scrollToTop}
           activeOpacity={0.7}
         >
-          <ShieldCheck size={35} color={theme.colors.primary}/>
+          <ShieldCheck size={35} color={pixTatameTheme.colors.primary}/>
         </TouchableOpacity>
 
         <Text style={styles.title}>Regras do Tatame</Text>
@@ -190,48 +161,48 @@ const styles = StyleSheet.create({
   header: {
     alignItems: "center",
     paddingTop: screenHeight * 0.00,
-    paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
+    paddingBottom: pixTatameTheme.spacing.lg,
+    backgroundColor: pixTatameTheme.colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: pixTatameTheme.colors.border,
     zIndex: 10,
   },
   iconContainer: {
-    padding: theme.spacing.md,
+    padding: pixTatameTheme.spacing.md,
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: pixTatameTheme.colors.border,
     borderRadius: 50,
-    marginBottom: theme.spacing.md,
+    marginBottom: pixTatameTheme.spacing.md,
     backgroundColor: 'rgba(184, 134, 11, 0.1)',
   },
   title: {
-    fontSize: theme.typography.title,
+    fontSize: pixTatameTheme.typography.title,
     fontWeight: "800",
-    color: theme.colors.text.primary,
+    color: pixTatameTheme.colors.text.primary,
     textTransform: "uppercase",
     textAlign: "center",
-    marginBottom: theme.spacing.xs,
+    marginBottom: pixTatameTheme.spacing.xs,
   },
   subtitle: {
-    fontSize: theme.typography.caption,
-    color: theme.colors.text.muted,
+    fontSize: pixTatameTheme.typography.caption,
+    color: pixTatameTheme.colors.text.muted,
     textAlign: "center",
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl * 2,
+    paddingHorizontal: pixTatameTheme.spacing.lg,
+    paddingTop: pixTatameTheme.spacing.lg,
+    paddingBottom: pixTatameTheme.spacing.xl * 2,
   },
   ruleCard: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: pixTatameTheme.colors.card,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.border,
+    borderLeftColor: pixTatameTheme.colors.border,
     borderRadius: 16,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+    padding: pixTatameTheme.spacing.lg,
+    marginBottom: pixTatameTheme.spacing.md,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -242,7 +213,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   ruleCardActive: {
-    backgroundColor: theme.colors.cardActive,
+    backgroundColor: pixTatameTheme.colors.cardActive,
     transform: [{ scale: 1.02 }],
     shadowOpacity: 0.4,
     shadowRadius: 5,
@@ -251,45 +222,45 @@ const styles = StyleSheet.create({
   ruleHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: theme.spacing.sm,
+    marginBottom: pixTatameTheme.spacing.sm,
   },
   ruleNumberContainer: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: pixTatameTheme.colors.primary,
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: theme.spacing.md,
+    marginRight: pixTatameTheme.spacing.md,
   },
   ruleNumber: {
     fontSize: 16,
     fontWeight: "900",
-    color: theme.colors.background,
+    color: pixTatameTheme.colors.background,
   },
   ruleTitle: {
-    fontSize: theme.typography.subtitle,
+    fontSize: pixTatameTheme.typography.subtitle,
     fontWeight: "bold",
-    color: theme.colors.text.primary,
+    color: pixTatameTheme.colors.text.primary,
     flex: 1,
   },
   ruleItems: {
-    marginLeft: theme.spacing.xs,
+    marginLeft: pixTatameTheme.spacing.xs,
   },
   ruleItemContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: theme.spacing.xs,
+    marginBottom: pixTatameTheme.spacing.xs,
   },
   bullet: {
     fontSize: 16,
-    color: theme.colors.primary,
-    marginRight: theme.spacing.sm,
+    color: pixTatameTheme.colors.primary,
+    marginRight: pixTatameTheme.spacing.sm,
     marginTop: 1,
   },
   ruleItem: {
-    fontSize: theme.typography.body,
-    color: theme.colors.text.secondary,
+    fontSize: pixTatameTheme.typography.body,
+    color: pixTatameTheme.colors.text.secondary,
     lineHeight: 20,
     flex: 1,
     textAlign: "justify",
@@ -300,7 +271,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: 4,
     height: "100%",
-    backgroundColor: theme.colors.primary,
+    backgroundColor: pixTatameTheme.colors.primary,
     borderTopRightRadius: 16,
     borderBottomRightRadius: 16,
   },
@@ -314,14 +285,14 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(11, 11, 11, 0.9)',
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingVertical: theme.spacing.md,
+    borderTopColor: pixTatameTheme.colors.border,
+    paddingVertical: pixTatameTheme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
   },
   footerText: {
-    fontSize: theme.typography.caption,
-    color: theme.colors.text.muted,
+    fontSize: pixTatameTheme.typography.caption,
+    color: pixTatameTheme.colors.text.muted,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -333,7 +304,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   floatingButtonInner: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: pixTatameTheme.colors.primary,
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -349,7 +320,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   floatingButtonText: {
-    color: theme.colors.background,
+    color: pixTatameTheme.colors.background,
     fontSize: 20,
     fontWeight: "bold",
   },

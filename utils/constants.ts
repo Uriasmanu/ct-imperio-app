@@ -11,16 +11,22 @@ export const AD_IDS = {
   },
 };
 
-export const COLORS = {
-  PRIMARY: "#007AFF",
-  BACKGROUND: "#F5F5F5",
-  WHITE: "#FFFFFF",
-  BORDER: "#E0E0E0",
-};
+export const carouselImages = [
+  require('@/assets/images/Muay.jpeg'),
+  require('@/assets/images/boxe.jpeg'),
+  require('@/assets/images/jiu-feminino.jpeg'),
+  require('@/assets/images/jiu-misto.jpeg'),
+  require('@/assets/images/jiu-baby.jpeg'),
+  require('@/assets/images/no-gi.jpeg'),
+  require('@/assets/images/jiu-mirim.jpeg'),
+  require('@/assets/images/muay-kids.jpeg'),
+  require('@/assets/images/jiu-infantil.jpeg'),
+];
+
 
 export const appConfig = {
-  version: "1.1",
-  lastUpload: "27/10/2025",
+  version: "2.0",
+  lastUpload: "14/01/2026",
   features: ["Correção de bugs"],
 };
 
