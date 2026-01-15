@@ -4,26 +4,11 @@ import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
 import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck, Ticket } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-// Componente separado para o HeaderLeft com a imagem
-function HeaderLeftWithImage({ onPress }: { onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      style={styles.headerImageContainer}
-      onPress={onPress}
-    >
-      <Image
-        source={require('@/assets/images/icon.png')}
-        style={styles.headerImage}
-        resizeMode="cover"
-      />
-    </TouchableOpacity>
-  );
-}
 
 // Componente de Drawer personalizado
 function CustomDrawerContent(props: any) {
@@ -224,6 +209,20 @@ function RootLayoutContent() {
                   title: '',
                   drawerIcon: ({ color, size }) => (
                     <Megaphone size={size} color={color} />
+                  ),
+                }}
+              />
+
+              <Drawer.Screen
+                name="pagamentoPixScreen"
+                options={{
+                  drawerLabel: 'Pagamento (Pix)',
+                  title: '',
+                  drawerIcon: ({ color, size }) => (
+                    <Image
+                      source={require('../assets/images/pix.png')}
+                      style={{ width: 26, height: 26 , tintColor: color}}
+                    />
                   ),
                 }}
               />

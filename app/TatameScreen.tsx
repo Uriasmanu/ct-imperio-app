@@ -42,8 +42,6 @@ const theme = {
   }
 };
 
-
-
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function Rules() {
