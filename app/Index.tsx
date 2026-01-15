@@ -1,5 +1,6 @@
 import { classSchedule, ClassSchedule } from '@/data/classSchedule';
 import { globalStyles } from '@/styles/globalStyles';
+import { inicioTheme } from '@/styles/theme';
 import { carouselImages } from '@/utils/constants';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,43 +22,7 @@ import {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Sistema de tema
-const theme = {
-  colors: {
-    primary: '#FFD700',
-    secondary: '#3B82F6',
-    background: '#000000',
-    card: '#1A1A1A',
-    text: {
-      primary: '#FFFFFF',
-      secondary: '#E5E5E5',
-      muted: '#888888',
-      dark: '#000000',
-      body: "#ddd",
-    },
-    border: "#333",
-    success: "#4CAF50"
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32
-  },
-  typography: {
-    title: 36,
-    subtitle: 18,
-    body: 16,
-    caption: 14,
-    small: 12
-  },
-  borderRadius: {
-    sm: 6,
-    md: 12,
-    lg: 25
-  }
-};
+
 
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -161,7 +126,7 @@ export default function IndexScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <View style={{ flex: 1, backgroundColor: inicioTheme.colors.background }}>
       <ScrollView style={globalStyles.container} contentContainerStyle={styles.container}>
         {/* Banner Principal */}
         <Image
@@ -187,7 +152,7 @@ export default function IndexScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Agende sua Aula Experimental</Text>
-            <AntDesign name="arrow-right" size={16} color={theme.colors.text.dark} style={styles.buttonIcon} />
+            <AntDesign name="arrow-right" size={16} color={inicioTheme.colors.text.dark} style={styles.buttonIcon} />
           </TouchableOpacity>
         </View>
 
@@ -329,7 +294,7 @@ export default function IndexScreen() {
                 style={styles.modalClose}
                 onPress={() => setShowModal(false)}
               >
-                <AntDesign name="close" size={20} color={theme.colors.text.muted} />
+                <AntDesign name="close" size={20} color={inicioTheme.colors.text.muted} />
               </TouchableOpacity>
             </View>
 
@@ -372,29 +337,29 @@ const styles = StyleSheet.create({
     height: 200,
   },
   content: {
-    padding: theme.spacing.lg,
+    padding: inicioTheme.spacing.lg,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.md,
+    color: inicioTheme.colors.text.primary,
+    marginBottom: inicioTheme.spacing.md,
   },
   paragraph: {
     fontSize: 15,
-    color: theme.colors.text.secondary,
+    color: inicioTheme.colors.text.secondary,
     lineHeight: 22,
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
   },
   button: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: inicioTheme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: inicioTheme.spacing.md,
+    paddingHorizontal: inicioTheme.spacing.lg,
     borderRadius: 12,
-    marginTop: theme.spacing.lg,
+    marginTop: inicioTheme.spacing.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -402,7 +367,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   buttonText: {
-    color: theme.colors.background,
+    color: inicioTheme.colors.background,
     fontSize: 16,
     fontWeight: 'bold',
     marginRight: 8,
@@ -411,19 +376,19 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   carouselSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: inicioTheme.spacing.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+    paddingHorizontal: inicioTheme.spacing.lg,
+    marginBottom: inicioTheme.spacing.md,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
+    color: inicioTheme.colors.text.primary,
   },
   seeAllButton: {
     paddingVertical: 6,
@@ -432,12 +397,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   seeAllText: {
-    color: theme.colors.primary,
+    color: inicioTheme.colors.primary,
     fontSize: 12,
     fontWeight: '600',
   },
   carousel: {
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
   },
   carouselItem: {
     width: screenWidth - 40,
@@ -459,19 +424,19 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.colors.text.muted,
+    backgroundColor: inicioTheme.colors.text.muted,
   },
   indicatorActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: inicioTheme.colors.primary,
     width: 20,
   },
   professorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: inicioTheme.spacing.lg,
     marginHorizontal: 20,
     borderRadius: 16,
-    marginBottom: theme.spacing.lg,
+    marginBottom: inicioTheme.spacing.lg,
   },
   professorImage: {
     width: 70,
@@ -482,22 +447,22 @@ const styles = StyleSheet.create({
   },
   professorInfo: {
     flex: 1,
-    marginLeft: theme.spacing.md,
+    marginLeft: inicioTheme.spacing.md,
   },
   professorName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
+    color: inicioTheme.colors.text.primary,
     marginBottom: 4,
   },
   professorRole: {
     fontSize: 13,
-    color: theme.colors.text.muted,
+    color: inicioTheme.colors.text.muted,
     marginBottom: 8,
   },
   professorStats: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: inicioTheme.spacing.md,
   },
   stat: {
     flexDirection: 'row',
@@ -506,25 +471,25 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: theme.colors.text.muted,
+    color: inicioTheme.colors.text.muted,
   },
   scheduleSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: inicioTheme.spacing.lg,
   },
   currentClassesContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: inicioTheme.spacing.lg,
   },
   currentClassesTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.md,
+    color: inicioTheme.colors.text.primary,
+    marginBottom: inicioTheme.spacing.md,
     textAlign: 'center',
   },
   currentClassContainer: {
-    padding: theme.spacing.lg,
+    padding: inicioTheme.spacing.lg,
     borderRadius: 16,
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
     minHeight: 120,
     justifyContent: 'space-between',
     shadowColor: '#3B82F6',
@@ -539,12 +504,12 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 3,
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
+    backgroundColor: inicioTheme.colors.primary,
     borderRadius: 3,
   },
 
@@ -553,7 +518,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
   },
   classDetails: {
     flexDirection: 'row',
@@ -571,10 +536,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   noClassContainer: {
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.lg,
+    backgroundColor: inicioTheme.colors.card,
+    padding: inicioTheme.spacing.lg,
     borderRadius: 16,
-    marginHorizontal: theme.spacing.lg,
+    marginHorizontal: inicioTheme.spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -582,25 +547,25 @@ const styles = StyleSheet.create({
   },
   noClassEmoji: {
     fontSize: 32,
-    marginBottom: theme.spacing.md,
+    marginBottom: inicioTheme.spacing.md,
   },
   noClassTitle: {
     fontSize: 18,
-    color: theme.colors.text.primary,
+    color: inicioTheme.colors.text.primary,
     fontWeight: 'bold',
-    marginBottom: theme.spacing.sm,
+    marginBottom: inicioTheme.spacing.sm,
     textAlign: 'center',
   },
   noClassText: {
     fontSize: 14,
-    color: theme.colors.text.secondary,
+    color: inicioTheme.colors.text.secondary,
     textAlign: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: inicioTheme.spacing.lg,
   },
   scheduleButton: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    backgroundColor: inicioTheme.colors.primary,
+    paddingHorizontal: inicioTheme.spacing.lg,
+    paddingVertical: inicioTheme.spacing.md,
     borderRadius: 12,
   },
   scheduleButtonText: {
@@ -613,49 +578,49 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.8)",
     justifyContent: "center",
     alignItems: "center",
-    padding: theme.spacing.lg,
+    padding: inicioTheme.spacing.lg,
   },
   modalBox: {
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.xl,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: inicioTheme.colors.card,
+    padding: inicioTheme.spacing.xl,
+    borderRadius: inicioTheme.borderRadius.md,
     width: "100%",
     maxWidth: 400,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: inicioTheme.colors.border,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.lg,
+    marginBottom: inicioTheme.spacing.lg,
   },
   modalTitle: {
-    color: theme.colors.text.primary,
+    color: inicioTheme.colors.text.primary,
     fontSize: 20,
     fontWeight: "700",
     flex: 1,
   },
   modalClose: {
-    padding: theme.spacing.xs,
+    padding: inicioTheme.spacing.xs,
   },
   modalDesc: {
-    color: theme.colors.text.body,
-    marginBottom: theme.spacing.xl,
+    color: inicioTheme.colors.text.body,
+    marginBottom: inicioTheme.spacing.xl,
     lineHeight: 22,
-    fontSize: theme.typography.caption,
+    fontSize: inicioTheme.typography.caption,
   },
   modalButtons: {
-    gap: theme.spacing.md,
+    gap: inicioTheme.spacing.md,
   },
   modalButton: {
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    paddingVertical: inicioTheme.spacing.lg,
+    paddingHorizontal: inicioTheme.spacing.lg,
+    borderRadius: inicioTheme.borderRadius.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: theme.spacing.sm,
+    gap: inicioTheme.spacing.sm,
   },
   whatsappButton: {
     backgroundColor: "#25D366",
@@ -666,21 +631,21 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: inicioTheme.colors.border,
   },
   whatsappText: {
     color: "#FFF",
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: inicioTheme.typography.body,
   },
   phoneText: {
     color: "#FFF",
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: inicioTheme.typography.body,
   },
   closeText: {
-    color: theme.colors.text.body,
+    color: inicioTheme.colors.text.body,
     fontWeight: "600",
-    fontSize: theme.typography.body,
+    fontSize: inicioTheme.typography.body,
   },
 });

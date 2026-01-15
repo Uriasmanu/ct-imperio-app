@@ -129,3 +129,40 @@ export const avisosTheme = {
         gray300: "#D1D5DB",
     },
 };
+
+
+/* ======================================================
+   INÍCIO (variação do base)
+====================================================== */
+export const inicioTheme = {
+    ...baseTheme,
+    colors: {
+        ...baseTheme.colors,
+        primary: "#FFD700",
+        secondary: "#3B82F6",
+        background: "#000000",
+        card: "#1A1A1A",
+        border: "#333333",
+        text: {
+            ...baseTheme.colors.text,
+            primary: "#FFFFFF",
+            secondary: "#E5E5E5",
+            muted: "#888888",
+            dark: "#000000",
+            body: "#DDDDDD",
+        },
+        success: "#4CAF50",
+    },
+    typography: {
+        title: 36,
+        subtitle: 18,
+        body: 16,
+        caption: 14,
+        small: 12,
+    },
+    borderRadius: {
+        sm: 6,
+        md: 12,
+        lg: 25,
+    },
+};

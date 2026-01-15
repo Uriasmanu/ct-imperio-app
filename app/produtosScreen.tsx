@@ -1,5 +1,3 @@
-// screens/ProdutosScreen.tsx
-
 import { CarrinhoModal, ItemCarrinho } from '@/components/telaProdutos/CarrinhoModal';
 import { ModalTamanho } from '@/components/telaProdutos/ModalTamanho';
 import { PedidoCard } from '@/components/telaProdutos/PedidoCard';
@@ -20,7 +18,6 @@ import {
     View
 } from "react-native";
 
-// COMPONENTE PRINCIPAL
 export default function ProdutosScreen() {
     const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
     const [busca, setBusca] = useState('');
@@ -60,7 +57,7 @@ export default function ProdutosScreen() {
         return () => unsubscribe();
     }, []);
 
-    // Carregar pedidos quando a aba de pedidos estiver ativa
+
     useEffect(() => {
         if (abaAtiva === 'pedidos') {
             carregarPedidosUsuario();
@@ -245,7 +242,6 @@ export default function ProdutosScreen() {
                 </>
             );
         } else {
-            // ABA DE PEDIDOS
             return (
                 <ScrollView
                     style={styles.scrollContainer}

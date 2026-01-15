@@ -22,12 +22,10 @@ const settingsScreen = () => {
   const { usuario } = useUser();
   
   const {
-    isLoggedIn,
     showLoginModal,
     email,
     password,
     loading,
-    user,
     setShowLoginModal,
     setEmail,
     setPassword,
