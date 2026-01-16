@@ -49,8 +49,6 @@ const registroScreen = () => {
     }
   };
 
-
-
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
