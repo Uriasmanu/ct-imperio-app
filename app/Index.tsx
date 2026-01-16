@@ -21,9 +21,6 @@ import {
 } from 'react-native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-
-
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentClasses, setCurrentClasses] = useState<ClassSchedule[]>([]);
@@ -32,9 +29,6 @@ export default function IndexScreen() {
   const [showModal, setShowModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
-
-
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(contentOffsetX / (screenWidth - 40));
@@ -62,7 +56,6 @@ export default function IndexScreen() {
     return days[new Date().getDay()];
   };
 
-  // PERFORMANCE: Atualização otimizada
   const calculateClasses = () => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -119,7 +112,7 @@ export default function IndexScreen() {
   useEffect(() => {
     calculateClasses();
 
-    // Atualizar a cada segundo para progresso suave
+
     const interval = setInterval(calculateClasses, 1000);
 
     return () => clearInterval(interval);
@@ -128,14 +121,12 @@ export default function IndexScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: inicioTheme.colors.background }}>
       <ScrollView style={globalStyles.container} contentContainerStyle={styles.container}>
-        {/* Banner Principal */}
         <Image
           source={require('@/assets/images/banner.jpeg')}
           style={styles.banner}
           resizeMode="cover"
         />
-
-        {/* Conteúdo de texto COM BOTÃO - OPÇÃO 1 */}
+        
         <View style={styles.content}>
           <Text style={styles.title}>Nossa História</Text>
           <Text style={styles.paragraph}>
@@ -144,8 +135,7 @@ export default function IndexScreen() {
           <Text style={styles.paragraph}>
             Referência no interior paulista com trabalho dedicado a crianças e adultos.
           </Text>
-
-          {/* BOTÃO AGENDE SUA AULA EXPERIMENTAL - POSIÇÃO ESTRATÉGICA */}
+          
           <TouchableOpacity
             style={styles.button}
             onPress={() => setShowModal(true)}
@@ -156,7 +146,6 @@ export default function IndexScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Carrossel com Indicadores Dinâmicos */}
         <View style={styles.carouselSection}>
           <ScrollView
             ref={scrollViewRef}
@@ -191,7 +180,6 @@ export default function IndexScreen() {
           </View>
         </View>
 
-        {/* Professor */}
         <View style={styles.professorContainer}>
           <Image
             source={require('@/assets/images/will.jpg')}
@@ -204,7 +192,6 @@ export default function IndexScreen() {
           </View>
         </View>
 
-        {/* Aulas em Andamento */}
         <View style={styles.scheduleSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Aulas de Hoje</Text>
@@ -279,7 +266,7 @@ export default function IndexScreen() {
             </View>
           )}
         </View>
-      </ScrollView>{/* Modal de Agendamento */}
+      </ScrollView>
       <Modal
         visible={showModal}
         transparent
@@ -311,8 +298,7 @@ export default function IndexScreen() {
                 <AntDesign name="whats-app" size={20} color="#FFF" />
                 <Text style={styles.whatsappText}>Abrir WhatsApp</Text>
               </TouchableOpacity>
-
-
+              
               <TouchableOpacity
                 style={[styles.modalButton, styles.closeButton]}
                 onPress={() => setShowModal(false)}
