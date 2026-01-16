@@ -17,7 +17,6 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-
 export default function ProdutosScreen() {
     const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'pedidos'>('produtos');
     const [busca, setBusca] = useState('');
@@ -57,7 +56,6 @@ export default function ProdutosScreen() {
         return () => unsubscribe();
     }, []);
 
-
     useEffect(() => {
         if (abaAtiva === 'pedidos') {
             carregarPedidosUsuario();
@@ -83,7 +81,6 @@ export default function ProdutosScreen() {
             setPedidosUsuario([]);
         }
     };
-
 
     const filtrarProdutos = (texto: string) => {
         setBusca(texto);
