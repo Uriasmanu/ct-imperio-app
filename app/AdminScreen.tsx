@@ -124,37 +124,82 @@ export default function AdminScreen() {
       return false;
     }
 
-    if (filtros.statusPagamento !== "todos") {
-      if (filtros.statusPagamento === "pagos") {
-        if (!usuario.pagamento) return false;
-      }
-
-      if (filtros.statusPagamento === "aguardando") {
-        if (usuario.pagamento || !usuario.avisoPagamento) return false;
-      }
-
-      if (filtros.statusPagamento === "pendentes") {
-        if (usuario.pagamento || usuario.avisoPagamento) return false;
-      }
-    }
-
     if (filtros.modalidade !== "todas") {
-      if (!usuario.modalidades || usuario.modalidades.length === 0) {
-        return false;
-      }
-
-      const temModalidade = usuario.modalidades.some(
+      const usuarioTemModalidade = usuario.modalidades?.some(
         (m) => m && m.modalidade === filtros.modalidade && m.ativo !== false,
       );
 
-      if (!temModalidade) {
+      const algumFilhoTemModalidade = usuario.filhos?.some((filho) =>
+        filho.modalidades?.some(
+          (m) => m && m.modalidade === filtros.modalidade && m.ativo !== false,
+        ),
+      );
+
+      if (!usuarioTemModalidade && !algumFilhoTemModalidade) {
         return false;
+      }
+    }
+
+    if (filtros.statusPagamento !== "todos") {
+      const usuarioTemModalidadeAtiva = usuario.modalidades?.some(
+        (m) => m && m.ativo !== false,
+      );
+
+      const algumFilhoTemModalidadeAtiva = usuario.filhos?.some((filho) =>
+        filho.modalidades?.some((m) => m && m.ativo !== false),
+      );
+
+      if (!usuarioTemModalidadeAtiva && !algumFilhoTemModalidadeAtiva) {
+        return false;
+      }
+
+      if (filtros.statusPagamento === "pagos") {
+        const usuarioPago = usuario.pagamento && usuarioTemModalidadeAtiva;
+
+        const algumFilhoPago = usuario.filhos?.some(
+          (filho) =>
+            filho.pagamento &&
+            filho.modalidades?.some((m) => m && m.ativo !== false),
+        );
+
+        if (!usuarioPago && !algumFilhoPago) return false;
+      }
+
+      if (filtros.statusPagamento === "aguardando") {
+        const usuarioAguardando =
+          !usuario.pagamento &&
+          usuario.avisoPagamento &&
+          usuarioTemModalidadeAtiva;
+
+        const algumFilhoAguardando = usuario.filhos?.some(
+          (filho) =>
+            !filho.pagamento &&
+            filho.avisoPagamento &&
+            filho.modalidades?.some((m) => m && m.ativo !== false),
+        );
+
+        if (!usuarioAguardando && !algumFilhoAguardando) return false;
+      }
+
+      if (filtros.statusPagamento === "pendentes") {
+        const usuarioPendente =
+          !usuario.pagamento &&
+          !usuario.avisoPagamento &&
+          usuarioTemModalidadeAtiva;
+
+        const algumFilhoPendente = usuario.filhos?.some(
+          (filho) =>
+            !filho.pagamento &&
+            !filho.avisoPagamento &&
+            filho.modalidades?.some((m) => m && m.ativo !== false),
+        );
+
+        if (!usuarioPendente && !algumFilhoPendente) return false;
       }
     }
 
     return true;
   });
-
   const estatisticas = {
     total: usuarios.length,
 
