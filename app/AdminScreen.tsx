@@ -125,10 +125,17 @@ export default function AdminScreen() {
     }
 
     if (filtros.statusPagamento !== "todos") {
-      if (filtros.statusPagamento === "pagos" && !usuario.pagamento)
-        return false;
-      if (filtros.statusPagamento === "pendentes" && usuario.pagamento)
-        return false;
+      if (filtros.statusPagamento === "pagos") {
+        if (!usuario.pagamento) return false;
+      }
+
+      if (filtros.statusPagamento === "aguardando") {
+        if (usuario.pagamento || !usuario.avisoPagamento) return false;
+      }
+
+      if (filtros.statusPagamento === "pendentes") {
+        if (usuario.pagamento || usuario.avisoPagamento) return false;
+      }
     }
 
     if (filtros.modalidade !== "todas") {

@@ -9,7 +9,7 @@ export interface PresencaParaConfirmar {
   data: string;
   modalidades: string[];
   confirmada: boolean;
-  tipo: 'usuario' | 'filho';
+  tipo: "usuario" | "filho";
 }
 
 export interface PresencaStats {
@@ -25,9 +25,9 @@ export interface UsuarioCompleto extends Usuario {
 
 export interface FiltrosState {
   busca: string;
-  statusPagamento: "todos" | "pagos" | "pendentes";
+  statusPagamento: "todos" | "pagos" | "aguardando" | "pendentes";
   modalidade: "todas" | "Muay Thai" | "Jiu-Jitsu" | "Boxe" | "MMA";
-  professor: "todos" | string; 
+  professor: "todos" | string;
 }
 
 export interface Professor {
@@ -36,10 +36,13 @@ export interface Professor {
   email: string;
 }
 
-
 export const professores: Professor[] = [
   { id: "1", nome: "Mestre Will", email: "will@academia.com" },
   { id: "2", nome: "Instrutor Rui", email: "rui@academia.com" },
-  { id: "3", nome: "Instrutor Gustavo (Jagunço)", email: "gustavo@academia.com" },
-  { id: "4", nome: "Instrutora Aline", email: "aline@academia.com" }
+  {
+    id: "3",
+    nome: "Instrutor Gustavo (Jagunço)",
+    email: "gustavo@academia.com",
+  },
+  { id: "4", nome: "Instrutora Aline", email: "aline@academia.com" },
 ];
