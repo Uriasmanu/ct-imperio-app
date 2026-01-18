@@ -10,7 +10,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { ModalFilho } from "@/components/perfil/ModalFilho";
@@ -26,13 +26,17 @@ import { useLocalSearchParams } from "expo-router";
 import {
   Filho,
   GraduacaoJiuJitsu,
-  GraduacaoMuayThai
+  GraduacaoMuayThai,
+  Usuario,
 } from "../types/usuarios";
 
 export default function perfilScreen() {
   const [editando, setEditando] = useState(false);
   const [modalFilho, setModalFilho] = useState(false);
   const [filhoEmEdicao, setFilhoEmEdicao] = useState<Filho | null>(null);
+  const [dadosEmEdicao, setDadosEmEdicao] = useState<Partial<Usuario> | null>(
+    null,
+  );
 
   const params = useLocalSearchParams();
   const refresh = params.refresh as string;
@@ -50,9 +54,8 @@ export default function perfilScreen() {
     carregarUsuario,
   } = useAuth();
 
-
   useEffect(() => {
-    if (refresh === 'true') {
+    if (refresh === "true") {
       const atualizarDados = async () => {
         await carregarUsuario(true);
       };
@@ -60,6 +63,29 @@ export default function perfilScreen() {
     }
   }, [refresh, timestamp, carregarUsuario]);
 
+  const deveMostrarGerenciarPagamento = () => {
+    if (editando) {
+      return false;
+    }
+
+    return usuario?.modalidades && usuario.modalidades.length > 0;
+  };
+
+  const toggleEditar = () => {
+    if (!editando) {
+      setDadosEmEdicao({
+        nome: usuario?.nome ?? "",
+        email: usuario?.email ?? "",
+        telefone: usuario?.telefone ?? "",
+        observacao: usuario?.observacao ?? "",
+        modalidades: usuario?.modalidades ? [...usuario.modalidades] : [],
+        professores: usuario?.professores ? [...usuario.professores] : [],
+      });
+    } else {
+      setDadosEmEdicao(null);
+    }
+    setEditando(!editando);
+  };
 
   const handleSalvarPerfil = async () => {
     if (!usuario?.id) {
@@ -67,24 +93,38 @@ export default function perfilScreen() {
       return;
     }
 
-    if (!usuario.modalidades || usuario.modalidades.length === 0) {
-      Alert.alert("Campo obrigatório", "Selecione pelo menos uma modalidade antes de salvar.");
+    const modalidadesParaSalvar =
+      dadosEmEdicao?.modalidades || usuario.modalidades || [];
+
+    if (modalidadesParaSalvar.length === 0) {
+      Alert.alert(
+        "Campo obrigatório",
+        "Selecione pelo menos uma modalidade antes de salvar.",
+      );
       return;
     }
 
     try {
       const userRef = doc(db, "usuarios", usuario.id);
       await updateDoc(userRef, {
-        nome: usuario.nome ?? "",
-        email: usuario.email ?? "",
-        telefone: usuario.telefone ?? "",
-        observacao: usuario.observacao ?? "",
-        modalidades: usuario.modalidades ?? [],
-        professores: usuario.professores ?? [],
+        nome: dadosEmEdicao?.nome ?? usuario.nome ?? "",
+        email: dadosEmEdicao?.email ?? usuario.email ?? "",
+        telefone: dadosEmEdicao?.telefone ?? usuario.telefone ?? "",
+        observacao: dadosEmEdicao?.observacao ?? usuario.observacao ?? "",
+        modalidades: modalidadesParaSalvar,
+        professores: dadosEmEdicao?.professores ?? usuario.professores ?? [],
       });
+
+      if (dadosEmEdicao) {
+        atualizarUsuario({
+          ...usuario,
+          ...dadosEmEdicao,
+        });
+      }
 
       Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
       setEditando(false);
+      setDadosEmEdicao(null);
     } catch (error) {
       console.error(error);
       Alert.alert("Erro", "Não foi possível salvar as alterações.");
@@ -102,7 +142,7 @@ export default function perfilScreen() {
 
   const formatarGraduacao = (
     graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu,
-    modalidade?: string
+    modalidade?: string,
   ) => {
     if (!graduacao) return "Sem graduação";
 
@@ -117,22 +157,37 @@ export default function perfilScreen() {
   };
 
   const renderModalidadesUsuario = () => {
-    if (!usuario?.modalidades || usuario.modalidades.length === 0) {
-      return <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>;
+    const modalidades =
+      editando && dadosEmEdicao?.modalidades
+        ? dadosEmEdicao.modalidades
+        : usuario?.modalidades || [];
+
+    if (modalidades.length === 0) {
+      return (
+        <Text style={styles.infoValue}>Nenhuma modalidade selecionada</Text>
+      );
     }
 
     return (
       <View style={styles.modalidadesList}>
-        {usuario.modalidades.map((modalidadeAluno, index) => (
-          <View key={`${modalidadeAluno.modalidade}-${index}`} style={styles.modalidadeItem}>
+        {modalidades.map((modalidadeAluno, index) => (
+          <View
+            key={`${modalidadeAluno.modalidade}-${index}`}
+            style={styles.modalidadeItem}
+          >
             <View style={styles.modalidadeHeader}>
-              <Text style={styles.modalidadeNome}>{modalidadeAluno.modalidade}</Text>
+              <Text style={styles.modalidadeNome}>
+                {modalidadeAluno.modalidade}
+              </Text>
               <Text style={styles.modalidadeStatus}>
-                {modalidadeAluno.ativo ? '✅ Ativo' : '⏸️ Inativo'}
+                {modalidadeAluno.ativo ? "✅ Ativo" : "⏸️ Inativo"}
               </Text>
             </View>
             <Text style={styles.modalidadeGraduacao}>
-              {formatarGraduacao(modalidadeAluno.graduacao, modalidadeAluno.modalidade)}
+              {formatarGraduacao(
+                modalidadeAluno.graduacao,
+                modalidadeAluno.modalidade,
+              )}
             </Text>
             <Text style={styles.modalidadeData}>
               Desde: {formatarData(modalidadeAluno.dataInicio)}
@@ -151,15 +206,22 @@ export default function perfilScreen() {
     return (
       <View style={styles.filhoModalidades}>
         {filho.modalidades.map((modalidadeAluno, index) => (
-          <View key={`${modalidadeAluno.modalidade}-${index}`} style={styles.filhoModalidadeItem}>
+          <View
+            key={`${modalidadeAluno.modalidade}-${index}`}
+            style={styles.filhoModalidadeItem}
+          >
             <View
               style={[
                 styles.modalidadeBadge,
                 {
                   backgroundColor:
-                    modalidadeAluno.modalidade === "Muay Thai" ? "#dc2626" :
-                      modalidadeAluno.modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                        modalidadeAluno.modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                    modalidadeAluno.modalidade === "Muay Thai"
+                      ? "#dc2626"
+                      : modalidadeAluno.modalidade === "Jiu-Jitsu"
+                        ? "#1e40af"
+                        : modalidadeAluno.modalidade === "Boxe"
+                          ? "#059669"
+                          : "#7c3aed",
                 },
               ]}
             >
@@ -168,7 +230,10 @@ export default function perfilScreen() {
               </Text>
             </View>
             <Text style={styles.filhoGraduacao}>
-              {formatarGraduacao(modalidadeAluno.graduacao, modalidadeAluno.modalidade)}
+              {formatarGraduacao(
+                modalidadeAluno.graduacao,
+                modalidadeAluno.modalidade,
+              )}
             </Text>
           </View>
         ))}
@@ -176,16 +241,27 @@ export default function perfilScreen() {
     );
   };
 
-  const renderInfoField = (label: string, value: string, editable?: boolean, key?: string) => (
+  const renderInfoField = (
+    label: string,
+    value: string,
+    editable?: boolean,
+    key?: string,
+  ) => (
     <View style={styles.infoField} key={key}>
       <Text style={styles.infoLabel}>{label}</Text>
       {editable && editando ? (
         <TextInput
           style={styles.input}
-          value={value}
+          value={
+            editando && dadosEmEdicao
+              ? (dadosEmEdicao[key as keyof Usuario] as string) || ""
+              : value
+          }
           onChangeText={(text) => {
-            if (usuario && key) {
-              atualizarUsuario({ ...usuario, [key]: text });
+            if (editando && key) {
+              setDadosEmEdicao((prev) =>
+                prev ? { ...prev, [key]: text } : { [key]: text },
+              );
             }
           }}
           placeholderTextColor="#666"
@@ -199,24 +275,39 @@ export default function perfilScreen() {
   );
 
   const getPrimeiraModalidadeAtiva = () => {
-    if (!usuario?.modalidades || usuario.modalidades.length === 0) return "Sem modalidade";
-    const ativa = usuario.modalidades.find(m => m.ativo);
-    return ativa ? ativa.modalidade : usuario.modalidades[0].modalidade;
+    const modalidades =
+      editando && dadosEmEdicao?.modalidades
+        ? dadosEmEdicao.modalidades
+        : usuario?.modalidades || [];
+
+    if (modalidades.length === 0) return "Sem modalidade";
+    const ativa = modalidades.find((m) => m.ativo);
+    return ativa ? ativa.modalidade : modalidades[0].modalidade;
   };
 
   const getPrimeiraGraduacaoAtiva = () => {
-    if (!usuario?.modalidades || usuario.modalidades.length === 0) return undefined;
-    const ativa = usuario.modalidades.find(m => m.ativo);
-    return ativa ? ativa.graduacao : usuario.modalidades[0].graduacao;
+    const modalidades =
+      editando && dadosEmEdicao?.modalidades
+        ? dadosEmEdicao.modalidades
+        : usuario?.modalidades || [];
+
+    if (modalidades.length === 0) return undefined;
+    const ativa = modalidades.find((m) => m.ativo);
+    return ativa ? ativa.graduacao : modalidades[0].graduacao;
   };
 
   const renderProfessoresUsuario = () => {
-    if (!usuario?.professores || usuario.professores.length === 0) {
+    const professoresIds =
+      editando && dadosEmEdicao?.professores
+        ? dadosEmEdicao.professores
+        : usuario?.professores || [];
+
+    if (professoresIds.length === 0) {
       return <Text style={styles.infoValue}>Nenhum professor selecionado</Text>;
     }
 
-    const professoresSelecionados = professores.filter(prof =>
-      usuario.professores?.includes(prof.id)
+    const professoresSelecionados = professores.filter((prof) =>
+      professoresIds.includes(prof.id),
     );
 
     return (
@@ -256,26 +347,45 @@ export default function perfilScreen() {
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {usuario?.nome?.split(" ").map(n => n[0]).join("").toUpperCase() ?? ""}
+            {usuario?.nome
+              ?.split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase() ?? ""}
           </Text>
         </View>
         <Text style={styles.userName}>{usuario?.nome ?? ""}</Text>
         <Text style={styles.userGraduacao}>
-          {formatarGraduacao(getPrimeiraGraduacaoAtiva(), getPrimeiraModalidadeAtiva())}
+          {formatarGraduacao(
+            getPrimeiraGraduacaoAtiva(),
+            getPrimeiraModalidadeAtiva(),
+          )}
         </Text>
         <Text style={styles.userModalidade}>
-          {usuario?.modalidades?.length && usuario.modalidades.length > 1
-            ? `${usuario.modalidades.length} modalidades`
-            : getPrimeiraModalidadeAtiva()}
-        </Text>
+          {(() => {
+            const modalidades =
+              editando && dadosEmEdicao?.modalidades
+                ? dadosEmEdicao.modalidades
+                : usuario?.modalidades || [];
 
+            if (modalidades.length === 0) return "Sem modalidades";
+            if (modalidades.length > 1)
+              return `${modalidades.length} modalidades`;
+            return getPrimeiraModalidadeAtiva();
+          })()}
+        </Text>
         <View style={styles.pagamentoHeader}>
           <Ionicons
             name={usuario?.pagamento ? "checkmark-circle" : "alert-circle"}
             size={16}
             color={usuario?.pagamento ? "#22c55e" : "#ef4444"}
           />
-          <Text style={[styles.pagamentoHeaderText, { color: usuario?.pagamento ? "#22c55e" : "#ef4444" }]}>
+          <Text
+            style={[
+              styles.pagamentoHeaderText,
+              { color: usuario?.pagamento ? "#22c55e" : "#ef4444" },
+            ]}
+          >
             {usuario?.pagamento ? "Pagamento em dia" : "Pagamento pendente"}
           </Text>
         </View>
@@ -288,28 +398,49 @@ export default function perfilScreen() {
             <Ionicons name="person" size={20} color="#B8860B" />
             <Text style={styles.sectionTitle}>INFORMAÇÕES PESSOAIS</Text>
           </View>
-          <TouchableOpacity style={styles.editButton} onPress={() => setEditando(!editando)}>
-            <Ionicons name={editando ? "close" : "create-outline"} size={20} color="#B8860B" />
-            <Text style={styles.editButtonText}>{editando ? "Cancelar" : "Editar"}</Text>
+          <TouchableOpacity style={styles.editButton} onPress={toggleEditar}>
+            <Ionicons
+              name={editando ? "close" : "create-outline"}
+              size={20}
+              color="#B8860B"
+            />
+            <Text style={styles.editButtonText}>
+              {editando ? "Cancelar" : "Editar"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.infoCard}>
           {renderInfoField("Nome", usuario?.nome ?? "", true, "nome")}
           {renderInfoField("Email", usuario?.email ?? "", true, "email")}
-          {renderInfoField("Telefone", usuario?.telefone ?? "", true, "telefone")}
-          {renderInfoField("Data de Registro", usuario?.dataDeRegistro ? formatarData(usuario.dataDeRegistro) : "", false)}
-          {renderInfoField("Observação", usuario?.observacao ?? "", true, "observacao")}
-
+          {renderInfoField(
+            "Telefone",
+            usuario?.telefone ?? "",
+            true,
+            "telefone",
+          )}
+          {renderInfoField(
+            "Data de Registro",
+            usuario?.dataDeRegistro ? formatarData(usuario.dataDeRegistro) : "",
+            false,
+          )}
+          {renderInfoField(
+            "Observação",
+            usuario?.observacao ?? "",
+            true,
+            "observacao",
+          )}
 
           <View style={styles.infoField}>
             <Text style={styles.infoLabel}>Dia de pagamento:</Text>
             <Text style={styles.infoValue}>
-              {usuario?.dataPagamento ? new Date(usuario.dataPagamento).getDate() : "-"} de cada mês
+              {usuario?.dataPagamento
+                ? new Date(usuario.dataPagamento).getDate()
+                : "-"}{" "}
+              de cada mês
             </Text>
           </View>
-
-          {usuario?.modalidades?.length ? (
+          {deveMostrarGerenciarPagamento() ? (
             <View style={styles.infoField}>
               <Text style={styles.infoLabel}>Status do Pagamento</Text>
               {usuario && (
@@ -322,14 +453,16 @@ export default function perfilScreen() {
             </View>
           ) : null}
 
-
-
           <View style={styles.infoField}>
             {editando ? (
               <MultiModalidadeSelector
-                modalidades={usuario?.modalidades || []}
+                modalidades={
+                  dadosEmEdicao?.modalidades || usuario?.modalidades || []
+                }
                 onModalidadesChange={(modalidades) => {
-                  if (usuario) atualizarUsuario({ ...usuario, modalidades });
+                  setDadosEmEdicao((prev) =>
+                    prev ? { ...prev, modalidades } : { modalidades },
+                  );
                 }}
               />
             ) : (
@@ -341,9 +474,15 @@ export default function perfilScreen() {
             <Text style={styles.infoLabel}>Professores</Text>
             {editando ? (
               <ProfessorSelector
-                professoresSelecionados={usuario?.professores || []}
+                professoresSelecionados={
+                  dadosEmEdicao?.professores || usuario?.professores || []
+                }
                 onProfessoresChange={(professoresIds) => {
-                  if (usuario) atualizarUsuario({ ...usuario, professores: professoresIds });
+                  setDadosEmEdicao((prev) =>
+                    prev
+                      ? { ...prev, professores: professoresIds }
+                      : { professores: professoresIds },
+                  );
                 }}
               />
             ) : (
@@ -352,14 +491,17 @@ export default function perfilScreen() {
           </View>
 
           {editando && (
-            <TouchableOpacity style={styles.saveButton} onPress={handleSalvarPerfil}>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSalvarPerfil}
+            >
               <Ionicons name="save" size={20} color="#000" />
               <Text style={styles.saveButtonText}>Salvar Alterações</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
-      {usuario?.modalidades?.length ? (
+      {!editando && usuario?.modalidades?.length ? (
         <View style={styles.section}>
           <PresencaSection />
         </View>
@@ -374,7 +516,10 @@ export default function perfilScreen() {
           </View>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => { setFilhoEmEdicao(null); setModalFilho(true); }}
+            onPress={() => {
+              setFilhoEmEdicao(null);
+              setModalFilho(true);
+            }}
           >
             <Ionicons name="add" size={20} color="#B8860B" />
             <Text style={styles.addButtonText}>Adicionar</Text>
@@ -387,17 +532,26 @@ export default function perfilScreen() {
               <View style={styles.filhoHeader}>
                 <View style={styles.filhoInfoHeader}>
                   <Text style={styles.filhoName}>{filho.nome}</Text>
-                  {filho.idade && <Text style={styles.filhoIdade}>{filho.idade} anos</Text>}
+                  {filho.idade && (
+                    <Text style={styles.filhoIdade}>{filho.idade} anos</Text>
+                  )}
                 </View>
-                <TouchableOpacity style={styles.editIconButton} onPress={() => handleEditarFilho(filho)}>
+                <TouchableOpacity
+                  style={styles.editIconButton}
+                  onPress={() => handleEditarFilho(filho)}
+                >
                   <Ionicons name="create-outline" size={18} color="#B8860B" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.filhoContent}>
                 {renderFilhoModalidades(filho)}
-                <Text style={styles.filhoData}>Registrado em: {formatarData(filho.dataDeRegistro)}</Text>
-                {filho.observacao && <Text style={styles.filhoObservacao}>{filho.observacao}</Text>}
+                <Text style={styles.filhoData}>
+                  Registrado em: {formatarData(filho.dataDeRegistro)}
+                </Text>
+                {filho.observacao && (
+                  <Text style={styles.filhoObservacao}>{filho.observacao}</Text>
+                )}
 
                 <View style={styles.pagamentoSection}>
                   <Text style={styles.infoLabel}>Status do Pagamento:</Text>
@@ -423,7 +577,9 @@ export default function perfilScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="people-outline" size={48} color="#666" />
             <Text style={styles.emptyStateText}>Nenhum aluno cadastrado</Text>
-            <Text style={styles.emptyStateSubtext}>Clique em "Adicionar" para cadastrar um aluno</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Clique em "Adicionar" para cadastrar um aluno
+            </Text>
           </View>
         )}
       </View>
@@ -432,20 +588,32 @@ export default function perfilScreen() {
       <ModalFilho
         visible={modalFilho}
         filhoEmEdicao={filhoEmEdicao}
-        onClose={() => { setModalFilho(false); setFilhoEmEdicao(null); }}
+        onClose={() => {
+          setModalFilho(false);
+          setFilhoEmEdicao(null);
+        }}
         onAdicionarFilho={async (filhoData) => {
           const sucesso = await adicionarFilho(filhoData);
-          Alert.alert(sucesso ? "Sucesso" : "Erro", sucesso ? "Aluno adicionado com sucesso!" : "Não foi possível adicionar o aluno.");
+          Alert.alert(
+            sucesso ? "Sucesso" : "Erro",
+            sucesso
+              ? "Aluno adicionado com sucesso!"
+              : "Não foi possível adicionar o aluno.",
+          );
         }}
         onSalvarEdicaoFilho={async (filhoEditado) => {
           const sucesso = await editarFilho(filhoEditado);
-          Alert.alert(sucesso ? "Sucesso" : "Erro", sucesso ? "Aluno atualizado com sucesso!" : "Não foi possível atualizar o aluno.");
+          Alert.alert(
+            sucesso ? "Sucesso" : "Erro",
+            sucesso
+              ? "Aluno atualizado com sucesso!"
+              : "Não foi possível atualizar o aluno.",
+          );
         }}
       />
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -607,36 +775,36 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalidadeItem: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   modalidadeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   modalidadeNome: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
+    fontWeight: "600",
+    color: "#FFF",
   },
   modalidadeStatus: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
   },
   modalidadeGraduacao: {
     fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '500',
+    color: "#B8860B",
+    fontWeight: "500",
     marginBottom: 4,
   },
   modalidadeData: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   saveButton: {
     flexDirection: "row",
@@ -767,20 +935,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   professorItem: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   professorNome: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
+    fontWeight: "600",
+    color: "#FFF",
     marginBottom: 4,
   },
   professorEmail: {
     fontSize: 12,
-    color: '#B8860B',
+    color: "#B8860B",
   },
 });
