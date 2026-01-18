@@ -1,16 +1,22 @@
-import { UserProvider, useUser } from '@/contexts/UserContext'; // ✅ ADD IMPORT
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import { Drawer } from 'expo-router/drawer';
-import { Clock, Home, Megaphone, MessageCircleQuestion, Settings, ShieldCheck, Ticket } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import 'react-native-reanimated';
+import { UserProvider, useUser } from "@/contexts/UserContext";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import { Drawer } from "expo-router/drawer";
+import {
+  Clock,
+  Home,
+  Megaphone,
+  MessageCircleQuestion,
+  Settings,
+  ShieldCheck,
+  Ticket,
+} from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-
-// Componente de Drawer personalizado
 function CustomDrawerContent(props: any) {
   const { isAdmin, loading } = useAdminAuth();
   const { usuario } = useUser();
@@ -22,57 +28,51 @@ function CustomDrawerContent(props: any) {
     }
   }, [isAdmin, loading]);
 
-  // Filtra as rotas que devem aparecer no drawer
   const filteredRoutes = props.state.routes.filter((route: any) => {
-    // Admin: só aparece se for admin
-    if (route.name === 'adminScreen') {
+    if (route.name === "adminScreen") {
       return showAdmin;
     }
 
-    // Produtos: só aparece se estiver logado
-    if (route.name === 'produtosScreen') {
+    if (route.name === "produtosScreen") {
       return !!usuario;
     }
 
-    // Outras telas ocultas
     return (
-      route.name !== 'settingsScreen' &&
-      route.name !== 'perfilScreen' &&
-      route.name !== 'registroScreen'
+      route.name !== "settingsScreen" &&
+      route.name !== "perfilScreen" &&
+      route.name !== "registroScreen"
     );
   });
-
 
   return (
     <DrawerContentScrollView
       {...props}
       contentContainerStyle={{
         flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: "#000000",
       }}
     >
-      {/* Header do Drawer */}
       <View style={styles.drawerHeader}>
         <Image
-          source={require('@/assets/images/icon.png')}
+          source={require("@/assets/images/icon.png")}
           style={styles.drawerHeaderImage}
           resizeMode="cover"
         />
         <View style={styles.drawerHeaderText}>
           <Text style={styles.drawerTitle}>CT Imperio</Text>
           <Text style={styles.drawerSubtitle}>
-            {showAdmin ? 'Administrador' : `Bem-vindo(a), ${usuario?.nome?.split(' ')[0] || 'Aluno'}`}
+            {showAdmin
+              ? "Administrador"
+              : `Bem-vindo(a), ${usuario?.nome?.split(" ")[0] || "Aluno"}`}
           </Text>
         </View>
       </View>
 
-      {/* Renderiza os itens manualmente */}
       {filteredRoutes.map((route: any, index: number) => {
         const { options } = props.descriptors[route.key];
         const isFocused = props.state.index === index;
 
-        // Se for uma tela que não deve aparecer no drawer, não renderiza
-        if (options.drawerItemStyle?.display === 'none') {
+        if (options.drawerItemStyle?.display === "none") {
           return null;
         }
 
@@ -80,8 +80,8 @@ function CustomDrawerContent(props: any) {
           <DrawerItem
             key={route.key}
             label={
-              typeof options.drawerLabel === 'function'
-                ? options.drawerLabel({ focused: isFocused, color: '#FFFFFF' })
+              typeof options.drawerLabel === "function"
+                ? options.drawerLabel({ focused: isFocused, color: "#FFFFFF" })
                 : options.drawerLabel || route.name
             }
             icon={({ color, size }) => {
@@ -92,7 +92,7 @@ function CustomDrawerContent(props: any) {
             }}
             focused={isFocused}
             onPress={() => props.navigation.navigate(route.name)}
-            labelStyle={[styles.drawerLabel, { color: '#FFFFFF' }]}
+            labelStyle={[styles.drawerLabel, { color: "#FFFFFF" }]}
             activeTintColor="#FFFFFF"
             inactiveTintColor="#FFFFFF"
             activeBackgroundColor="#1A1A1A"
@@ -103,14 +103,11 @@ function CustomDrawerContent(props: any) {
 
       <View style={{ flex: 1 }} />
 
-      {/* Item de Configurações */}
       <DrawerItem
         label="Configurações"
-        icon={({ color, size }) => (
-          <Settings size={size} color={color} />
-        )}
-        onPress={() => props.navigation.navigate('settingsScreen')}
-        labelStyle={[styles.drawerLabel, { color: '#FFFFFF' }]}
+        icon={({ color, size }) => <Settings size={size} color={color} />}
+        onPress={() => props.navigation.navigate("settingsScreen")}
+        labelStyle={[styles.drawerLabel, { color: "#FFFFFF" }]}
         activeTintColor="#FFFFFF"
         inactiveTintColor="#FFFFFF"
         activeBackgroundColor="#1A1A1A"
@@ -120,7 +117,6 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-// ADD: Componente wrapper para usar o contexto
 function RootLayoutWithProvider() {
   return (
     <UserProvider>
@@ -129,7 +125,6 @@ function RootLayoutWithProvider() {
   );
 }
 
-// ADD: Separar o conteúdo do layout
 function RootLayoutContent() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -141,32 +136,32 @@ function RootLayoutContent() {
                 headerShown: true,
                 drawerLabelStyle: {
                   fontSize: 16,
-                  color: '#FFFFFF',
-                  fontWeight: '500'
+                  color: "#FFFFFF",
+                  fontWeight: "500",
                 },
                 drawerStyle: {
-                  backgroundColor: '#000000',
+                  backgroundColor: "#000000",
                   width: 280,
                 },
                 headerStyle: {
-                  backgroundColor: '#000000',
+                  backgroundColor: "#000000",
                 },
-                headerTintColor: '#FFFFFF',
+                headerTintColor: "#FFFFFF",
                 headerTitleStyle: {
-                  color: '#FFFFFF',
-                  fontWeight: 'bold',
+                  color: "#FFFFFF",
+                  fontWeight: "bold",
                 },
-                drawerActiveBackgroundColor: '#1A1A1A',
-                drawerActiveTintColor: '#FFFFFF',
-                drawerInactiveTintColor: '#FFFFFF',
+                drawerActiveBackgroundColor: "#1A1A1A",
+                drawerActiveTintColor: "#FFFFFF",
+                drawerInactiveTintColor: "#FFFFFF",
               }}
               drawerContent={(props) => <CustomDrawerContent {...props} />}
             >
               <Drawer.Screen
                 name="index"
                 options={{
-                  drawerLabel: 'Início',
-                  title: '',
+                  drawerLabel: "Início",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <Home size={size} color={color} />
                   ),
@@ -175,8 +170,8 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="aulasScreen"
                 options={{
-                  drawerLabel: 'Aulas',
-                  title: '',
+                  drawerLabel: "Aulas",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <Clock size={size} color={color} />
                   ),
@@ -185,8 +180,8 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="faqScreen"
                 options={{
-                  drawerLabel: 'Dúvidas Frequentes',
-                  title: '',
+                  drawerLabel: "Dúvidas Frequentes",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <MessageCircleQuestion size={size} color={color} />
                   ),
@@ -195,8 +190,8 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="tatameScreen"
                 options={{
-                  drawerLabel: 'Regras do Tatame',
-                  title: '',
+                  drawerLabel: "Regras do Tatame",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <ShieldCheck size={size} color={color} />
                   ),
@@ -205,8 +200,8 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="avisosScreen"
                 options={{
-                  drawerLabel: 'Avisos',
-                  title: '',
+                  drawerLabel: "Avisos",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <Megaphone size={size} color={color} />
                   ),
@@ -216,12 +211,12 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="pagamentoPixScreen"
                 options={{
-                  drawerLabel: 'Pagamento (Pix)',
-                  title: '',
+                  drawerLabel: "Pagamento (Pix)",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <Image
-                      source={require('../assets/images/pix.png')}
-                      style={{ width: 26, height: 26 , tintColor: color}}
+                      source={require("../assets/images/pix.png")}
+                      style={{ width: 26, height: 26, tintColor: color }}
                     />
                   ),
                 }}
@@ -230,15 +225,14 @@ function RootLayoutContent() {
               <Drawer.Screen
                 name="produtosScreen"
                 options={{
-                  drawerLabel: 'Produtos',
-                  title: '',
+                  drawerLabel: "Produtos",
+                  title: "",
                   drawerIcon: ({ color, size }) => (
                     <Ticket size={size} color={color} />
                   ),
                 }}
               />
 
-              {/* Tela Admin - sempre definida, mas só aparece no drawer para admins */}
               <Drawer.Screen
                 name="adminScreen"
                 options={{
@@ -250,37 +244,45 @@ function RootLayoutContent() {
                 }}
               />
 
-              {/* Telas que não aparecem no drawer */}
               <Drawer.Screen
                 name="settingsScreen"
                 options={{
                   drawerLabel: () => null,
-                  drawerItemStyle: { display: 'none' },
-                  title: 'Configurações',
+                  drawerItemStyle: { display: "none" },
+                  title: "Configurações",
                 }}
               />
               <Drawer.Screen
                 name="perfilScreen"
                 options={{
                   drawerLabel: () => null,
-                  drawerItemStyle: { display: 'none' },
-                  title: 'Perfil',
+                  drawerItemStyle: { display: "none" },
+                  title: "Perfil",
                 }}
               />
               <Drawer.Screen
                 name="registroScreen"
                 options={{
                   drawerLabel: () => null,
-                  drawerItemStyle: { display: 'none' },
-                  title: 'Registro',
+                  drawerItemStyle: { display: "none" },
+                  title: "Registro",
+                }}
+              />
+              <Drawer.Screen
+                name="onboardingScreen"
+                options={{
+                  drawerLabel: () => null,
+                  drawerItemStyle: { display: "none" },
+                  headerShown: false,
                 }}
               />
             </Drawer>
           </View>
 
-          <SafeAreaView edges={["bottom"]} style={styles.bottomArea}>
-            {/* <AdBannerMock /> <AdBanner forceRealAds={true} /> */}
-          </SafeAreaView>
+          <SafeAreaView
+            edges={["bottom"]}
+            style={styles.bottomArea}
+          ></SafeAreaView>
         </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -290,7 +292,7 @@ function RootLayoutContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
   },
   drawerContainer: {
     flex: 1,
@@ -309,10 +311,10 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
-    backgroundColor: '#000000',
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderBottomColor: "#333333",
+    backgroundColor: "#000000",
+    flexDirection: "row",
+    alignItems: "center",
   },
   drawerHeaderImage: {
     width: 80,
@@ -325,20 +327,20 @@ const styles = StyleSheet.create({
   },
   drawerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   drawerSubtitle: {
     fontSize: 14,
-    color: '#CCCCCC',
+    color: "#CCCCCC",
   },
   drawerLabel: {
-    color: '#FFFFFF',
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontWeight: "500",
   },
   bottomArea: {
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
   },
 });
 

@@ -1,11 +1,12 @@
-import { classSchedule, ClassSchedule } from '@/data/classSchedule';
-import { globalStyles } from '@/styles/globalStyles';
-import { inicioTheme } from '@/styles/theme';
-import { carouselImages } from '@/utils/constants';
-import { AntDesign } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Clock, User } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { classSchedule, ClassSchedule } from "@/data/classSchedule";
+import { getOnboardingDone } from "@/storage/onboarding";
+import { globalStyles } from "@/styles/globalStyles";
+import { inicioTheme } from "@/styles/theme";
+import { carouselImages } from "@/utils/constants";
+import { AntDesign } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Clock, User } from "lucide-react-native";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -18,9 +19,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [currentClasses, setCurrentClasses] = useState<ClassSchedule[]>([]);
@@ -35,6 +36,18 @@ export default function IndexScreen() {
     setActiveIndex(currentIndex);
   };
 
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const onboardingDone = await getOnboardingDone();
+
+      if (!onboardingDone) {
+        router.replace("/onboardingScreen");
+      }
+    };
+
+    checkOnboarding();
+  }, []);
+
   const openWhatsApp = () => {
     const phoneNumber = "5514997856670";
     const message = "Olá! Gostaria de agendar uma aula experimental.";
@@ -47,12 +60,20 @@ export default function IndexScreen() {
   };
 
   const timeToMinutes = (timeString: string): number => {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const [hours, minutes] = timeString.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
   const getTodayDay = (): string => {
-    const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const days = [
+      "Domingo",
+      "Segunda",
+      "Terça",
+      "Quarta",
+      "Quinta",
+      "Sexta",
+      "Sábado",
+    ];
     return days[new Date().getDay()];
   };
 
@@ -61,23 +82,27 @@ export default function IndexScreen() {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentSecond = now.getSeconds();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
+    const currentTimeInMinutes =
+      currentHour * 60 + currentMinute + currentSecond / 60;
 
     const today = getTodayDay();
 
     const todayClasses = classSchedule
-      .filter(classItem => classItem.days.includes(today))
+      .filter((classItem) => classItem.days.includes(today))
       .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
     const foundCurrentClasses: ClassSchedule[] = [];
     const newProgressMap: { [key: string]: number } = {};
     let foundNextClass: ClassSchedule | null = null;
 
-    todayClasses.forEach(classItem => {
+    todayClasses.forEach((classItem) => {
       const startTimeInMinutes = timeToMinutes(classItem.startTime);
       const endTimeInMinutes = timeToMinutes(classItem.endTime);
 
-      if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
+      if (
+        currentTimeInMinutes >= startTimeInMinutes &&
+        currentTimeInMinutes <= endTimeInMinutes
+      ) {
         foundCurrentClasses.push(classItem);
         const totalDuration = endTimeInMinutes - startTimeInMinutes;
         const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
@@ -87,10 +112,11 @@ export default function IndexScreen() {
     });
 
     if (foundCurrentClasses.length === 0) {
-      foundNextClass = todayClasses.find(classItem => {
-        const classStartTime = timeToMinutes(classItem.startTime);
-        return currentTimeInMinutes < classStartTime;
-      }) || null;
+      foundNextClass =
+        todayClasses.find((classItem) => {
+          const classStartTime = timeToMinutes(classItem.startTime);
+          return currentTimeInMinutes < classStartTime;
+        }) || null;
     }
 
     setCurrentClasses(foundCurrentClasses);
@@ -112,7 +138,6 @@ export default function IndexScreen() {
   useEffect(() => {
     calculateClasses();
 
-
     const interval = setInterval(calculateClasses, 1000);
 
     return () => clearInterval(interval);
@@ -120,29 +145,39 @@ export default function IndexScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: inicioTheme.colors.background }}>
-      <ScrollView style={globalStyles.container} contentContainerStyle={styles.container}>
+      <ScrollView
+        style={globalStyles.container}
+        contentContainerStyle={styles.container}
+      >
         <Image
-          source={require('@/assets/images/banner.jpeg')}
+          source={require("@/assets/images/banner.jpeg")}
           style={styles.banner}
           resizeMode="cover"
         />
-        
+
         <View style={styles.content}>
           <Text style={styles.title}>Nossa História</Text>
           <Text style={styles.paragraph}>
-            Desde 2015, ajudamos pessoas a saírem do sedentarismo, cuidarem da saúde e evoluírem no esporte.
+            Desde 2015, ajudamos pessoas a saírem do sedentarismo, cuidarem da
+            saúde e evoluírem no esporte.
           </Text>
           <Text style={styles.paragraph}>
-            Referência no interior paulista com trabalho dedicado a crianças e adultos.
+            Referência no interior paulista com trabalho dedicado a crianças e
+            adultos.
           </Text>
-          
+
           <TouchableOpacity
             style={styles.button}
             onPress={() => setShowModal(true)}
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Agende sua Aula Experimental</Text>
-            <AntDesign name="arrow-right" size={16} color={inicioTheme.colors.text.dark} style={styles.buttonIcon} />
+            <AntDesign
+              name="arrow-right"
+              size={16}
+              color={inicioTheme.colors.text.dark}
+              style={styles.buttonIcon}
+            />
           </TouchableOpacity>
         </View>
 
@@ -161,7 +196,7 @@ export default function IndexScreen() {
                 <Image
                   source={image}
                   style={styles.carouselImage}
-                  resizeMode='cover'
+                  resizeMode="cover"
                 />
               </View>
             ))}
@@ -173,7 +208,7 @@ export default function IndexScreen() {
                 key={index}
                 style={[
                   styles.indicator,
-                  index === activeIndex && styles.indicatorActive
+                  index === activeIndex && styles.indicatorActive,
                 ]}
               />
             ))}
@@ -182,7 +217,7 @@ export default function IndexScreen() {
 
         <View style={styles.professorContainer}>
           <Image
-            source={require('@/assets/images/will.jpg')}
+            source={require("@/assets/images/will.jpg")}
             style={styles.professorImage}
             resizeMode="cover"
           />
@@ -197,7 +232,7 @@ export default function IndexScreen() {
             <Text style={styles.sectionTitle}>Aulas de Hoje</Text>
             <TouchableOpacity
               style={styles.seeAllButton}
-              onPress={() => router.push('/aulasScreen')}
+              onPress={() => router.push("/aulasScreen")}
             >
               <Text style={styles.seeAllText}>Ver todas</Text>
             </TouchableOpacity>
@@ -212,23 +247,29 @@ export default function IndexScreen() {
                 <TouchableOpacity
                   key={getClassId(classItem)}
                   activeOpacity={0.8}
-                  onPress={() => router.push('/aulasScreen')}
+                  onPress={() => router.push("/aulasScreen")}
                   style={[
                     styles.currentClassContainer,
-                    { backgroundColor: getGradientColor(progressMap[classItem.title] || 0) }
+                    {
+                      backgroundColor: getGradientColor(
+                        progressMap[classItem.title] || 0,
+                      ),
+                    },
                   ]}
                 >
                   <View style={styles.progressBarBackground}>
                     <View
                       style={[
                         styles.progressBarFill,
-                        { width: `${progressMap[classItem.title] || 0}%` }
+                        { width: `${progressMap[classItem.title] || 0}%` },
                       ]}
                     />
                   </View>
 
                   <View>
-                    <Text style={styles.currentClassText}>{classItem.title}</Text>
+                    <Text style={styles.currentClassText}>
+                      {classItem.title}
+                    </Text>
                     <View style={styles.classDetails}>
                       <View style={styles.detailItem}>
                         <Clock size={16} color="#FFFFFF" />
@@ -238,7 +279,9 @@ export default function IndexScreen() {
                       </View>
                       <View style={styles.detailItem}>
                         <User size={16} color="#FFFFFF" />
-                        <Text style={styles.detailText}>{classItem.instructor}</Text>
+                        <Text style={styles.detailText}>
+                          {classItem.instructor}
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -249,19 +292,20 @@ export default function IndexScreen() {
             <View style={styles.noClassContainer}>
               <Text style={styles.noClassEmoji}>⏰</Text>
               <Text style={styles.noClassTitle}>
-                {nextClass ? 'Próxima Aula' : 'Sem Aulas Hoje'}
+                {nextClass ? "Próxima Aula" : "Sem Aulas Hoje"}
               </Text>
               <Text style={styles.noClassText}>
                 {nextClass
                   ? `${nextClass.title} às ${nextClass.startTime}`
-                  : 'Aproveite para descansar!'
-                }
+                  : "Aproveite para descansar!"}
               </Text>
               <TouchableOpacity
                 style={styles.scheduleButton}
-                onPress={() => router.push('/aulasScreen')}
+                onPress={() => router.push("/aulasScreen")}
               >
-                <Text style={styles.scheduleButtonText}>Ver Grade Completa</Text>
+                <Text style={styles.scheduleButtonText}>
+                  Ver Grade Completa
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -281,7 +325,11 @@ export default function IndexScreen() {
                 style={styles.modalClose}
                 onPress={() => setShowModal(false)}
               >
-                <AntDesign name="close" size={20} color={inicioTheme.colors.text.muted} />
+                <AntDesign
+                  name="close"
+                  size={20}
+                  color={inicioTheme.colors.text.muted}
+                />
               </TouchableOpacity>
             </View>
 
@@ -298,7 +346,7 @@ export default function IndexScreen() {
                 <AntDesign name="whats-app" size={20} color="#FFF" />
                 <Text style={styles.whatsappText}>Abrir WhatsApp</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.closeButton]}
                 onPress={() => setShowModal(false)}
@@ -319,7 +367,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   banner: {
-    width: '100%',
+    width: "100%",
     height: 200,
   },
   content: {
@@ -327,7 +375,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: inicioTheme.colors.text.primary,
     marginBottom: inicioTheme.spacing.md,
   },
@@ -339,14 +387,14 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: inicioTheme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: inicioTheme.spacing.md,
     paddingHorizontal: inicioTheme.spacing.lg,
     borderRadius: 12,
     marginTop: inicioTheme.spacing.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -355,7 +403,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: inicioTheme.colors.background,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginRight: 8,
   },
   buttonIcon: {
@@ -365,27 +413,27 @@ const styles = StyleSheet.create({
     marginBottom: inicioTheme.spacing.lg,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: inicioTheme.spacing.lg,
     marginBottom: inicioTheme.spacing.md,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: inicioTheme.colors.text.primary,
   },
   seeAllButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
   },
   seeAllText: {
     color: inicioTheme.colors.primary,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   carousel: {
     marginBottom: inicioTheme.spacing.md,
@@ -393,17 +441,17 @@ const styles = StyleSheet.create({
   carouselItem: {
     width: screenWidth - 40,
     marginHorizontal: 20,
-    position: 'relative',
+    position: "relative",
   },
   carouselImage: {
-    width: '100%',
+    width: "100%",
     height: 250,
     borderRadius: 12,
   },
   indicators: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 8,
   },
   indicator: {
@@ -417,8 +465,8 @@ const styles = StyleSheet.create({
     width: 20,
   },
   professorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: inicioTheme.spacing.lg,
     marginHorizontal: 20,
     borderRadius: 16,
@@ -429,7 +477,7 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: "#FFFFFF",
   },
   professorInfo: {
     flex: 1,
@@ -437,7 +485,7 @@ const styles = StyleSheet.create({
   },
   professorName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: inicioTheme.colors.text.primary,
     marginBottom: 4,
   },
@@ -447,12 +495,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   professorStats: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: inicioTheme.spacing.md,
   },
   stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   statText: {
@@ -467,69 +515,69 @@ const styles = StyleSheet.create({
   },
   currentClassesTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: inicioTheme.colors.text.primary,
     marginBottom: inicioTheme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   currentClassContainer: {
     padding: inicioTheme.spacing.lg,
     borderRadius: 16,
     marginBottom: inicioTheme.spacing.md,
     minHeight: 120,
-    justifyContent: 'space-between',
-    shadowColor: '#3B82F6',
+    justifyContent: "space-between",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: "rgba(59, 130, 246, 0.3)",
   },
   progressBarBackground: {
     height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 3,
     marginBottom: inicioTheme.spacing.md,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: inicioTheme.colors.primary,
     borderRadius: 3,
   },
 
   currentClassText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    textAlign: "center",
     marginBottom: inicioTheme.spacing.md,
   },
   classDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
   detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   detailText: {
     fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontWeight: "500",
   },
   noClassContainer: {
     backgroundColor: inicioTheme.colors.card,
     padding: inicioTheme.spacing.lg,
     borderRadius: 16,
     marginHorizontal: inicioTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderStyle: 'dashed',
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderStyle: "dashed",
   },
   noClassEmoji: {
     fontSize: 32,
@@ -538,14 +586,14 @@ const styles = StyleSheet.create({
   noClassTitle: {
     fontSize: 18,
     color: inicioTheme.colors.text.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: inicioTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   noClassText: {
     fontSize: 14,
     color: inicioTheme.colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: inicioTheme.spacing.lg,
   },
   scheduleButton: {
@@ -555,9 +603,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   scheduleButtonText: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
