@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   imageContainer: {
-    width: width * 0.85, // 85% da largura da tela
-    height: height * 0.7, // 70% da altura da tela
+    width: width * 0.8,
+    height: height * 0.6,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 12,
-    // Sombra para melhorar visibilidade
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
