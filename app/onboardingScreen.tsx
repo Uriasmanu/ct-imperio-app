@@ -1,4 +1,6 @@
 import { slides, SlideType } from "@/components/onboarding/slides";
+import { setOnboardingDone } from "@/storage/onboarding";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   Dimensions,
@@ -12,25 +14,34 @@ import Onboarding from "react-native-onboarding-swiper";
 
 const { width, height } = Dimensions.get("window");
 
-type Props = {
-  onFinish: () => void;
-};
+export default function OnboardingScreen() {
+  const router = useRouter();
 
-export default function OnboardingScreen({ onFinish }: Props) {
-  const SkipButton = ({ skipLabel, onSkip }: any) => (
-    <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
+  const handleFinish = async () => {
+    await setOnboardingDone();
+    router.replace("/");
+  };
+
+  const SkipButton = (props: any) => (
+    <TouchableOpacity onPress={props.onPress} style={styles.skipButton}>
       <Text style={styles.buttonText}>Pular</Text>
     </TouchableOpacity>
   );
 
-  const NextButton = ({ nextLabel, onNext }: any) => (
-    <TouchableOpacity onPress={onNext} style={styles.nextButton}>
+  const NextButton = (props: any) => (
+    <TouchableOpacity onPress={props.onPress} style={styles.nextButton}>
       <Text style={styles.buttonText}>Próximo</Text>
     </TouchableOpacity>
   );
 
-  const DoneButton = ({ onDone }: any) => (
-    <TouchableOpacity onPress={onDone} style={styles.doneButton}>
+  const DoneButton = (props: any) => (
+    <TouchableOpacity
+      onPress={async () => {
+        await setOnboardingDone();
+        props.onPress();
+      }}
+      style={styles.doneButton}
+    >
       <Text style={[styles.buttonText, styles.doneText]}>Começar</Text>
     </TouchableOpacity>
   );
@@ -57,8 +68,8 @@ export default function OnboardingScreen({ onFinish }: Props) {
             { color: slide.subtitleColor || "#CCCCCC" },
           ],
         }))}
-        onSkip={onFinish}
-        onDone={onFinish}
+        onSkip={handleFinish}
+        onDone={handleFinish}
         SkipButtonComponent={SkipButton}
         NextButtonComponent={NextButton}
         DoneButtonComponent={DoneButton}

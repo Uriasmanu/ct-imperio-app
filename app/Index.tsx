@@ -1,5 +1,5 @@
 import { classSchedule, ClassSchedule } from "@/data/classSchedule";
-import { getOnboardingDone } from "@/storage/onboarding";
+import { getOnboardingDone, resetOnboarding } from "@/storage/onboarding";
 import { globalStyles } from "@/styles/globalStyles";
 import { inicioTheme } from "@/styles/theme";
 import { carouselImages } from "@/utils/constants";
@@ -165,6 +165,24 @@ export default function IndexScreen() {
             Referência no interior paulista com trabalho dedicado a crianças e
             adultos.
           </Text>
+
+          <TouchableOpacity
+            onPress={async () => {
+              await resetOnboarding();
+              router.replace("/onboardingScreen");
+            }}
+            style={{
+              backgroundColor: "#FF4444",
+              padding: 12,
+              margin: 16,
+              borderRadius: 8,
+              alignSelf: "center",
+            }}
+          >
+            <Text style={{ color: "#FFF", fontWeight: "bold" }}>
+              Resetar Onboarding
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.button}

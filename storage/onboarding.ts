@@ -10,3 +10,7 @@ export async function getOnboardingDone() {
   const value = await AsyncStorage.getItem(KEY);
   return value === "true";
 }
+
+export async function resetOnboarding() {
+  await AsyncStorage.removeItem(KEY);
+}
