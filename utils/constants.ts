@@ -12,17 +12,18 @@ export const AD_IDS = {
 };
 
 export const carouselImages = [
-  require('@/assets/images/Muay.jpeg'),
-  require('@/assets/images/boxe.jpeg'),
-  require('@/assets/images/jiu-feminino.jpeg'),
-  require('@/assets/images/jiu-misto.jpeg'),
-  require('@/assets/images/jiu-baby.jpeg'),
-  require('@/assets/images/no-gi.jpeg'),
-  require('@/assets/images/jiu-mirim.jpeg'),
-  require('@/assets/images/muay-kids.jpeg'),
-  require('@/assets/images/jiu-infantil.jpeg'),
+  require("@/assets/images/graduacaoThai.jpeg"),
+  require("@/assets/images/graduacaoJiu.jpeg"),
+  require("@/assets/images/Muay.jpeg"),
+  require("@/assets/images/boxe.jpeg"),
+  require("@/assets/images/jiu-feminino.jpeg"),
+  require("@/assets/images/jiu-misto.jpeg"),
+  require("@/assets/images/jiu-baby.jpeg"),
+  require("@/assets/images/no-gi.jpeg"),
+  require("@/assets/images/jiu-mirim.jpeg"),
+  require("@/assets/images/muay-kids.jpeg"),
+  require("@/assets/images/jiu-infantil.jpeg"),
 ];
-
 
 export const appConfig = {
   version: "2.0",
@@ -56,7 +57,8 @@ export const faqItems: FAQItem[] = [
   },
   {
     question: "Posso fazer uma aula experimental antes de me matricular?",
-    answer: "Sim! Basta agendar seu horário com antecedência pela recepção ou WhatsApp.",
+    answer:
+      "Sim! Basta agendar seu horário com antecedência pela recepção ou WhatsApp.",
   },
   {
     question: "O que devo levar para o meu primeiro treino?",
@@ -68,9 +70,9 @@ export const faqItems: FAQItem[] = [
       "Os valores variam conforme a quantidade de aulas por semana: 1x — R$90, 2x — R$100, 3x — R$110, 4x — R$130, 5x — R$150. O plano Passe Free permite treinar em qualquer horário e modalidade por R$190.",
   },
   {
-    question: "Vocês aceitam  qual forma de pagamento da mensalidade. Cartão, PIX ou Gympass?",
-    answer:
-      "Aceitamos cartões, PIX, dinheiro, Gympass e TotalPass.",
+    question:
+      "Vocês aceitam  qual forma de pagamento da mensalidade. Cartão, PIX ou Gympass?",
+    answer: "Aceitamos cartões, PIX, dinheiro, Gympass e TotalPass.",
   },
   {
     question: "Vocês oferecem horários flexíveis?",
@@ -109,7 +111,8 @@ export const faqItems: FAQItem[] = [
   },
   {
     question: "Quanto tempo dura cada treino?",
-    answer: "A duração média das aulas é de 1 hora, variando conforme a modalidade.",
+    answer:
+      "A duração média das aulas é de 1 hora, variando conforme a modalidade.",
   },
   {
     question: "Existe taxa de matrícula?",
