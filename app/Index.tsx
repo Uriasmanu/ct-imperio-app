@@ -1,4 +1,5 @@
-import { classSchedule, ClassSchedule } from "@/data/classSchedule";
+import { CarouselSection } from "@/components/CarouselSection";
+import { useClassSchedule } from "@/hooks/useClassSchedule";
 import { getOnboardingDone } from "@/storage/onboarding";
 import { globalStyles } from "@/styles/globalStyles";
 import { inicioTheme } from "@/styles/theme";
@@ -24,9 +25,6 @@ import {
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function IndexScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [currentClasses, setCurrentClasses] = useState<ClassSchedule[]>([]);
-  const [nextClass, setNextClass] = useState<ClassSchedule | null>(null);
-  const [progressMap, setProgressMap] = useState<{ [key: string]: number }>({});
   const [showModal, setShowModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
@@ -35,6 +33,14 @@ export default function IndexScreen() {
     const currentIndex = Math.round(contentOffsetX / (screenWidth - 40));
     setActiveIndex(currentIndex);
   };
+
+  const {
+    currentClasses,
+    nextClass,
+    progressMap,
+    getClassId,
+    getGradientColor,
+  } = useClassSchedule();
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -58,90 +64,6 @@ export default function IndexScreen() {
     });
     setShowModal(false);
   };
-
-  const timeToMinutes = (timeString: string): number => {
-    const [hours, minutes] = timeString.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-
-  const getTodayDay = (): string => {
-    const days = [
-      "Domingo",
-      "Segunda",
-      "Terça",
-      "Quarta",
-      "Quinta",
-      "Sexta",
-      "Sábado",
-    ];
-    return days[new Date().getDay()];
-  };
-
-  const calculateClasses = () => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
-    const currentTimeInMinutes =
-      currentHour * 60 + currentMinute + currentSecond / 60;
-
-    const today = getTodayDay();
-
-    const todayClasses = classSchedule
-      .filter((classItem) => classItem.days.includes(today))
-      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-
-    const foundCurrentClasses: ClassSchedule[] = [];
-    const newProgressMap: { [key: string]: number } = {};
-    let foundNextClass: ClassSchedule | null = null;
-
-    todayClasses.forEach((classItem) => {
-      const startTimeInMinutes = timeToMinutes(classItem.startTime);
-      const endTimeInMinutes = timeToMinutes(classItem.endTime);
-
-      if (
-        currentTimeInMinutes >= startTimeInMinutes &&
-        currentTimeInMinutes <= endTimeInMinutes
-      ) {
-        foundCurrentClasses.push(classItem);
-        const totalDuration = endTimeInMinutes - startTimeInMinutes;
-        const elapsedTime = currentTimeInMinutes - startTimeInMinutes;
-        const progress = (elapsedTime / totalDuration) * 100;
-        newProgressMap[classItem.title] = Math.min(Math.max(progress, 0), 100);
-      }
-    });
-
-    if (foundCurrentClasses.length === 0) {
-      foundNextClass =
-        todayClasses.find((classItem) => {
-          const classStartTime = timeToMinutes(classItem.startTime);
-          return currentTimeInMinutes < classStartTime;
-        }) || null;
-    }
-
-    setCurrentClasses(foundCurrentClasses);
-    setNextClass(foundNextClass);
-    setProgressMap(newProgressMap);
-  };
-
-  const getGradientColor = (progress: number): string => {
-    const baseBlue = 150;
-    const additionalBlue = Math.floor((progress / 100) * 105);
-    const blueValue = baseBlue + additionalBlue;
-    return `rgb(30, 70, ${blueValue})`;
-  };
-
-  const getClassId = (classItem: ClassSchedule): string => {
-    return `${classItem.title}-${classItem.startTime}-${classItem.endTime}`;
-  };
-
-  useEffect(() => {
-    calculateClasses();
-
-    const interval = setInterval(calculateClasses, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: inicioTheme.colors.background }}>
@@ -181,39 +103,7 @@ export default function IndexScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.carouselSection}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={styles.carousel}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {carouselImages.map((image, index) => (
-              <View key={index} style={styles.carouselItem}>
-                <Image
-                  source={image}
-                  style={styles.carouselImage}
-                  resizeMode="cover"
-                />
-              </View>
-            ))}
-          </ScrollView>
-
-          <View style={styles.indicators}>
-            {carouselImages.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  index === activeIndex && styles.indicatorActive,
-                ]}
-              />
-            ))}
-          </View>
-        </View>
+        <CarouselSection images={carouselImages} />
 
         <View style={styles.professorContainer}>
           <Image
@@ -409,9 +299,6 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginLeft: 4,
   },
-  carouselSection: {
-    marginBottom: inicioTheme.spacing.lg,
-  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -434,35 +321,6 @@ const styles = StyleSheet.create({
     color: inicioTheme.colors.primary,
     fontSize: 12,
     fontWeight: "600",
-  },
-  carousel: {
-    marginBottom: inicioTheme.spacing.md,
-  },
-  carouselItem: {
-    width: screenWidth - 40,
-    marginHorizontal: 20,
-    position: "relative",
-  },
-  carouselImage: {
-    width: "100%",
-    height: 250,
-    borderRadius: 12,
-  },
-  indicators: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  indicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: inicioTheme.colors.text.muted,
-  },
-  indicatorActive: {
-    backgroundColor: inicioTheme.colors.primary,
-    width: 20,
   },
   professorContainer: {
     flexDirection: "row",
