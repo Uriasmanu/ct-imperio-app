@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,29 +8,33 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { AcessoNegado } from "@/components/Admin/AcessoNegado";
 import { AvisosManager } from "@/components/Admin/AvisosManager";
-import { DetalhesAlunoModal } from '@/components/Admin/DetalhesAlunoModal';
+import { DetalhesAlunoModal } from "@/components/Admin/DetalhesAlunoModal";
 import { Estatisticas } from "@/components/Admin/Estatisticas";
-import { Estoque } from '@/components/Admin/estoque/estoque';
+import { Estoque } from "@/components/Admin/estoque/estoque";
 import { Filtros } from "@/components/Admin/Filtros";
-import { ListaAlunos } from '@/components/Admin/ListaAlunos';
+import { ListaAlunos } from "@/components/Admin/ListaAlunos";
 import { LoadingScreen } from "@/components/Admin/LoadingScreen";
 import { PresencasParaConfirmar } from "@/components/Admin/PresencasParaConfirmar";
-import { ListaAlunosRelatorio } from '@/components/Admin/relatorios/ListaAlunosRelatorio';
+import { ListaAlunosRelatorio } from "@/components/Admin/relatorios/ListaAlunosRelatorio";
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { usePresenca } from '@/hooks/usePresenca';
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { usePresenca } from "@/hooks/usePresenca";
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
-// Tipos para as seções
-type AdminSection = 'presencas' | 'gestao' | 'alunos' | 'estoque' | 'relatorios' | 'avisos';
+type AdminSection =
+  | "presencas"
+  | "gestao"
+  | "alunos"
+  | "estoque"
+  | "relatorios"
+  | "avisos";
 
-// COMPONENTE PRINCIPAL ADMIN SCREEN
 export default function AdminScreen() {
   const { user, isAdmin, loading: authLoading } = useAdminAuth();
   const [usuarios, setUsuarios] = useState<UsuarioCompleto[]>([]);
@@ -40,11 +44,10 @@ export default function AdminScreen() {
     busca: "",
     statusPagamento: "todos",
     modalidade: "todas",
-    professor: "todos"
+    professor: "todos",
   });
   const [secaoAtiva, setSecaoAtiva] = useState<AdminSection | null>(null);
 
-  // Use o hook para presenças administrativas
   const {
     presencasParaConfirmar,
     stats,
@@ -54,29 +57,26 @@ export default function AdminScreen() {
     confirmarTodasPresencasHoje,
   } = usePresenca();
 
-  const [alunoSelecionado, setAlunoSelecionado] = useState<UsuarioCompleto | null>(null);
+  const [alunoSelecionado, setAlunoSelecionado] =
+    useState<UsuarioCompleto | null>(null);
   const [modalDetalhesVisible, setModalDetalhesVisible] = useState(false);
 
-  // Função para abrir detalhes do aluno
   const handleAbrirDetalhesAluno = (usuario: UsuarioCompleto) => {
     setAlunoSelecionado(usuario);
     setModalDetalhesVisible(true);
   };
 
-  // Função para fechar modal
   const handleFecharDetalhes = () => {
     setModalDetalhesVisible(false);
     setAlunoSelecionado(null);
   };
 
-  // VERIFICAR ACESSO
   useEffect(() => {
     if (!authLoading && !isAdmin) {
       setLoading(false);
     }
   }, [authLoading, isAdmin]);
 
-  // CARREGAR USUÁRIOS (apenas se for admin)
   const carregarUsuarios = async () => {
     if (!isAdmin) return;
 
@@ -87,7 +87,7 @@ export default function AdminScreen() {
       querySnapshot.forEach((doc) => {
         usuariosData.push({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         } as UsuarioCompleto);
       });
 
@@ -102,7 +102,6 @@ export default function AdminScreen() {
     }
   };
 
-  // PULL TO REFRESH
   const onRefresh = () => {
     if (!isAdmin) return;
     setRefreshing(true);
@@ -116,8 +115,9 @@ export default function AdminScreen() {
     }
   }, [isAdmin, authLoading]);
 
-  const usuariosFiltrados = usuarios.filter(usuario => {
-    if (filtros.busca &&
+  const usuariosFiltrados = usuarios.filter((usuario) => {
+    if (
+      filtros.busca &&
       !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
       !usuario.email.toLowerCase().includes(filtros.busca.toLowerCase())
     ) {
@@ -125,8 +125,10 @@ export default function AdminScreen() {
     }
 
     if (filtros.statusPagamento !== "todos") {
-      if (filtros.statusPagamento === "pagos" && !usuario.pagamento) return false;
-      if (filtros.statusPagamento === "pendentes" && usuario.pagamento) return false;
+      if (filtros.statusPagamento === "pagos" && !usuario.pagamento)
+        return false;
+      if (filtros.statusPagamento === "pendentes" && usuario.pagamento)
+        return false;
     }
 
     if (filtros.modalidade !== "todas") {
@@ -134,9 +136,8 @@ export default function AdminScreen() {
         return false;
       }
 
-      // Verificar se alguma modalidade corresponde ao filtro
-      const temModalidade = usuario.modalidades.some(m =>
-        m && m.modalidade === filtros.modalidade && m.ativo !== false
+      const temModalidade = usuario.modalidades.some(
+        (m) => m && m.modalidade === filtros.modalidade && m.ativo !== false,
       );
 
       if (!temModalidade) {
@@ -151,15 +152,21 @@ export default function AdminScreen() {
     total: usuarios.length,
 
     pendentes: usuarios.reduce((totalPendentes, usuario) => {
-      const usuarioPendente = !usuario.pagamento &&
+      const usuarioPendente =
+        !usuario.pagamento &&
         usuario.modalidades &&
-        usuario.modalidades.some(m => m.ativo !== false) ? 1 : 0;
+        usuario.modalidades.some((m) => m.ativo !== false)
+          ? 1
+          : 0;
 
-      const filhosPendentes = usuario.filhos ? usuario.filhos.filter(filho =>
-        !filho.pagamento &&
-        filho.modalidades &&
-        filho.modalidades.some(m => m.ativo !== false)
-      ).length : 0;
+      const filhosPendentes = usuario.filhos
+        ? usuario.filhos.filter(
+            (filho) =>
+              !filho.pagamento &&
+              filho.modalidades &&
+              filho.modalidades.some((m) => m.ativo !== false),
+          ).length
+        : 0;
 
       return totalPendentes + usuarioPendente + filhosPendentes;
     }, 0),
@@ -167,46 +174,45 @@ export default function AdminScreen() {
     pagos: usuarios.reduce((totalPagos, usuario) => {
       const usuarioPago = usuario.pagamento ? 1 : 0;
 
-      const filhosPagos = usuario.filhos ? usuario.filhos.filter(filho =>
-        filho.pagamento
-      ).length : 0;
+      const filhosPagos = usuario.filhos
+        ? usuario.filhos.filter((filho) => filho.pagamento).length
+        : 0;
 
       return totalPagos + usuarioPago + filhosPagos;
     }, 0),
 
-    comFilhos: usuarios.filter(u => u.filhos && u.filhos.length > 0).length,
+    comFilhos: usuarios.filter((u) => u.filhos && u.filhos.length > 0).length,
 
-    totalAlunos: usuarios.reduce(
-      (total, usuario) => total + (usuario.filhos ? usuario.filhos.length : 0), 0
-    ) + usuarios.length,
+    totalAlunos:
+      usuarios.reduce(
+        (total, usuario) =>
+          total + (usuario.filhos ? usuario.filhos.length : 0),
+        0,
+      ) + usuarios.length,
   };
 
-  // RENDER CONTEÚDO POR SEÇÃO
   const renderConteudoSecao = () => {
     switch (secaoAtiva) {
-      case 'presencas':
+      case "presencas":
         return (
           <View style={styles.secaoContent}>
-            {/* SEÇÃO: PRESENÇAS PARA CONFIRMAR */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleContainer}>
                   <Ionicons name="calendar" size={22} color="#B8860B" />
-                  <Text style={styles.sectionTitle}>Presenças para Confirmar</Text>
+                  <Text style={styles.sectionTitle}>
+                    Presenças para Confirmar
+                  </Text>
                 </View>
                 <TouchableOpacity
                   style={[
                     styles.refreshButton,
-                    presencasLoading && styles.refreshButtonDisabled
+                    presencasLoading && styles.refreshButtonDisabled,
                   ]}
                   onPress={() => buscarPresencasDoDia()}
                   disabled={presencasLoading}
                 >
-                  <Ionicons
-                    name="refresh"
-                    size={20}
-                    color="#B8860B"
-                  />
+                  <Ionicons name="refresh" size={20} color="#B8860B" />
                 </TouchableOpacity>
               </View>
 
@@ -221,10 +227,9 @@ export default function AdminScreen() {
           </View>
         );
 
-      case 'gestao':
+      case "gestao":
         return (
           <View style={styles.secaoContent}>
-            {/* SEÇÃO: ESTATÍSTICAS */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleContainer}>
@@ -234,7 +239,7 @@ export default function AdminScreen() {
                 <TouchableOpacity
                   style={[
                     styles.refreshButton,
-                    refreshing && styles.refreshButtonDisabled
+                    refreshing && styles.refreshButtonDisabled,
                   ]}
                   onPress={onRefresh}
                   disabled={refreshing}
@@ -245,7 +250,6 @@ export default function AdminScreen() {
               <Estatisticas estatisticas={estatisticas} />
             </View>
 
-            {/* SEÇÃO: FILTROS E USUÁRIOS */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleContainer}>
@@ -254,12 +258,10 @@ export default function AdminScreen() {
                 </View>
               </View>
 
-              {/* FILTROS */}
               <View style={styles.filtrosContainer}>
                 <Filtros filtros={filtros} onFiltrosChange={setFiltros} />
               </View>
 
-              {/* INFO RESULTADOS */}
               <View style={styles.resultadosInfo}>
                 <View style={styles.resultadosLeft}>
                   <Text style={styles.resultadosTexto}>
@@ -279,7 +281,6 @@ export default function AdminScreen() {
                 )}
               </View>
 
-              {/* LISTA DE USUÁRIOS */}
               <View style={styles.usuariosContainer}>
                 {usuariosFiltrados.length > 0 ? (
                   usuariosFiltrados.map((usuario) => (
@@ -305,7 +306,7 @@ export default function AdminScreen() {
           </View>
         );
 
-      case 'alunos':
+      case "alunos":
         return (
           <View style={styles.secaoContent}>
             <ListaAlunos
@@ -317,7 +318,7 @@ export default function AdminScreen() {
           </View>
         );
 
-      case 'relatorios':
+      case "relatorios":
         return (
           <View style={styles.secaoContent}>
             <ListaAlunosRelatorio
@@ -329,17 +330,17 @@ export default function AdminScreen() {
           </View>
         );
 
-      case 'estoque':
+      case "estoque":
         return (
           <View style={styles.secaoContent}>
-            <Estoque/>
+            <Estoque />
           </View>
         );
 
-      case 'avisos':
+      case "avisos":
         return (
           <View style={styles.secaoContent}>
-            <AvisosManager isVisible={secaoAtiva === 'avisos'} />
+            <AvisosManager isVisible={secaoAtiva === "avisos"} />
           </View>
         );
 
@@ -348,52 +349,51 @@ export default function AdminScreen() {
     }
   };
 
-  // RENDER CARDS DE NAVEGAÇÃO
   const renderCardsNavegacao = () => {
     const cards = [
       {
-        key: 'presencas' as AdminSection,
-        title: 'Presenças',
-        icon: 'calendar',
-        description: 'Confirmar presenças do dia',
+        key: "presencas" as AdminSection,
+        title: "Presenças",
+        icon: "calendar",
+        description: "Confirmar presenças do dia",
         badge: stats.pendentesHoje > 0 ? stats.pendentesHoje : undefined,
-        color: '#B8860B'
+        color: "#B8860B",
       },
       {
-        key: 'gestao' as AdminSection,
-        title: 'Gestão',
-        icon: 'people',
-        description: 'Gerenciar usuários e pagamentos',
-        color: '#10B981'
+        key: "gestao" as AdminSection,
+        title: "Gestão",
+        icon: "people",
+        description: "Gerenciar usuários e pagamentos",
+        color: "#10B981",
       },
       {
-        key: 'alunos' as AdminSection,
-        title: 'Alunos',
-        icon: 'list',
-        description: 'Lista completa de alunos',
-        color: '#3B82F6'
+        key: "alunos" as AdminSection,
+        title: "Alunos",
+        icon: "list",
+        description: "Lista completa de alunos",
+        color: "#3B82F6",
       },
       {
-        key: 'relatorios' as AdminSection,
-        title: 'Relatorios',
-        icon: 'analytics',
-        description: 'Análise de presença e dados',
-        color: '#8B5CF6'
+        key: "relatorios" as AdminSection,
+        title: "Relatorios",
+        icon: "analytics",
+        description: "Análise de presença e dados",
+        color: "#8B5CF6",
       },
       {
-        key: 'estoque' as AdminSection,
-        title: 'Estoque',
-        icon: 'cube',
-        description: 'Estoque de equipamentos e roupas',
-        color: '#84CC16'
+        key: "estoque" as AdminSection,
+        title: "Estoque",
+        icon: "cube",
+        description: "Estoque de equipamentos e roupas",
+        color: "#84CC16",
       },
       {
-        key: 'avisos' as AdminSection,
-        title: 'Avisos',
-        icon: 'megaphone',
-        description: 'Gerenciar avisos e notificações',
-        color: '#EF4444'
-      }
+        key: "avisos" as AdminSection,
+        title: "Avisos",
+        icon: "megaphone",
+        description: "Gerenciar avisos e notificações",
+        color: "#EF4444",
+      },
     ];
 
     return (
@@ -401,14 +401,16 @@ export default function AdminScreen() {
         {cards.map((card) => (
           <TouchableOpacity
             key={card.key}
-            style={[
-              styles.card,
-              { borderLeftColor: card.color }
-            ]}
+            style={[styles.card, { borderLeftColor: card.color }]}
             onPress={() => setSecaoAtiva(card.key)}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.cardIconContainer, { backgroundColor: card.color }]}>
+              <View
+                style={[
+                  styles.cardIconContainer,
+                  { backgroundColor: card.color },
+                ]}
+              >
                 <Ionicons name={card.icon as any} size={24} color="#FFF" />
               </View>
               {card.badge && (
@@ -430,7 +432,6 @@ export default function AdminScreen() {
     );
   };
 
-  // RENDER BOTÃO VOLTAR
   const renderBotaoVoltar = () => {
     if (secaoAtiva === null) return null;
 
@@ -445,7 +446,6 @@ export default function AdminScreen() {
     );
   };
 
-  // RENDER STATES
   if (authLoading || loading) {
     return <LoadingScreen />;
   }
@@ -456,18 +456,14 @@ export default function AdminScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Ionicons name="shield" size={32} color="#B8860B" />
           <Text style={styles.headerTitle}>Painel Administrativo</Text>
-          <Text style={styles.headerSubtitle}>
-            Logado como: {user?.email}
-          </Text>
+          <Text style={styles.headerSubtitle}>Logado como: {user?.email}</Text>
         </View>
       </View>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <ScrollView
         style={styles.scrollContainer}
         refreshControl={
@@ -480,23 +476,17 @@ export default function AdminScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* BOTÃO VOLTAR (quando em uma seção) */}
         {secaoAtiva && renderBotaoVoltar()}
 
-        {/* CONTEÚDO DINÂMICO */}
         {secaoAtiva ? (
           renderConteudoSecao()
         ) : (
-          <View style={styles.menuContainer}>
-            {renderCardsNavegacao()}
-          </View>
+          <View style={styles.menuContainer}>{renderCardsNavegacao()}</View>
         )}
 
-        {/* ESPAÇO FINAL */}
         <View style={styles.footerSpace} />
       </ScrollView>
 
-      {/* MODAL DE DETALHES DO ALUNO */}
       <DetalhesAlunoModal
         visible={modalDetalhesVisible}
         usuario={alunoSelecionado}
@@ -516,7 +506,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     paddingTop: 10,
     paddingBottom: 1,
     paddingHorizontal: 20,
@@ -532,85 +522,85 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFF",
-    textAlign: 'center',
+    textAlign: "center",
   },
   headerSubtitle: {
     fontSize: 14,
     color: "#AAA",
-    textAlign: 'center',
+    textAlign: "center",
   },
   menuContainer: {
     paddingTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   menuTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 8,
   },
   menuSubtitle: {
     fontSize: 16,
-    color: '#AAA',
-    textAlign: 'center',
+    color: "#AAA",
+    textAlign: "center",
     marginBottom: 32,
     lineHeight: 22,
   },
   cardsContainer: {
-    width: '100%',
+    width: "100%",
     gap: 16,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 16,
     padding: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#B8860B',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    borderLeftColor: "#B8860B",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
   },
   cardIconContainer: {
     width: 50,
     height: 50,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 16,
   },
   cardBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -8,
-    backgroundColor: '#EF4444',
+    backgroundColor: "#EF4444",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 1,
   },
   cardBadgeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     flex: 1,
   },
   cardDescription: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
     marginTop: 4,
     flex: 1,
   },
@@ -618,20 +608,20 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    alignSelf: 'flex-start',
-    backgroundColor: '#1a1a1a',
+    alignSelf: "flex-start",
+    backgroundColor: "#1a1a1a",
     borderRadius: 8,
-    marginTop: 15
+    marginTop: 15,
   },
   backButtonText: {
-    color: '#B8860B',
+    color: "#B8860B",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   secaoContent: {
     paddingTop: 20,
@@ -640,29 +630,29 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
     paddingHorizontal: 4,
   },
   sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#B8860B',
+    fontWeight: "700",
+    color: "#B8860B",
     letterSpacing: 0.5,
   },
   refreshButton: {
     padding: 10,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   refreshButtonDisabled: {
     opacity: 0.5,
@@ -671,9 +661,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   resultadosInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
     paddingHorizontal: 4,
   },
@@ -681,55 +671,55 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultadosTexto: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
   },
   buscaTexto: {
-    color: '#B8860B',
+    color: "#B8860B",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   recarregandoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
   },
   recarregandoTexto: {
-    color: '#B8860B',
+    color: "#B8860B",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   usuariosContainer: {
     gap: 16,
   },
   nenhumResultado: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 40,
     paddingHorizontal: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#333',
-    borderStyle: 'dashed',
+    borderColor: "#333",
+    borderStyle: "dashed",
   },
   nenhumResultadoTitle: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 16,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   nenhumResultadoText: {
-    color: '#888',
+    color: "#888",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   footerSpace: {
