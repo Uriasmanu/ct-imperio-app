@@ -24,7 +24,9 @@ import { ListaAlunosRelatorio } from "@/components/Admin/relatorios/ListaAlunosR
 import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useEstatisticasUsuarios } from "@/hooks/useEstatisticasUsuarios";
 import { usePresenca } from "@/hooks/usePresenca";
+import { useUsuariosFiltrados } from "@/hooks/useUsuariosFiltrados";
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
 
 type AdminSection =
@@ -115,133 +117,12 @@ export default function AdminScreen() {
     }
   }, [isAdmin, authLoading]);
 
-  const usuariosFiltrados = usuarios.filter((usuario) => {
-    if (
-      filtros.busca &&
-      !usuario.nome.toLowerCase().includes(filtros.busca.toLowerCase()) &&
-      !usuario.email.toLowerCase().includes(filtros.busca.toLowerCase())
-    ) {
-      return false;
-    }
-
-    if (filtros.modalidade !== "todas") {
-      const usuarioTemModalidade = usuario.modalidades?.some(
-        (m) => m && m.modalidade === filtros.modalidade && m.ativo !== false,
-      );
-
-      const algumFilhoTemModalidade = usuario.filhos?.some((filho) =>
-        filho.modalidades?.some(
-          (m) => m && m.modalidade === filtros.modalidade && m.ativo !== false,
-        ),
-      );
-
-      if (!usuarioTemModalidade && !algumFilhoTemModalidade) {
-        return false;
-      }
-    }
-
-    if (filtros.statusPagamento !== "todos") {
-      const usuarioTemModalidadeAtiva = usuario.modalidades?.some(
-        (m) => m && m.ativo !== false,
-      );
-
-      const algumFilhoTemModalidadeAtiva = usuario.filhos?.some((filho) =>
-        filho.modalidades?.some((m) => m && m.ativo !== false),
-      );
-
-      if (!usuarioTemModalidadeAtiva && !algumFilhoTemModalidadeAtiva) {
-        return false;
-      }
-
-      if (filtros.statusPagamento === "pagos") {
-        const usuarioPago = usuario.pagamento && usuarioTemModalidadeAtiva;
-
-        const algumFilhoPago = usuario.filhos?.some(
-          (filho) =>
-            filho.pagamento &&
-            filho.modalidades?.some((m) => m && m.ativo !== false),
-        );
-
-        if (!usuarioPago && !algumFilhoPago) return false;
-      }
-
-      if (filtros.statusPagamento === "aguardando") {
-        const usuarioAguardando =
-          !usuario.pagamento &&
-          usuario.avisoPagamento &&
-          usuarioTemModalidadeAtiva;
-
-        const algumFilhoAguardando = usuario.filhos?.some(
-          (filho) =>
-            !filho.pagamento &&
-            filho.avisoPagamento &&
-            filho.modalidades?.some((m) => m && m.ativo !== false),
-        );
-
-        if (!usuarioAguardando && !algumFilhoAguardando) return false;
-      }
-
-      if (filtros.statusPagamento === "pendentes") {
-        const usuarioPendente =
-          !usuario.pagamento &&
-          !usuario.avisoPagamento &&
-          usuarioTemModalidadeAtiva;
-
-        const algumFilhoPendente = usuario.filhos?.some(
-          (filho) =>
-            !filho.pagamento &&
-            !filho.avisoPagamento &&
-            filho.modalidades?.some((m) => m && m.ativo !== false),
-        );
-
-        if (!usuarioPendente && !algumFilhoPendente) return false;
-      }
-    }
-
-    return true;
+  const usuariosFiltrados = useUsuariosFiltrados({
+    usuarios,
+    filtros,
   });
-  const estatisticas = {
-    total: usuarios.length,
 
-    pendentes: usuarios.reduce((totalPendentes, usuario) => {
-      const usuarioPendente =
-        !usuario.pagamento &&
-        usuario.modalidades &&
-        usuario.modalidades.some((m) => m.ativo !== false)
-          ? 1
-          : 0;
-
-      const filhosPendentes = usuario.filhos
-        ? usuario.filhos.filter(
-            (filho) =>
-              !filho.pagamento &&
-              filho.modalidades &&
-              filho.modalidades.some((m) => m.ativo !== false),
-          ).length
-        : 0;
-
-      return totalPendentes + usuarioPendente + filhosPendentes;
-    }, 0),
-
-    pagos: usuarios.reduce((totalPagos, usuario) => {
-      const usuarioPago = usuario.pagamento ? 1 : 0;
-
-      const filhosPagos = usuario.filhos
-        ? usuario.filhos.filter((filho) => filho.pagamento).length
-        : 0;
-
-      return totalPagos + usuarioPago + filhosPagos;
-    }, 0),
-
-    comFilhos: usuarios.filter((u) => u.filhos && u.filhos.length > 0).length,
-
-    totalAlunos:
-      usuarios.reduce(
-        (total, usuario) =>
-          total + (usuario.filhos ? usuario.filhos.length : 0),
-        0,
-      ) + usuarios.length,
-  };
+  const estatisticas = useEstatisticasUsuarios(usuarios);
 
   const renderConteudoSecao = () => {
     switch (secaoAtiva) {
