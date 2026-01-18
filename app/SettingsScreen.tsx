@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Alert,
   Linking,
@@ -6,21 +6,22 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
 
-import AccountSection from '@/components/Settings/AccountSection';
-import LoginModal from '@/components/Settings/LoginModal';
-import { useUser } from '@/contexts/UserContext';
-import { useLogin } from '@/hooks/useLogin';
-import { globalStyles } from '@/styles/globalStyles';
-import { appConfig, gymData } from './../utils/constants';
+import AccountSection from "@/components/Settings/AccountSection";
+import LoginModal from "@/components/Settings/LoginModal";
+import { useUser } from "@/contexts/UserContext";
+import { useLogin } from "@/hooks/useLogin";
+import { globalStyles } from "@/styles/globalStyles";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { appConfig, gymData } from "./../utils/constants";
 
-
-const settingsScreen = () => {
+const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const { usuario } = useUser();
-  
+
   const {
     showLoginModal,
     email,
@@ -36,27 +37,29 @@ const settingsScreen = () => {
     handleProfile,
   } = useLogin();
 
-
   const handlePrivacyPolicy = async () => {
-    const url = 'https://uriasmanu.github.io/ct-imperio-app/';
+    const url = "https://ct-imperio-privacy-policy.vercel.app/";
     try {
       const canOpen = await Linking.canOpenURL(url);
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Erro', 'Não foi possível abrir o link.');
+        Alert.alert("Erro", "Não foi possível abrir o link.");
       }
     } catch (error) {
-      Alert.alert('Erro', 'Ocorreu um problema ao abrir a política de privacidade.');
+      Alert.alert(
+        "Erro",
+        "Ocorreu um problema ao abrir a política de privacidade.",
+      );
     }
   };
 
   const handleContact = () => {
-    const phoneNumber = gymData.phone.replace(/\D/g, '');
+    const phoneNumber = gymData.phone.replace(/\D/g, "");
     const url = `whatsapp://send?phone=${phoneNumber}`;
 
     Linking.openURL(url).catch(() => {
-      Alert.alert('Erro', 'WhatsApp não está instalado no dispositivo.');
+      Alert.alert("Erro", "WhatsApp não está instalado no dispositivo.");
     });
   };
 
@@ -64,10 +67,16 @@ const settingsScreen = () => {
     setShowVersionInfo(!showVersionInfo);
   };
 
-
+  const handleTutorial = () => {
+    // Função para navegar para o tutorial
+    router.push("/onboardingScreen");
+  };
 
   return (
-    <ScrollView style={globalStyles.container}>
+    <ScrollView
+      style={globalStyles.container}
+      showsVerticalScrollIndicator={false}
+    >
       <AccountSection
         isLoggedIn={!!usuario}
         user={usuario}
@@ -76,104 +85,144 @@ const settingsScreen = () => {
         handleRegister={handleRegister}
         handleLogin={handleLogin}
       />
-      {/* Seção de Informações da Academia */}
+
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="business" size={18} color="#B8860B" />
+          <Text style={styles.sectionTitle}>INFORMAÇÕES DA ACADEMIA</Text>
+        </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.gymName}>{gymData.name}</Text>
+          <View style={styles.infoCardHeader}>
+            <Ionicons name="trophy" size={20} color="#B8860B" />
+            <Text style={styles.gymName}>{gymData.name}</Text>
+          </View>
           <Text style={styles.gymAddress}>{gymData.address}</Text>
         </View>
 
         <TouchableOpacity style={styles.menuItem} onPress={handleContact}>
           <View style={styles.menuItemLeft}>
-            <Text style={styles.menuText}>Contato / WhatsApp</Text>
-            <Text style={styles.menuSubtext}>{gymData.phone}</Text>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="logo-whatsapp" size={18} color="#B8860B" />
+            </View>
+            <View>
+              <Text style={styles.menuText}>Contato / WhatsApp</Text>
+              <Text style={styles.menuSubtext}>{gymData.phone}</Text>
+            </View>
           </View>
-          <Text style={styles.menuArrow}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#B8860B" />
         </TouchableOpacity>
 
         <View style={styles.menuItem}>
           <View style={styles.menuItemLeft}>
-            <Text style={styles.menuText}>Professor Responsável</Text>
-            <Text style={styles.menuSubtext}>{gymData.instructor}</Text>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="person" size={18} color="#B8860B" />
+            </View>
+            <View>
+              <Text style={styles.menuText}>Professor Responsável</Text>
+              <Text style={styles.menuSubtext}>{gymData.instructor}</Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.menuItem}>
           <View style={styles.menuItemLeft}>
-            <Text style={styles.menuText}>Horários de Funcionamento</Text>
-            <Text style={styles.menuSubtext}>{gymData.hours}</Text>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="time" size={18} color="#B8860B" />
+            </View>
+            <View>
+              <Text style={styles.menuText}>Horários de Funcionamento</Text>
+              <Text style={styles.menuSubtext}>{gymData.hours}</Text>
+            </View>
           </View>
         </View>
       </View>
 
-      {/* Seção de Suporte */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>SUPORTE</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="help-circle" size={18} color="#B8860B" />
+          <Text style={styles.sectionTitle}>SUPORTE</Text>
+        </View>
 
         <TouchableOpacity style={styles.menuItem} onPress={handlePrivacyPolicy}>
-          <Text style={styles.menuText}>Política de Privacidade</Text>
-          <Text style={styles.menuArrow}>›</Text>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="shield-checkmark" size={18} color="#B8860B" />
+            </View>
+            <Text style={styles.menuText}>Política de Privacidade</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#B8860B" />
         </TouchableOpacity>
       </View>
 
-      {/* Seção de Atualizações */}
       <View style={styles.section}>
-        <View style={styles.accordionContainer}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="refresh-circle" size={18} color="#B8860B" />
+          <Text style={styles.sectionTitle}>APLICATIVO</Text>
+        </View>
+
+        <TouchableOpacity style={styles.menuItem} onPress={toggleVersionInfo}>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="information-circle" size={18} color="#B8860B" />
+            </View>
+            <Text style={styles.menuText}>Versão do App</Text>
+          </View>
+          <View style={styles.versionBadge}>
+            <Text style={styles.versionText}>v{appConfig.version}</Text>
+            <Ionicons
+              name={showVersionInfo ? "chevron-up" : "chevron-down"}
+              size={18}
+              color="#B8860B"
+            />
+          </View>
+        </TouchableOpacity>
+
+        <View>
           <TouchableOpacity
-            style={styles.accordionHeader}
-            onPress={toggleVersionInfo}
+            style={styles.tutorialButton}
+            onPress={handleTutorial}
           >
-            <Text style={styles.menuText}>Atualizações</Text>
-            <View style={styles.headerRight}>
-              <Text style={styles.versionText}>v {appConfig.version}</Text>
-              <Text
-                style={[
-                  styles.accordionArrow,
-                  showVersionInfo && styles.accordionArrowOpen
-                ]}
-              >
-                ›
+            <View style={styles.tutorialIconContainer}>
+              <Ionicons name="play-circle" size={24} color="#B8860B" />
+            </View>
+            <View style={styles.tutorialContent}>
+              <Text style={styles.tutorialTitle}>Tutorial do App</Text>
+              <Text style={styles.tutorialSubtitle}>
+                Aprenda a usar todos os recursos
               </Text>
             </View>
+            <Ionicons name="chevron-forward" size={20} color="#B8860B" />
           </TouchableOpacity>
-
-          {showVersionInfo && (
-            <View style={styles.accordionContent}>
-              <View style={styles.versionInfo}>
-                <Text style={styles.versionTitle}>Informações da versão</Text>
-
-                <View style={styles.versionDetail}>
-                  <Text style={styles.versionLabel}>Versão</Text>
-                  <Text style={styles.versionValue}>{appConfig.version}</Text>
-                </View>
-
-                <View style={styles.versionDetail}>
-                  <Text style={styles.versionLabel}>Última atualização</Text>
-                  <Text style={styles.versionValue}>{appConfig.lastUpload}</Text>
-                </View>
-
-                <View style={styles.versionDetailFeature}>
-                  <Text style={styles.versionLabel}>Novidades</Text>
-                  <View style={styles.featuresList}>
-                    {appConfig.features.map((feature: string, index: number) => (
-                      <Text key={index} style={styles.featureItem}>
-                        • {feature}
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
         </View>
+
+        {showVersionInfo && (
+          <View style={styles.versionInfoCard}>
+            <View style={styles.versionDetail}>
+              <Text style={styles.versionLabel}>Última atualização:</Text>
+              <Text style={styles.versionValue}>{appConfig.lastUpload}</Text>
+            </View>
+            <View style={styles.featuresContainer}>
+              <Text style={styles.featuresTitle}>Novidades:</Text>
+              {appConfig.features.map((feature: string, index: number) => (
+                <View key={index} style={styles.featureItem}>
+                  <Ionicons name="checkmark-circle" size={14} color="#B8860B" />
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
 
-      {/* Rodapé */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>CT Império © 2024</Text>
-        <Text style={styles.footerSubtext}>Todos os direitos reservados</Text>
+        <View style={styles.footerLogo}>
+          <Ionicons name="fitness" size={24} color="#B8860B" />
+          <Text style={styles.footerTitle}>CT Império</Text>
+        </View>
+        <Text style={styles.footerText}>
+          © 2025 Todos os direitos reservados
+        </Text>
       </View>
 
       <LoginModal
@@ -186,204 +235,236 @@ const settingsScreen = () => {
         password={password}
         onPasswordChange={setPassword}
       />
-
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-
-  userMembership: {
+  section: {
+    backgroundColor: "#000000",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#1a1a1a",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#0a0a0a",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1a1a1a",
+  },
+  sectionTitle: {
     fontSize: 12,
-    color: '#B8860B',
-    fontWeight: '500',
+    fontWeight: "700",
+    color: "#B8860B",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  tutorialButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#0a0a0a",
+    padding: 16,
+    borderRadius: 12,
+    margin: 16,
+    borderWidth: 1,
+    borderColor: "#B8860B",
+    shadowColor: "#B8860B",
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tutorialIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(184, 134, 11, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  tutorialContent: {
+    flex: 1,
+  },
+  tutorialTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  tutorialSubtitle: {
+    fontSize: 14,
+    color: "#B8860B",
+    fontWeight: "500",
   },
   infoCard: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#0a0a0a",
     padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 12,
     borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#B8860B',
+    borderWidth: 1,
+    borderColor: "#1a1a1a",
+  },
+  infoCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
   },
   gymName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#B8860B',
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#B8860B",
   },
   gymAddress: {
     fontSize: 14,
-    color: '#CCCCCC',
+    color: "#CCCCCC",
     lineHeight: 20,
+    marginLeft: 28,
   },
   menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333333',
+    borderBottomColor: "#1a1a1a",
   },
   menuItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
+  },
+  menuItemIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(184, 134, 11, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
   },
   menuText: {
     fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '500',
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   menuSubtext: {
     fontSize: 14,
-    color: '#B8860B',
-    marginTop: 4,
-    lineHeight: 18,
+    color: "#B8860B",
+    marginTop: 2,
+    fontWeight: "500",
   },
-  menuArrow: {
-    fontSize: 18,
-    color: '#B8860B',
-    fontWeight: 'bold',
-  },
-  unitSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  selectedUnitText: {
-    fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '500',
-  },
-  unitOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#1a1a1a',
-    marginBottom: 1,
-  },
-  unitOptionText: {
-    fontSize: 14,
-    color: '#CCCCCC',
-  },
-  unitOptionTextSelected: {
-    color: '#B8860B',
-    fontWeight: '600',
-  },
-  checkmark: {
-    color: '#B8860B',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  accordionContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#333333',
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  versionBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   versionText: {
     fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '500',
+    color: "#B8860B",
+    fontWeight: "600",
   },
-  accordionArrow: {
-    fontSize: 18,
-    color: '#B8860B',
-    fontWeight: 'bold',
-    transform: [{ rotate: '0deg' }],
-  },
-  accordionArrowOpen: {
-    transform: [{ rotate: '90deg' }],
-  },
-  accordionContent: {
-    backgroundColor: '#000000',
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#333333',
-  },
-  versionInfo: {
-    paddingVertical: 16,
-    gap: 12,
-  },
-  versionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#B8860B',
-    marginBottom: 8,
+  versionInfoCard: {
+    backgroundColor: "#0a0a0a",
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#1a1a1a",
   },
   versionDetail: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1a1a1a",
   },
   versionLabel: {
     fontSize: 14,
-    color: '#CCCCCC',
-    fontWeight: '500',
-    flex: 1,
+    color: "#CCCCCC",
+    fontWeight: "500",
   },
   versionValue: {
     fontSize: 14,
-    color: '#B8860B',
-    flex: 2,
-    textAlign: 'right',
-    fontWeight: '500',
+    color: "#B8860B",
+    fontWeight: "600",
   },
-  versionDetailFeature: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 10
+  featuresContainer: {
+    gap: 8,
   },
-  featuresList: {
-    flex: 2,
+  featuresTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#B8860B",
+    marginBottom: 4,
   },
   featureItem: {
-    fontSize: 14,
-    color: '#CCCCCC',
-    marginBottom: 4,
-    fontWeight: '500',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 4,
+  },
+  featureText: {
+    fontSize: 13,
+    color: "#CCCCCC",
+    flex: 1,
+  },
+  resetButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "rgba(255, 68, 68, 0.1)",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 68, 68, 0.3)",
+  },
+  resetButtonText: {
+    fontSize: 15,
+    color: "#FF4444",
+    fontWeight: "600",
   },
   footer: {
-    alignItems: 'center',
-    paddingVertical: 24,
+    alignItems: "center",
+    paddingVertical: 32,
     paddingHorizontal: 16,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
+  },
+  footerLogo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  footerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#B8860B",
   },
   footerText: {
-    fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '500',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#666666',
-    marginTop: 4,
-  },
-  section: {
-    backgroundColor: '#000000',
-    marginVertical: 8,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#B8860B',
-    marginVertical: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 13,
+    color: "#666666",
+    fontWeight: "500",
   },
 });
 
-export default settingsScreen;
+export default SettingsScreen;
