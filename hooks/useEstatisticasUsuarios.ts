@@ -5,6 +5,7 @@ interface Estatisticas {
   total: number;
   pendentes: number;
   pagos: number;
+  aguardando: number;
   comFilhos: number;
   totalAlunos: number;
 }
@@ -17,6 +18,7 @@ export function useEstatisticasUsuarios(
       total: usuarios.length,
       pendentes: calcularPendentes(usuarios),
       pagos: calcularPagos(usuarios),
+      aguardando: calcularAguardando(usuarios),
       comFilhos: calcularComFilhos(usuarios),
       totalAlunos: calcularTotalAlunos(usuarios),
     };
@@ -73,4 +75,16 @@ function calcularTotalAlunos(usuarios: UsuarioCompleto[]): number {
   );
 
   return totalFilhos + usuarios.length;
+}
+
+function calcularAguardando(usuarios: UsuarioCompleto[]): number {
+  return usuarios.reduce((total, usuario) => {
+    const usuarioAviso = usuario.avisoPagamento === true ? 1 : 0;
+
+    const filhosAviso =
+      usuario.filhos?.filter((filho) => filho.avisoPagamento === true).length ??
+      0;
+
+    return total + usuarioAviso + filhosAviso;
+  }, 0);
 }

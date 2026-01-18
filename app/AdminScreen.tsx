@@ -297,6 +297,8 @@ export default function AdminScreen() {
         title: "Gestão",
         icon: "people",
         description: "Gerenciar usuários e pagamentos",
+        badge:
+          estatisticas.aguardando > 0 ? estatisticas.aguardando : undefined,
         color: "#10B981",
       },
       {
