@@ -1,30 +1,28 @@
 export interface GraduacaoMuayThai {
-  cor: string;       
+  cor: string;
   pontaBranca?: boolean;
 }
 
 export const graduaçõesMuayThai: GraduacaoMuayThai[] = [
-  { cor: "Banca" },
-  { cor: "Amarela" },
-  { cor: "Amarela", pontaBranca: true },
+  { cor: "Banco" },
+  { cor: "Amarelo" },
+  { cor: "Amarelo", pontaBranca: true },
   { cor: "Verde" },
   { cor: "Verde", pontaBranca: true },
   { cor: "Azul" },
   { cor: "Azul", pontaBranca: true },
   { cor: "Marrom" },
   { cor: "Marrom", pontaBranca: true },
-  { cor: "Vermelha" },
-  { cor: "Vermelha", pontaBranca: true },
+  { cor: "Vermelho" },
+  { cor: "Vermelho", pontaBranca: true },
   { cor: "Preto" },
 ];
 
-
 export interface GraduacaoJiuJitsu {
-  cor: string;    
-  faixa?: string; 
-  grau?: 0 | 1 | 2 | 3 | 4;  
+  cor: string;
+  faixa?: string;
+  grau?: 0 | 1 | 2 | 3 | 4;
 }
-
 
 export const graduaçõesJiuJitsu: GraduacaoJiuJitsu[] = [
   { cor: "Branca", grau: 0 },
