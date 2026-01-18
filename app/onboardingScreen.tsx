@@ -1,4 +1,4 @@
-import { slides } from "@/components/onboarding/slides";
+import { slides, SlideType } from "@/components/onboarding/slides";
 import React from "react";
 import {
   Dimensions,
@@ -38,7 +38,7 @@ export default function OnboardingScreen({ onFinish }: Props) {
   return (
     <View style={styles.container}>
       <Onboarding
-        pages={slides.map((slide) => ({
+        pages={slides.map((slide: SlideType) => ({
           backgroundColor: slide.backgroundColor,
           image: (
             <View style={styles.imageContainer}>
@@ -51,23 +51,11 @@ export default function OnboardingScreen({ onFinish }: Props) {
           ),
           title: slide.title,
           subtitle: slide.subtitle,
-          titleStyles: {
-            color: slide.titleColor || "#FFFFFF",
-            fontSize: 28,
-            fontWeight: "800",
-            textAlign: "center",
-            marginBottom: 12,
-            lineHeight: 34,
-          },
-          subTitleStyles: {
-            color: slide.subtitleColor || "#CCCCCC",
-            fontSize: 16,
-            textAlign: "center",
-            lineHeight: 22,
-            fontWeight: "400",
-            opacity: 0.9,
-            paddingHorizontal: 40,
-          },
+          titleStyles: [styles.title, { color: slide.titleColor || "#FFFFFF" }],
+          subTitleStyles: [
+            styles.subtitle,
+            { color: slide.subtitleColor || "#CCCCCC" },
+          ],
         }))}
         onSkip={onFinish}
         onDone={onFinish}
@@ -90,26 +78,51 @@ export default function OnboardingScreen({ onFinish }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
   },
   onboardingContainer: {
     paddingBottom: 30,
   },
-  imageContainer: {
-    width: width * 0.85,
-    height: height * 0.4,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
   customImageContainer: {
     paddingBottom: 0,
+    marginBottom: 10,
+  },
+  imageContainer: {
+    width: width * 0.85, // 85% da largura da tela
+    height: height * 0.7, // 70% da altura da tela
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
   },
   image: {
     width: "100%",
     height: "100%",
     borderRadius: 12,
+    // Sombra para melhorar visibilidade
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 12,
+    lineHeight: 34,
+    fontFamily: "System",
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 22,
+    fontWeight: "400",
+    opacity: 0.9,
+    paddingHorizontal: 40,
+    fontFamily: "System",
   },
   skipButton: {
     paddingHorizontal: 20,
@@ -131,6 +144,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     opacity: 0.8,
+    fontFamily: "System",
   },
   doneText: {
     color: "#007AFF",
