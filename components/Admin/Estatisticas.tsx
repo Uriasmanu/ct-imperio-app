@@ -16,21 +16,24 @@ interface EstatisticasProps {
 export const Estatisticas: React.FC<EstatisticasProps> = ({ estatisticas }) => {
   return (
     <View style={styles.container}>
+      {/* DESTAQUE: Total de Alunos */}
       <View style={styles.mainCard}>
+        <View style={[styles.mainIndicator, { backgroundColor: "#8b5cf6" }]} />
         <View>
-          <Text style={styles.mainLabel}>Total de Usuários</Text>
-          <Text style={styles.mainNumber}>{estatisticas.total}</Text>
+          <Text style={styles.mainLabel}>Total de Alunos</Text>
+          <Text style={styles.mainNumber}>{estatisticas.totalAlunos}</Text>
         </View>
         <View
           style={[
             styles.iconCircle,
-            { backgroundColor: "rgba(184, 134, 11, 0.2)" },
+            { backgroundColor: "rgba(139, 92, 246, 0.15)" },
           ]}
         >
-          <Ionicons name="people" size={24} color="#B8860B" />
+          <Ionicons name="school" size={28} color="#8b5cf6" />
         </View>
       </View>
 
+      {/* Grid de Detalhes e Usuários */}
       <View style={styles.grid}>
         <StatItem
           label="Aguardando"
@@ -39,22 +42,22 @@ export const Estatisticas: React.FC<EstatisticasProps> = ({ estatisticas }) => {
           color="#d78500"
         />
         <StatItem
-          label="Pagos"
-          value={estatisticas.pagos}
-          icon="checkmark-done"
-          color="#22c55e"
-        />
-        <StatItem
           label="Pendentes"
           value={estatisticas.pendentes}
           icon="alert-circle-outline"
           color="#ef4444"
         />
         <StatItem
-          label="Total Alunos"
-          value={estatisticas.totalAlunos}
-          icon="school-outline"
-          color="#8b5cf6"
+          label="Pagos"
+          value={estatisticas.pagos}
+          icon="checkmark-done"
+          color="#22c55e"
+        />
+        <StatItem
+          label="Usuarios"
+          value={estatisticas.total}
+          icon="people-outline"
+          color="#B8860B"
         />
       </View>
     </View>
@@ -65,9 +68,11 @@ const StatItem = ({ label, value, icon, color }: any) => (
   <View style={styles.miniCard}>
     <View style={[styles.indicator, { backgroundColor: color }]} />
     <Ionicons name={icon} size={18} color={color} style={styles.miniIcon} />
-    <View>
+    <View style={styles.miniTextContainer}>
       <Text style={styles.miniValue}>{value}</Text>
-      <Text style={styles.miniLabel}>{label}</Text>
+      <Text style={styles.miniLabel} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   </View>
 );
@@ -86,6 +91,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#333",
+    overflow: "hidden",
+    position: "relative",
+  },
+  mainIndicator: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6,
   },
   mainLabel: {
     color: "#aaa",
@@ -94,13 +108,14 @@ const styles = StyleSheet.create({
   },
   mainNumber: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
+    marginTop: 4,
   },
   iconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -114,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1e1e1e",
     borderRadius: 12,
     padding: 12,
-    width: "48%",
+    width: "48.5%",
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
@@ -129,7 +144,10 @@ const styles = StyleSheet.create({
     width: 4,
   },
   miniIcon: {
-    marginRight: 10,
+    marginRight: 8,
+  },
+  miniTextContainer: {
+    flex: 1,
   },
   miniValue: {
     color: "#fff",
