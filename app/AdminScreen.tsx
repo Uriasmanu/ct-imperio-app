@@ -25,6 +25,7 @@ import { UsuarioCard } from "@/components/Admin/UsuarioCard";
 import { db } from "@/config/firebaseConfig";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useEstatisticasUsuarios } from "@/hooks/useEstatisticasUsuarios";
+import { usePedidosPendentes } from "@/hooks/usePedidosPendentes";
 import { usePresenca } from "@/hooks/usePresenca";
 import { useUsuariosFiltrados } from "@/hooks/useUsuariosFiltrados";
 import { FiltrosState, UsuarioCompleto } from "@/types/admin";
@@ -282,6 +283,8 @@ export default function AdminScreen() {
     }
   };
 
+  const pedidosPendentes = usePedidosPendentes();
+
   const renderCardsNavegacao = () => {
     const cards = [
       {
@@ -320,6 +323,7 @@ export default function AdminScreen() {
         title: "Estoque",
         icon: "cube",
         description: "Estoque de equipamentos e roupas",
+        badge: pedidosPendentes > 0 ? pedidosPendentes : undefined,
         color: "#84CC16",
       },
       {

@@ -38,7 +38,7 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide4",
-    title: "Gerencie sua Família",
+    title: "Gerencie seu cadastro",
     subtitle: "Cadastre filhos e acompanhe todos em uma só conta",
     image: require("../../assets/onboarding/registreFilhos.png"),
     backgroundColor: "#000",
