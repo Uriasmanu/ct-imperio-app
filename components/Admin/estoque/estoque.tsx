@@ -332,14 +332,12 @@ export const Estoque: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.sectionTitleContainer}>
           <Ionicons name="cube" size={22} color="#B8860B" />
           <Text style={styles.sectionTitle}>Controle de Estoque</Text>
         </View>
 
-        {/* ABAS */}
         <View style={styles.abasContainer}>
           <TouchableOpacity
             style={[styles.aba, abaAtiva === "estoque" && styles.abaAtiva]}
@@ -381,7 +379,6 @@ export const Estoque: React.FC = () => {
         </View>
       </View>
 
-      {/* FORMULÁRIO DE PRODUTO */}
       <FormProduto
         visible={mostrarFormItem}
         onClose={handleFecharFormulario}
@@ -391,7 +388,6 @@ export const Estoque: React.FC = () => {
         modoEdicao={modoEdicao}
       />
 
-      {/* MODAL DE VENDA */}
       <ModalVenda
         visible={mostrarModalVenda}
         produto={produtoVendendo}
@@ -399,7 +395,6 @@ export const Estoque: React.FC = () => {
         onVender={handleProcessarVenda}
       />
 
-      {/* MODAL DE PEDIDO */}
       <ModalPedido
         visible={mostrarModalPedido}
         onClose={() => setMostrarModalPedido(false)}
@@ -410,7 +405,6 @@ export const Estoque: React.FC = () => {
         alunos={alunos}
       />
 
-      {/* BOTÕES DE AÇÃO */}
       <View style={styles.acoesContainer}>
         {abaAtiva === "estoque" ? (
           <TouchableOpacity
@@ -431,7 +425,6 @@ export const Estoque: React.FC = () => {
         )}
       </View>
 
-      {/* CONTEÚDO DAS ABAS */}
       <ScrollView style={styles.conteudo}>
         {abaAtiva === "estoque" ? (
           <View style={styles.estoqueContainer}>
@@ -453,7 +446,6 @@ export const Estoque: React.FC = () => {
             ) : (
               estoque.map((item) => (
                 <View key={item.id} style={styles.itemCard}>
-                  {/* IMAGEM GRANDE NO TOPO */}
                   <View style={styles.imagemContainer}>
                     {item.imagem ? (
                       <Image
@@ -474,9 +466,7 @@ export const Estoque: React.FC = () => {
                     )}
                   </View>
 
-                  {/* INFORMAÇÕES ABAIXO DA IMAGEM */}
                   <View style={styles.conteudoCard}>
-                    {/* CABEÇALHO COM NOME E PREÇO */}
                     <View style={styles.itemHeader}>
                       <Text style={styles.itemNome} numberOfLines={2}>
                         {item.nome}
@@ -488,7 +478,6 @@ export const Estoque: React.FC = () => {
                       </View>
                     </View>
 
-                    {/* INFORMAÇÕES DO PRODUTO */}
                     <View style={styles.itemInfo}>
                       <View style={styles.quantidadeContainer}>
                         <Ionicons name="pricetag" size={16} color="#B8860B" />
@@ -517,7 +506,6 @@ export const Estoque: React.FC = () => {
                       )}
                     </View>
 
-                    {/* AÇÕES */}
                     <View style={styles.itemAcoes}>
                       <TouchableOpacity
                         style={styles.botaoEditar}
@@ -573,7 +561,6 @@ export const Estoque: React.FC = () => {
 
                 return (
                   <View key={pedido.id} style={styles.pedidoCard}>
-                    {/* Cabeçalho */}
                     <View style={styles.pedidoHeader}>
                       <View>
                         <Text style={styles.pedidoPessoa}>{pedido.pessoa}</Text>
@@ -598,7 +585,6 @@ export const Estoque: React.FC = () => {
                       </View>
                     </View>
 
-                    {/* Lista de Itens */}
                     <View style={styles.pedidoItens}>
                       {pedido.itens.map((itemPedido, index) => (
                         <View key={index} style={styles.pedidoItem}>
@@ -639,7 +625,6 @@ export const Estoque: React.FC = () => {
                       </View>
                     )}
 
-                    {/* Rodapé e Ações */}
                     <View style={styles.pedidoFooter}>
                       <View style={styles.pedidoTotalContainer}>
                         <Text style={styles.totalLabel}>Total do Pedido</Text>
@@ -649,7 +634,6 @@ export const Estoque: React.FC = () => {
                       </View>
 
                       <View style={styles.pedidoAcoes}>
-                        {/* Botão de Pagar - aparece apenas se pendente ou reservado */}
                         {mostrarBotaoPagar(pedido) && (
                           <TouchableOpacity
                             style={[styles.botaoAcao, styles.botaoPagar]}
@@ -664,7 +648,6 @@ export const Estoque: React.FC = () => {
                           </TouchableOpacity>
                         )}
 
-                        {/* Botão de Entregue - aparece apenas se pago */}
                         {mostrarBotaoEntregue(pedido) && (
                           <TouchableOpacity
                             style={[styles.botaoAcao, styles.botaoEntregue]}
@@ -679,7 +662,6 @@ export const Estoque: React.FC = () => {
                           </TouchableOpacity>
                         )}
 
-                        {/* Botão Editar */}
                         <TouchableOpacity
                           style={[styles.botaoAcao, styles.botaoEditarPedido]}
                           onPress={() => {
@@ -698,7 +680,6 @@ export const Estoque: React.FC = () => {
                           <Text style={styles.botaoAcaoTexto}>Editar</Text>
                         </TouchableOpacity>
 
-                        {/* Botão Excluir */}
                         <TouchableOpacity
                           style={[styles.botaoAcao, styles.botaoExcluirPedido]}
                           onPress={() => handleDeletarPedido(pedido)}
