@@ -12,7 +12,7 @@ export const slides: SlideType[] = [
   {
     key: "slide1",
     title: "Bem-vindo à CT Império",
-    subtitle: "Sua academia agora na palma da mão",
+    subtitle: "A sua academia agora está na palma da sua mão",
     image: require("../../assets/onboarding/inicio.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -20,8 +20,9 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide2",
-    title: "Cronograma de Aulas",
-    subtitle: "Acompanhe horários, professores e status em tempo real",
+    title: "Quadro de Aulas",
+    subtitle:
+      "Confira horários, professores e o status das aulas em tempo real",
     image: require("../../assets/onboarding/cronograma.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -29,8 +30,9 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide3",
-    title: "Faça seu Registro",
-    subtitle: "Crie sua conta em poucos passos e comece hoje mesmo",
+    title: "Acesse sua Conta",
+    subtitle:
+      "Faça login em Configurações para liberar todas as funcionalidades",
     image: require("../../assets/onboarding/registrese.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -38,8 +40,9 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide4",
-    title: "Gerencie seu cadastro",
-    subtitle: "Cadastre filhos e acompanhe todos em uma só conta",
+    title: "Perfil e Modalidades",
+    subtitle:
+      "⚠️ Cadastre uma modalidade para você ou seus filhos para habilitar o financeiro e a presença",
     image: require("../../assets/onboarding/registreFilhos.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -48,7 +51,8 @@ export const slides: SlideType[] = [
   {
     key: "slide5",
     title: "Controle de Frequência",
-    subtitle: "Marque presença e veja seu histórico de participação",
+    subtitle:
+      "Marque sua presença nas aulas e acompanhe seu histórico de participação",
     image: require("../../assets/onboarding/AvisePresenca.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -56,8 +60,8 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide6",
-    title: "Aviso de Pagamento",
-    subtitle: "Informe quando realizar seu pagamento mensal",
+    title: "Status de Pagamento",
+    subtitle: "Acompanhe suas mensalidades e use o botão 'Avisar que pagou'",
     image: require("../../assets/onboarding/avisePagamento.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -65,8 +69,9 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide7",
-    title: "Pagamento Rápido",
-    subtitle: "Use PIX para pagamentos instantâneos e seguros",
+    title: "Pagamento via PIX",
+    subtitle:
+      "Utilize o QR Code ou a chave CNPJ para pagamentos rápidos e seguros",
     image: require("../../assets/onboarding/informacaoPagamento.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
@@ -74,8 +79,9 @@ export const slides: SlideType[] = [
   },
   {
     key: "slide8",
-    title: "Equipamentos Oficiais",
-    subtitle: "Compre uniformes e acessórios direto pelo app",
+    title: "Produtos e Uniformes",
+    subtitle:
+      "Conheça nossos produtos oficiais e demonstre interesse direto pelo app",
     image: require("../../assets/onboarding/nossosProdutos.png"),
     backgroundColor: "#000",
     titleColor: "#FFFFFF",
