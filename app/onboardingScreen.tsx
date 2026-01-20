@@ -1,7 +1,7 @@
-import { slides, SlideType } from "@/components/onboarding/slides";
+import { slides, SlideType } from "../components/onboarding/slides";
+
 import { setOnboardingDone } from "@/storage/onboarding";
 import { useRouter } from "expo-router";
-import React from "react";
 import {
   Dimensions,
   Image,
