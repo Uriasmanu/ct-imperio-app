@@ -455,7 +455,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>
             {pedidoEditando ? "Editar Pedido" : "Novo Pedido"}
@@ -466,11 +465,9 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         </View>
 
         <ScrollView style={styles.content}>
-          {/* Informações do Cliente */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Informações do Cliente</Text>
 
-            {/* Seletor de Aluno */}
             <View style={styles.alunoSelectorContainer}>
               <TouchableOpacity
                 style={styles.alunoSelectorButton}
@@ -514,14 +511,12 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               )}
             </View>
 
-            {/* Separador OU */}
             <View style={styles.ouContainer}>
               <View style={styles.ouLinha} />
               <Text style={styles.ouTexto}>OU</Text>
               <View style={styles.ouLinha} />
             </View>
 
-            {/* Campo de nome manual */}
             <TextInput
               style={styles.input}
               placeholder="Digite o nome manualmente"
@@ -572,7 +567,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
             </View>
           </View>
 
-          {/* Itens do Pedido */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Itens do Pedido</Text>
@@ -631,7 +625,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
             )}
           </View>
 
-          {/* Produtos Disponíveis */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Produtos Disponíveis</Text>
             {produtos.map((produto) => (
@@ -706,7 +699,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           </View>
         </ScrollView>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={[
@@ -723,7 +715,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Modal para seleção de alunos */}
         <Modal
           visible={mostrarListaAlunos}
           animationType="slide"
@@ -747,7 +738,6 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
               </TouchableOpacity>
             </View>
 
-            {/* Barra de busca no modal */}
             <View style={styles.buscaAlunoContainer}>
               <Ionicons name="search" size={20} color="#666" />
               <TextInput
