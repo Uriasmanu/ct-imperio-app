@@ -144,16 +144,27 @@ export default function perfilScreen() {
     graduacao?: GraduacaoMuayThai | GraduacaoJiuJitsu,
     modalidade?: string,
   ) => {
-    if (!graduacao) return "Sem graduação";
+    if (
+      modalidade === "No-Gi" ||
+      modalidade === "Boxe" ||
+      modalidade === "MMA"
+    ) {
+      return "";
+    }
+
+    if (!graduacao) return "";
 
     if (modalidade === "Muay Thai") {
       const grad = graduacao as GraduacaoMuayThai;
       return grad?.pontaBranca ? `${grad.cor} (Ponta Branca)` : grad.cor;
-    } else {
-      const grad = graduacao as GraduacaoJiuJitsu;
-      const grau = grad?.grau ?? 0;
-      return `${grad.cor} - ${grau}º Grau`;
     }
+
+    if (modalidade === "Jiu-Jitsu") {
+      const grad = graduacao as GraduacaoJiuJitsu;
+      return `${grad.cor} - ${grad.grau}º Grau`;
+    }
+
+    return "";
   };
 
   const renderModalidadesUsuario = () => {
@@ -183,12 +194,18 @@ export default function perfilScreen() {
                 {modalidadeAluno.ativo ? "✅ Ativo" : "⏸️ Inativo"}
               </Text>
             </View>
-            <Text style={styles.modalidadeGraduacao}>
-              {formatarGraduacao(
-                modalidadeAluno.graduacao,
-                modalidadeAluno.modalidade,
-              )}
-            </Text>
+            {formatarGraduacao(
+              modalidadeAluno.graduacao,
+              modalidadeAluno.modalidade,
+            ) ? (
+              <Text style={styles.modalidadeGraduacao}>
+                {formatarGraduacao(
+                  modalidadeAluno.graduacao,
+                  modalidadeAluno.modalidade,
+                )}
+              </Text>
+            ) : null}
+
             <Text style={styles.modalidadeData}>
               Desde: {formatarData(modalidadeAluno.dataInicio)}
             </Text>
