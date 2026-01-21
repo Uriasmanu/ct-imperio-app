@@ -29,21 +29,17 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [confirmandoTodas, setConfirmandoTodas] = useState(false);
 
-  // Função para verificar se uma data é hoje
   const isHoje = (dataString: string) => {
-    const hoje = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
+    const hoje = new Date().toISOString().split("T")[0];
     return dataString === hoje;
   };
 
-  // Filtrar presenças de hoje
   const presencasHoje = presencas.filter((presenca) => isHoje(presenca.data));
   const presencasPendentesHoje = presencasHoje.filter((p) => !p.confirmada);
 
-  // Verificar se há presenças de hoje para mostrar o botão
   const temPresencasHoje = presencasHoje.length > 0;
   const temPresencasPendentesHoje = presencasPendentesHoje.length > 0;
 
-  // Função para confirmar todas as presenças
   const handleConfirmarTodas = async () => {
     if (!onConfirmarTodas) return;
 
@@ -101,7 +97,6 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
             setConfirmando(presenca.id);
             try {
               await onConfirmarPresenca(presenca.id);
-              // O feedback visual será dado pela atualização da lista
             } catch (error) {
               Alert.alert("Erro", "Não foi possível confirmar a presença");
             } finally {
