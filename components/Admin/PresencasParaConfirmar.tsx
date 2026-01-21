@@ -1,6 +1,6 @@
-import { PresencaParaConfirmar, PresencaStats } from '@/types/admin';
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { PresencaParaConfirmar, PresencaStats } from "@/types/admin";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,8 +8,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
 
 interface PresencasParaConfirmarProps {
   presencas: PresencaParaConfirmar[];
@@ -24,98 +24,98 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   stats,
   onConfirmarPresenca,
   onConfirmarTodas,
-  loading = false
+  loading = false,
 }) => {
-
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [confirmandoTodas, setConfirmandoTodas] = useState(false);
 
-
   // Função para verificar se uma data é hoje
   const isHoje = (dataString: string) => {
-    const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    const hoje = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
     return dataString === hoje;
   };
 
   // Filtrar presenças de hoje
-  const presencasHoje = presencas.filter(presenca => isHoje(presenca.data));
-  const presencasPendentesHoje = presencasHoje.filter(p => !p.confirmada);
+  const presencasHoje = presencas.filter((presenca) => isHoje(presenca.data));
+  const presencasPendentesHoje = presencasHoje.filter((p) => !p.confirmada);
 
   // Verificar se há presenças de hoje para mostrar o botão
   const temPresencasHoje = presencasHoje.length > 0;
   const temPresencasPendentesHoje = presencasPendentesHoje.length > 0;
 
-
   // Função para confirmar todas as presenças
   const handleConfirmarTodas = async () => {
     if (!onConfirmarTodas) return;
 
-    const presencasPendentes = presencas.filter(p => !p.confirmada);
+    const presencasPendentes = presencas.filter((p) => !p.confirmada);
 
     if (presencasPendentes.length === 0) {
-      Alert.alert('Aviso', 'Não há presenças pendentes para confirmar');
+      Alert.alert("Aviso", "Não há presenças pendentes para confirmar");
       return;
     }
 
     Alert.alert(
-      'Confirmar Todas as Presenças',
+      "Confirmar Todas as Presenças",
       `Deseja confirmar todas as ${presencasPendentesHoje.length} presenças pendentes de hoje?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: "Cancelar", style: "cancel" },
         {
-          text: 'Confirmar Todas',
-          style: 'default',
+          text: "Confirmar Todas",
+          style: "default",
           onPress: async () => {
             setConfirmandoTodas(true);
             try {
               const result = await onConfirmarTodas();
               if (result.success) {
                 Alert.alert(
-                  'Sucesso!',
-                  `${result.confirmed} presenças foram confirmadas com sucesso!`
+                  "Sucesso!",
+                  `${result.confirmed} presenças foram confirmadas com sucesso!`,
                 );
               } else {
-                Alert.alert('Erro', 'Não foi possível confirmar todas as presenças');
+                Alert.alert(
+                  "Erro",
+                  "Não foi possível confirmar todas as presenças",
+                );
               }
             } catch (error) {
-              Alert.alert('Erro', 'Ocorreu um erro ao confirmar as presenças');
+              Alert.alert("Erro", "Ocorreu um erro ao confirmar as presenças");
             } finally {
               setConfirmandoTodas(false);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   const handleConfirmar = async (presenca: PresencaParaConfirmar) => {
     Alert.alert(
-      'Confirmar Presença',
-      `Deseja confirmar a presença de ${presenca.tipo === 'filho' ? presenca.filhoNome : presenca.usuarioNome}?`,
+      "Confirmar Presença",
+      `Deseja confirmar a presença de ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: "Cancelar", style: "cancel" },
         {
-          text: 'Confirmar',
-          style: 'default',
+          text: "Confirmar",
+          style: "default",
           onPress: async () => {
             setConfirmando(presenca.id);
             try {
               await onConfirmarPresenca(presenca.id);
               // O feedback visual será dado pela atualização da lista
             } catch (error) {
-              Alert.alert('Erro', 'Não foi possível confirmar a presença');
+              Alert.alert("Erro", "Não foi possível confirmar a presença");
             } finally {
               setConfirmando(null);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   const formatarData = (dataString: string) => {
-    const data = new Date(dataString + 'T00:00:00');
-    return data.toLocaleDateString('pt-BR');
+    const data = new Date(dataString + "T00:00:00");
+    return data.toLocaleDateString("pt-BR");
   };
 
   if (loading) {
@@ -128,16 +128,14 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com botão de confirmar todas */}
       <View style={styles.header}>
         <Text style={styles.title}>Presenças para Confirmar</Text>
 
-        {/* MOSTRAR BOTÃO APENAS SE HOUVER PRESENÇAS PENDENTES HOJE */}
         {temPresencasPendentesHoje && onConfirmarTodas && (
           <TouchableOpacity
             style={[
               styles.confirmarTodasButton,
-              confirmandoTodas && styles.confirmarTodasButtonDisabled
+              confirmandoTodas && styles.confirmarTodasButtonDisabled,
             ]}
             onPress={handleConfirmarTodas}
             disabled={confirmandoTodas}
@@ -154,9 +152,8 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
             )}
           </TouchableOpacity>
         )}
-
       </View>
-      {/* Estatísticas */}
+
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Ionicons name="time-outline" size={20} color="#eab308" />
@@ -177,7 +174,6 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
         </View>
       </View>
 
-      {/* Lista de Presenças */}
       <ScrollView style={styles.listaContainer}>
         {presencas.length === 0 ? (
           <View style={styles.emptyState}>
@@ -193,16 +189,20 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
               key={presenca.id}
               style={[
                 styles.presencaItem,
-                presenca.confirmada && styles.presencaConfirmada
+                presenca.confirmada && styles.presencaConfirmada,
               ]}
             >
               <View style={styles.presencaInfo}>
                 <View style={styles.presencaHeader}>
                   <Text style={styles.usuarioNome}>
-                    {presenca.tipo === 'filho' ? presenca.filhoNome : presenca.usuarioNome}
+                    {presenca.tipo === "filho"
+                      ? presenca.filhoNome
+                      : presenca.usuarioNome}
                   </Text>
-                  {presenca.tipo === 'filho' && (
-                    <Text style={styles.filhoLabel}>(Filho de {presenca.usuarioNome})</Text>
+                  {presenca.tipo === "filho" && (
+                    <Text style={styles.filhoLabel}>
+                      (Filho de {presenca.usuarioNome})
+                    </Text>
                   )}
                 </View>
 
@@ -218,9 +218,13 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                         styles.modalidadeBadge,
                         {
                           backgroundColor:
-                            modalidade === "Muay Thai" ? "#dc2626" :
-                              modalidade === "Jiu-Jitsu" ? "#1e40af" :
-                                modalidade === "Boxe" ? "#059669" : "#7c3aed",
+                            modalidade === "Muay Thai"
+                              ? "#dc2626"
+                              : modalidade === "Jiu-Jitsu"
+                                ? "#1e40af"
+                                : modalidade === "Boxe"
+                                  ? "#059669"
+                                  : "#7c3aed",
                         },
                       ]}
                     >
@@ -235,17 +239,24 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
               <View style={styles.actions}>
                 {presenca.confirmada ? (
                   <View style={styles.confirmadaBadge}>
-                    <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color="#22c55e"
+                    />
                     <Text style={styles.confirmadaText}>Confirmada</Text>
                   </View>
                 ) : (
                   <TouchableOpacity
                     style={[
                       styles.confirmarButton,
-                      confirmando === presenca.id && styles.confirmarButtonDisabled
+                      confirmando === presenca.id &&
+                        styles.confirmarButtonDisabled,
                     ]}
                     onPress={() => handleConfirmar(presenca)}
-                    disabled={confirmando === presenca.id || presenca.confirmada}
+                    disabled={
+                      confirmando === presenca.id || presenca.confirmada
+                    }
                   >
                     {confirmando === presenca.id ? (
                       <ActivityIndicator size="small" color="#000" />
@@ -253,7 +264,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                       <>
                         <Ionicons name="checkmark" size={18} color="#000" />
                         <Text style={styles.confirmarButtonText}>
-                          {presenca.confirmada ? 'Confirmada' : 'Confirmar'}
+                          {presenca.confirmada ? "Confirmada" : "Confirmar"}
                         </Text>
                       </>
                     )}
@@ -270,30 +281,30 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: "#333",
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statNumber: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 4,
   },
   statLabel: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 12,
   },
   listaContainer: {
@@ -302,47 +313,47 @@ const styles = StyleSheet.create({
   },
 
   presencaItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#2a2a2a',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#2a2a2a",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#B8860B',
+    borderLeftColor: "#B8860B",
   },
   presencaConfirmada: {
-    borderLeftColor: '#22c55e',
+    borderLeftColor: "#22c55e",
     opacity: 0.7,
   },
   presencaInfo: {
     flex: 1,
   },
   presencaHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   usuarioNome: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginRight: 8,
   },
   filhoLabel: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 12,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   presencaData: {
-    color: '#B8860B',
+    color: "#B8860B",
     fontSize: 12,
     marginVertical: 4,
   },
   modalidadesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 4,
     marginTop: 4,
   },
@@ -352,82 +363,82 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   modalidadeBadgeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   actions: {
     marginLeft: 12,
   },
   confirmadaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   confirmadaText: {
-    color: '#22c55e',
+    color: "#22c55e",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   confirmarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#B8860B',
+    backgroundColor: "#B8860B",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
   confirmarButtonText: {
-    color: '#000',
+    color: "#000",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   emptyStateText: {
-    color: '#CCC',
+    color: "#CCC",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyStateSubtext: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 4,
   },
   loadingText: {
-    color: '#B8860B',
-    textAlign: 'center',
+    color: "#B8860B",
+    textAlign: "center",
     padding: 20,
   },
   confirmarButtonDisabled: {
     opacity: 0.6,
-    backgroundColor: '#666',
+    backgroundColor: "#666",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
 
   title: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     flex: 1,
   },
 
   confirmarTodasButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    backgroundColor: '#22c55e',
+    backgroundColor: "#22c55e",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -435,13 +446,12 @@ const styles = StyleSheet.create({
 
   confirmarTodasButtonDisabled: {
     opacity: 0.6,
-    backgroundColor: '#666',
+    backgroundColor: "#666",
   },
 
   confirmarTodasText: {
-    color: '#000',
+    color: "#000",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-
 });
