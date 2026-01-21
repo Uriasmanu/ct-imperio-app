@@ -1,7 +1,17 @@
 import { ItemEstoque } from "@/types/estoque";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface ModalTamanhoProps {
   visible: boolean;
@@ -26,7 +36,6 @@ export function ModalTamanho({
 
   const handleConfirmar = () => {
     if (!tamanhoSelecionado) return;
-
     onConfirmar(tamanhoSelecionado);
     setTamanhoSelecionado("");
   };
@@ -47,52 +56,67 @@ export function ModalTamanho({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalProdutoInfo}>
-            <Text style={styles.modalProdutoNome}>{produto.nome}</Text>
-            <Text style={styles.modalProdutoPreco}>
-              R$ {produto.preco.toFixed(2)}
-            </Text>
-          </View>
+          <ScrollView
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={true}
+          >
+            <View style={styles.modalProdutoInfo}>
+              <Text style={styles.modalProdutoNome}>{produto.nome}</Text>
+              <Text style={styles.modalProdutoPreco}>
+                R$ {produto.preco.toFixed(2)}
+              </Text>
+            </View>
 
-          <View style={styles.tamanhosContainer}>
-            {tamanhosDisponiveis.map((tamanho) => {
-              const estoque = produto.tamanhos?.[tamanho] || 0;
-              const disponivel = estoque > 0;
+            <View style={styles.tamanhosContainer}>
+              {tamanhosDisponiveis.map((tamanho) => {
+                const estoque = produto.tamanhos?.[tamanho] || 0;
+                const disponivel = estoque > 0;
 
-              return (
-                <TouchableOpacity
-                  key={tamanho}
-                  style={[
-                    styles.tamanhoItem,
-                    tamanhoSelecionado === tamanho && styles.tamanhoSelecionado,
-                    !disponivel && styles.tamanhoIndisponivel,
-                  ]}
-                  onPress={() => disponivel && setTamanhoSelecionado(tamanho)}
-                  disabled={!disponivel}
-                >
-                  <Text
+                return (
+                  <TouchableOpacity
+                    key={tamanho}
                     style={[
-                      styles.tamanhoTexto,
+                      styles.tamanhoItem,
                       tamanhoSelecionado === tamanho &&
-                        styles.tamanhoTextoSelecionado,
-                      !disponivel && styles.tamanhoTextoIndisponivel,
+                        styles.tamanhoSelecionado,
+                      !disponivel && styles.tamanhoIndisponivel,
                     ]}
+                    onPress={() => disponivel && setTamanhoSelecionado(tamanho)}
+                    disabled={!disponivel}
                   >
-                    {tamanho}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.estoqueTexto,
-                      !disponivel && styles.estoqueTextoIndisponivel,
-                    ]}
-                  >
-                    {disponivel ? `${estoque} disponíveis` : "Indisponível"}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <View>
+                      <Text
+                        style={[
+                          styles.tamanhoTexto,
+                          tamanhoSelecionado === tamanho &&
+                            styles.tamanhoTextoSelecionado,
+                          !disponivel && styles.tamanhoTextoIndisponivel,
+                        ]}
+                      >
+                        {tamanho}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.estoqueTexto,
+                          !disponivel && styles.estoqueTextoIndisponivel,
+                        ]}
+                      >
+                        {disponivel ? `${estoque} disponíveis` : "Indisponível"}
+                      </Text>
+                    </View>
+                    {tamanhoSelecionado === tamanho && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color="#B8860B"
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
 
           <View style={styles.modalBotoesContainer}>
             <TouchableOpacity
@@ -111,9 +135,7 @@ export function ModalTamanho({
               disabled={!tamanhoSelecionado}
             >
               <Ionicons name="cart" size={20} color="#FFF" />
-              <Text style={styles.modalBotaoConfirmarTexto}>
-                Adicionar ao Carrinho
-              </Text>
+              <Text style={styles.modalBotaoConfirmarTexto}>Adicionar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -125,31 +147,38 @@ export function ModalTamanho({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   modalTamanhoContainer: {
     backgroundColor: "#1a1a1a",
     borderRadius: 20,
     width: "100%",
     maxWidth: 400,
+    maxHeight: SCREEN_HEIGHT * 0.8,
     borderWidth: 1,
     borderColor: "#333",
+    overflow: "hidden",
   },
   modalTamanhoHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
   },
+  scrollArea: {
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingBottom: 10,
+  },
   modalTamanhoTitulo: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#FFF",
   },
@@ -158,23 +187,21 @@ const styles = StyleSheet.create({
   },
   modalProdutoInfo: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   modalProdutoNome: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFF",
-    marginBottom: 8,
+    fontSize: 16,
+    color: "#AAA",
+    marginBottom: 4,
   },
   modalProdutoPreco: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#B8860B",
   },
   tamanhosContainer: {
-    padding: 20,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 10,
   },
   tamanhoItem: {
     flexDirection: "row",
@@ -188,14 +215,13 @@ const styles = StyleSheet.create({
   },
   tamanhoSelecionado: {
     borderColor: "#B8860B",
-    backgroundColor: "rgba(184, 134, 11, 0.1)",
+    backgroundColor: "rgba(184, 134, 11, 0.05)",
   },
   tamanhoIndisponivel: {
-    opacity: 0.5,
-    backgroundColor: "#1a1a1a",
+    opacity: 0.4,
   },
   tamanhoTexto: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
     color: "#FFF",
   },
@@ -206,11 +232,12 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   estoqueTexto: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#888",
+    marginTop: 2,
   },
   estoqueTextoIndisponivel: {
-    color: "#666",
+    color: "#555",
   },
   modalBotoesContainer: {
     flexDirection: "row",
@@ -218,37 +245,36 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: "#333",
+    backgroundColor: "#1a1a1a",
   },
   modalBotaoCancelar: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: "#2a2a2a",
     alignItems: "center",
-    justifyContent: "center",
   },
   modalBotaoCancelarTexto: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   modalBotaoConfirmar: {
-    flex: 2,
+    flex: 1.5,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: "#B8860B",
   },
   modalBotaoConfirmarDisabled: {
     backgroundColor: "#333",
-    opacity: 0.5,
   },
   modalBotaoConfirmarTexto: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
 });
