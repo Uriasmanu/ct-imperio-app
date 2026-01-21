@@ -1,13 +1,7 @@
-import { ItemEstoque } from '@/types/estoque';
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import {
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { ItemEstoque } from "@/types/estoque";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface ModalTamanhoProps {
   visible: boolean;
@@ -20,9 +14,9 @@ export function ModalTamanho({
   visible,
   produto,
   onFechar,
-  onConfirmar
+  onConfirmar,
 }: ModalTamanhoProps) {
-  const [tamanhoSelecionado, setTamanhoSelecionado] = useState<string>('');
+  const [tamanhoSelecionado, setTamanhoSelecionado] = useState<string>("");
 
   if (!produto) return null;
 
@@ -34,7 +28,7 @@ export function ModalTamanho({
     if (!tamanhoSelecionado) return;
 
     onConfirmar(tamanhoSelecionado);
-    setTamanhoSelecionado('');
+    setTamanhoSelecionado("");
   };
 
   return (
@@ -46,17 +40,13 @@ export function ModalTamanho({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalTamanhoContainer}>
-          {/* HEADER */}
           <View style={styles.modalTamanhoHeader}>
-            <Text style={styles.modalTamanhoTitulo}>
-              Selecione o Tamanho
-            </Text>
+            <Text style={styles.modalTamanhoTitulo}>Selecione o Tamanho</Text>
             <TouchableOpacity onPress={onFechar} style={styles.modalFecharBtn}>
               <Ionicons name="close" size={24} color="#AAA" />
             </TouchableOpacity>
           </View>
 
-          {/* INFO DO PRODUTO */}
           <View style={styles.modalProdutoInfo}>
             <Text style={styles.modalProdutoNome}>{produto.nome}</Text>
             <Text style={styles.modalProdutoPreco}>
@@ -64,7 +54,6 @@ export function ModalTamanho({
             </Text>
           </View>
 
-          {/* TAMANHOS */}
           <View style={styles.tamanhosContainer}>
             {tamanhosDisponiveis.map((tamanho) => {
               const estoque = produto.tamanhos?.[tamanho] || 0;
@@ -76,7 +65,7 @@ export function ModalTamanho({
                   style={[
                     styles.tamanhoItem,
                     tamanhoSelecionado === tamanho && styles.tamanhoSelecionado,
-                    !disponivel && styles.tamanhoIndisponivel
+                    !disponivel && styles.tamanhoIndisponivel,
                   ]}
                   onPress={() => disponivel && setTamanhoSelecionado(tamanho)}
                   disabled={!disponivel}
@@ -84,8 +73,9 @@ export function ModalTamanho({
                   <Text
                     style={[
                       styles.tamanhoTexto,
-                      tamanhoSelecionado === tamanho && styles.tamanhoTextoSelecionado,
-                      !disponivel && styles.tamanhoTextoIndisponivel
+                      tamanhoSelecionado === tamanho &&
+                        styles.tamanhoTextoSelecionado,
+                      !disponivel && styles.tamanhoTextoIndisponivel,
                     ]}
                   >
                     {tamanho}
@@ -94,33 +84,28 @@ export function ModalTamanho({
                   <Text
                     style={[
                       styles.estoqueTexto,
-                      !disponivel && styles.estoqueTextoIndisponivel
+                      !disponivel && styles.estoqueTextoIndisponivel,
                     ]}
                   >
-                    {disponivel
-                      ? `${estoque} disponíveis`
-                      : 'Indisponível'}
+                    {disponivel ? `${estoque} disponíveis` : "Indisponível"}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* BOTÕES */}
           <View style={styles.modalBotoesContainer}>
             <TouchableOpacity
               style={styles.modalBotaoCancelar}
               onPress={onFechar}
             >
-              <Text style={styles.modalBotaoCancelarTexto}>
-                Cancelar
-              </Text>
+              <Text style={styles.modalBotaoCancelarTexto}>Cancelar</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.modalBotaoConfirmar,
-                !tamanhoSelecionado && styles.modalBotaoConfirmarDisabled
+                !tamanhoSelecionado && styles.modalBotaoConfirmarDisabled,
               ]}
               onPress={handleConfirmar}
               disabled={!tamanhoSelecionado}
@@ -140,33 +125,33 @@ export function ModalTamanho({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   modalTamanhoContainer: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     borderRadius: 20,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   modalTamanhoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: "#333",
   },
   modalTamanhoTitulo: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
   },
   modalFecharBtn: {
     padding: 4,
@@ -174,96 +159,96 @@ const styles = StyleSheet.create({
   modalProdutoInfo: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: "#333",
   },
   modalProdutoNome: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
+    fontWeight: "600",
+    color: "#FFF",
     marginBottom: 8,
   },
   modalProdutoPreco: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#B8860B',
+    fontWeight: "bold",
+    color: "#B8860B",
   },
   tamanhosContainer: {
     padding: 20,
     gap: 12,
   },
   tamanhoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#0a0a0a',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#0a0a0a",
     padding: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   tamanhoSelecionado: {
-    borderColor: '#B8860B',
-    backgroundColor: 'rgba(184, 134, 11, 0.1)',
+    borderColor: "#B8860B",
+    backgroundColor: "rgba(184, 134, 11, 0.1)",
   },
   tamanhoIndisponivel: {
     opacity: 0.5,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
   },
   tamanhoTexto: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
   },
   tamanhoTextoSelecionado: {
-    color: '#B8860B',
+    color: "#B8860B",
   },
   tamanhoTextoIndisponivel: {
-    color: '#666',
+    color: "#666",
   },
   estoqueTexto: {
     fontSize: 14,
-    color: '#888',
+    color: "#888",
   },
   estoqueTextoIndisponivel: {
-    color: '#666',
+    color: "#666",
   },
   modalBotoesContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: "#333",
   },
   modalBotaoCancelar: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#2a2a2a",
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalBotaoCancelarTexto: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalBotaoConfirmar: {
     flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
     borderRadius: 8,
-    backgroundColor: '#B8860B',
+    backgroundColor: "#B8860B",
   },
   modalBotaoConfirmarDisabled: {
-    backgroundColor: '#333',
+    backgroundColor: "#333",
     opacity: 0.5,
   },
   modalBotaoConfirmarTexto: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
