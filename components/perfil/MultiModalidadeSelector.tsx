@@ -1,69 +1,72 @@
-import { ModalidadeAluno } from '@/types/usuarios';
-import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GraduacaoSelector } from './GraduacaoSelector';
+import { ModalidadeAluno } from "@/types/usuarios";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { GraduacaoSelector } from "./GraduacaoSelector";
 
 interface MultiModalidadeSelectorProps {
   modalidades: ModalidadeAluno[];
   onModalidadesChange: (modalidades: ModalidadeAluno[]) => void;
 }
 
-export const MultiModalidadeSelector: React.FC<MultiModalidadeSelectorProps> = ({
-  modalidades,
-  onModalidadesChange,
-}) => {
-  const todasModalidades: Array<"Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA"> = [
-    "Jiu-Jitsu", "Muay Thai", "Boxe", "MMA", "No-Gi"
-  ];
+export const MultiModalidadeSelector: React.FC<
+  MultiModalidadeSelectorProps
+> = ({ modalidades, onModalidadesChange }) => {
+  const todasModalidades: Array<
+    "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA"
+  > = ["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA", "No-Gi"];
 
-  const toggleModalidade = (modalidade: "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA") => {
-    const existe = modalidades.find(m => m.modalidade === modalidade);
-    
+  const toggleModalidade = (
+    modalidade: "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA",
+  ) => {
+    const existe = modalidades.find((m) => m.modalidade === modalidade);
+
     if (existe) {
-      // Remove a modalidade
-      onModalidadesChange(modalidades.filter(m => m.modalidade !== modalidade));
+      onModalidadesChange(
+        modalidades.filter((m) => m.modalidade !== modalidade),
+      );
     } else {
-      // Adiciona a modalidade
       const novaModalidade: ModalidadeAluno = {
         modalidade,
         dataInicio: new Date().toISOString(),
         ativo: true,
-        graduacao: modalidade === "Muay Thai" ? { cor: "Branca", pontaBranca: false } : { cor: "Branca", grau: 1 }
+        graduacao:
+          modalidade === "Muay Thai"
+            ? { cor: "Branca", pontaBranca: false }
+            : { cor: "Branca", grau: 1 },
       };
       onModalidadesChange([...modalidades, novaModalidade]);
     }
   };
 
   const atualizarGraduacao = (modalidade: string, novaGraduacao: any) => {
-    const novasModalidades = modalidades.map(m => 
-      m.modalidade === modalidade 
-        ? { ...m, graduacao: novaGraduacao }
-        : m
+    const novasModalidades = modalidades.map((m) =>
+      m.modalidade === modalidade ? { ...m, graduacao: novaGraduacao } : m,
     );
     onModalidadesChange(novasModalidades);
   };
 
   return (
     <View style={styles.container}>
-      
       <View style={styles.modalidadesGrid}>
         {todasModalidades.map((modalidade) => {
-          const ativa = modalidades.find(m => m.modalidade === modalidade);
-          
+          const ativa = modalidades.find((m) => m.modalidade === modalidade);
+
           return (
             <View key={modalidade} style={styles.modalidadeItem}>
               <TouchableOpacity
                 style={[
                   styles.modalidadeButton,
-                  ativa && styles.modalidadeButtonSelected
+                  ativa && styles.modalidadeButtonSelected,
                 ]}
                 onPress={() => toggleModalidade(modalidade)}
               >
-                <Text style={[
-                  styles.modalidadeButtonText,
-                  ativa && styles.modalidadeButtonTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.modalidadeButtonText,
+                    ativa && styles.modalidadeButtonTextSelected,
+                  ]}
+                >
                   {modalidade}
                 </Text>
                 <Ionicons
@@ -86,7 +89,7 @@ export const MultiModalidadeSelector: React.FC<MultiModalidadeSelectorProps> = (
           <GraduacaoSelector
             modalidade={modalidadeAluno.modalidade}
             graduacaoAtual={modalidadeAluno.graduacao}
-            onSelect={(graduacao) => 
+            onSelect={(graduacao) =>
               atualizarGraduacao(modalidadeAluno.modalidade, graduacao)
             }
           />
@@ -102,57 +105,57 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#B8860B',
-    fontWeight: '600',
+    color: "#B8860B",
+    fontWeight: "600",
     marginBottom: 12,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   modalidadesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 16,
   },
   modalidadeItem: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: "45%",
   },
   modalidadeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   modalidadeButtonSelected: {
-    backgroundColor: '#B8860B',
-    borderColor: '#DAA520',
+    backgroundColor: "#B8860B",
+    borderColor: "#DAA520",
   },
   modalidadeButtonText: {
-    color: '#CCC',
-    fontWeight: '500',
+    color: "#CCC",
+    fontWeight: "500",
     fontSize: 14,
   },
   modalidadeButtonTextSelected: {
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
   },
   graduacaoSection: {
     marginBottom: 16,
     padding: 12,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   graduacaoLabel: {
     fontSize: 14,
-    color: '#FFF',
-    fontWeight: '600',
+    color: "#FFF",
+    fontWeight: "600",
     marginBottom: 8,
   },
 });
