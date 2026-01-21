@@ -48,6 +48,10 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
   const [usuarioId, setUsuarioId] = useState<string>("");
   const [buscaAluno, setBuscaAluno] = useState("");
 
+  const [modalTamanhoVisivel, setModalTamanhoVisivel] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] =
+    useState<ItemEstoque | null>(null);
+
   useEffect(() => {
     if (pedidoEditando) {
       const pessoa = pedidoEditando.pessoa || "";
@@ -91,6 +95,15 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
 
   const calcularTotal = () => {
     return itensPedido.reduce((total, item) => total + item.subtotal, 0);
+  };
+
+  const handleClickProduto = (produto: ItemEstoque) => {
+    if (Object.keys(produto.tamanhos).length > 0) {
+      setProdutoSelecionado(produto);
+      setModalTamanhoVisivel(true);
+    } else {
+      adicionarItem(produto);
+    }
   };
 
   const adicionarItem = (produto: ItemEstoque) => {
@@ -287,6 +300,9 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
         setItensPedido([...itensPedido, novoItem]);
       }
     }
+
+    setModalTamanhoVisivel(false);
+    setProdutoSelecionado(null);
   };
 
   const removerItem = (index: number) => {
@@ -628,73 +644,43 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Produtos Disponíveis</Text>
             {produtos.map((produto) => (
-              <View key={produto.id} style={styles.produtoCard}>
+              <TouchableOpacity
+                key={produto.id}
+                style={styles.produtoCard}
+                onPress={() => handleClickProduto(produto)}
+                disabled={
+                  produto.quantidade === 0 &&
+                  Object.keys(produto.tamanhos).length === 0
+                }
+              >
                 <View style={styles.produtoInfo}>
                   <Text style={styles.produtoName}>{produto.nome}</Text>
                   <Text style={styles.produtoPrice}>
                     R$ {produto.preco.toFixed(2)}
                   </Text>
-                  <Text style={styles.produtoStock}>
-                    Estoque: {produto.quantidade} unidades
-                  </Text>
+                  {Object.keys(produto.tamanhos).length > 0 ? (
+                    <Text style={styles.produtoStock}>
+                      Toque para selecionar tamanho
+                    </Text>
+                  ) : (
+                    <Text style={styles.produtoStock}>
+                      Estoque: {produto.quantidade} unidades
+                    </Text>
+                  )}
                 </View>
 
                 <View style={styles.produtoActions}>
-                  {Object.keys(produto.tamanhos).length > 0 ? (
-                    <View style={styles.tamanhosContainer}>
-                      {Object.entries(produto.tamanhos).map(
-                        ([tamanho, quantidade]) => (
-                          <TouchableOpacity
-                            key={tamanho}
-                            onPress={() =>
-                              adicionarItemComTamanho(produto, tamanho)
-                            }
-                            style={[
-                              styles.tamanhoButton,
-                              quantidade === 0 && styles.tamanhoButtonDisabled,
-                            ]}
-                            disabled={quantidade === 0}
-                          >
-                            <Text
-                              style={[
-                                styles.tamanhoButtonText,
-                                quantidade === 0 &&
-                                  styles.tamanhoButtonTextDisabled,
-                              ]}
-                            >
-                              {tamanho} ({quantidade})
-                            </Text>
-                          </TouchableOpacity>
-                        ),
-                      )}
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => adicionarItem(produto)}
-                      style={[
-                        styles.addButton,
-                        produto.quantidade === 0 && styles.addButtonDisabled,
-                      ]}
-                      disabled={produto.quantidade === 0}
-                    >
-                      <Ionicons
-                        name="add"
-                        size={16}
-                        color={produto.quantidade === 0 ? "#666" : "#FFF"}
-                      />
-                      <Text
-                        style={[
-                          styles.addButtonText,
-                          produto.quantidade === 0 &&
-                            styles.addButtonTextDisabled,
-                        ]}
-                      >
-                        Adicionar
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <Ionicons
+                    name={
+                      Object.keys(produto.tamanhos).length > 0
+                        ? "resize"
+                        : "add-circle"
+                    }
+                    size={24}
+                    color="#B8860B"
+                  />
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
@@ -808,6 +794,93 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
             </ScrollView>
           </View>
         </Modal>
+
+        <Modal
+          visible={modalTamanhoVisivel}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => {
+            setModalTamanhoVisivel(false);
+            setProdutoSelecionado(null);
+          }}
+          transparent={true}
+        >
+          <View style={styles.modalTamanhoOverlay}>
+            <View style={styles.modalTamanhoContainer}>
+              <View style={styles.modalTamanhoHeader}>
+                <Text style={styles.modalTamanhoTitle}>
+                  {produtoSelecionado?.nome}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setModalTamanhoVisivel(false);
+                    setProdutoSelecionado(null);
+                  }}
+                  style={styles.modalTamanhoCloseButton}
+                >
+                  <Ionicons name="close" size={24} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.modalTamanhoSubtitle}>
+                Selecione o tamanho desejado
+              </Text>
+
+              <Text style={styles.modalTamanhoPreco}>
+                R$ {produtoSelecionado?.preco.toFixed(2)}
+              </Text>
+
+              <ScrollView style={styles.modalTamanhosLista}>
+                {produtoSelecionado &&
+                  Object.entries(produtoSelecionado.tamanhos).map(
+                    ([tamanho, quantidade]) => (
+                      <TouchableOpacity
+                        key={tamanho}
+                        style={[
+                          styles.modalTamanhoItem,
+                          quantidade === 0 && styles.modalTamanhoItemDisabled,
+                        ]}
+                        onPress={() =>
+                          adicionarItemComTamanho(produtoSelecionado, tamanho)
+                        }
+                        disabled={quantidade === 0}
+                      >
+                        <View style={styles.modalTamanhoItemInfo}>
+                          <Text
+                            style={[
+                              styles.modalTamanhoItemTamanho,
+                              quantidade === 0 &&
+                                styles.modalTamanhoItemTamanhoDisabled,
+                            ]}
+                          >
+                            {tamanho}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.modalTamanhoItemEstoque,
+                              quantidade === 0 &&
+                                styles.modalTamanhoItemEstoqueDisabled,
+                            ]}
+                          >
+                            {quantidade === 0
+                              ? "Sem estoque"
+                              : `${quantidade} disponíveis`}
+                          </Text>
+                        </View>
+                        {quantidade > 0 && (
+                          <Ionicons
+                            name="add-circle"
+                            size={24}
+                            color="#B8860B"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ),
+                  )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -816,31 +889,37 @@ export const ModalPedido: React.FC<ModalPedidoProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#1A1A1A",
   },
   header: {
+    backgroundColor: "#B8860B",
+    padding: 20,
+    paddingTop: Platform.OS === "ios" ? 60 : 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#1a1a1a",
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#B8860B",
+    color: "#FFF",
   },
   closeButton: {
     padding: 4,
   },
   content: {
     flex: 1,
-    padding: 16,
   },
   section: {
-    marginBottom: 24,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 12,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -848,61 +927,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  sectionTitle: {
-    fontSize: 16,
+  totalText: {
+    fontSize: 18,
     fontWeight: "bold",
     color: "#B8860B",
-    marginBottom: 12,
-  },
-  totalText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FFF",
   },
   input: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
     padding: 12,
     color: "#FFF",
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#444",
   },
   textArea: {
     height: 80,
     textAlignVertical: "top",
   },
-  statusButton: {
+  statusContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#333",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    gap: 8,
+    marginTop: 8,
   },
-  statusPago: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
-    borderColor: "#22C55E",
-  },
-  statusPendente: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "#EF4444",
-  },
-  statusButtonText: {
+  statusOption: {
     flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#2A2A2A",
+    borderWidth: 1,
+    borderColor: "#444",
+    alignItems: "center",
+  },
+  statusOptionActive: {
+    backgroundColor: "#B8860B",
+    borderColor: "#B8860B",
+  },
+  statusOptionText: {
+    color: "#999",
+    fontSize: 12,
     fontWeight: "600",
   },
+  statusOptionTextActive: {
+    color: "#FFF",
+  },
   itemCard: {
-    backgroundColor: "#1a1a1a",
-    padding: 12,
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    padding: 12,
     marginBottom: 8,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -913,17 +985,18 @@ const styles = StyleSheet.create({
   },
   itemName: {
     color: "#FFF",
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 4,
   },
   itemSize: {
     color: "#B8860B",
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   itemPrice: {
-    color: "#888",
-    fontSize: 12,
+    color: "#999",
+    fontSize: 14,
   },
   itemActions: {
     flexDirection: "row",
@@ -932,36 +1005,33 @@ const styles = StyleSheet.create({
   },
   quantityButton: {
     backgroundColor: "#B8860B",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 4,
+    padding: 4,
   },
   quantityText: {
     color: "#FFF",
-    fontWeight: "bold",
-    minWidth: 20,
+    fontSize: 16,
+    fontWeight: "600",
+    minWidth: 30,
     textAlign: "center",
   },
   removeButton: {
     padding: 4,
+    marginLeft: 4,
   },
   emptyItems: {
     alignItems: "center",
-    padding: 20,
+    padding: 32,
   },
   emptyItemsText: {
     color: "#666",
+    fontSize: 14,
     marginTop: 8,
-    textAlign: "center",
   },
   produtoCard: {
-    backgroundColor: "#1a1a1a",
-    padding: 12,
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    padding: 12,
     marginBottom: 8,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -972,121 +1042,74 @@ const styles = StyleSheet.create({
   },
   produtoName: {
     color: "#FFF",
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 4,
   },
   produtoPrice: {
     color: "#B8860B",
     fontSize: 14,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   produtoStock: {
-    color: "#888",
+    color: "#999",
     fontSize: 12,
   },
   produtoActions: {
-    alignItems: "flex-end",
-  },
-  tamanhosContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    justifyContent: "flex-end",
-  },
-  tamanhoButton: {
-    backgroundColor: "#B8860B",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  tamanhoButtonDisabled: {
-    backgroundColor: "#333",
-  },
-  tamanhoButtonText: {
-    color: "#000",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  tamanhoButtonTextDisabled: {
-    color: "#666",
-  },
-  addButton: {
-    backgroundColor: "#B8860B",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  addButtonDisabled: {
-    backgroundColor: "#333",
-  },
-  addButtonText: {
-    color: "#000",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  addButtonTextDisabled: {
-    color: "#666",
+    paddingLeft: 12,
   },
   footer: {
     padding: 16,
-    backgroundColor: "#1a1a1a",
+    paddingBottom: Platform.OS === "ios" ? 32 : 16,
+    backgroundColor: "#1A1A1A",
     borderTopWidth: 1,
     borderTopColor: "#333",
   },
   saveButton: {
     backgroundColor: "#B8860B",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
     borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
   },
   saveButtonDisabled: {
-    backgroundColor: "#333",
+    backgroundColor: "#444",
   },
   saveButtonText: {
-    color: "#000",
-    fontWeight: "bold",
+    color: "#FFF",
     fontSize: 16,
+    fontWeight: "bold",
   },
-
   alunoSelectorContainer: {
     marginBottom: 12,
   },
   alunoSelectorButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
     padding: 12,
+    borderWidth: 1,
+    borderColor: "#444",
+    gap: 8,
   },
   alunoSelectorText: {
     flex: 1,
-    marginLeft: 8,
-    color: "#B8860B",
+    color: "#FFF",
     fontSize: 14,
-    fontWeight: "600",
   },
   alunoSelectorTextDisabled: {
     color: "#666",
   },
   alunoSelecionadoContainer: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(184, 134, 11, 0.1)",
-    borderWidth: 1,
-    borderColor: "#B8860B",
+    alignItems: "center",
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
     padding: 12,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#B8860B",
   },
   alunoSelecionadoInfo: {
     flexDirection: "row",
@@ -1094,7 +1117,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   alunoSelecionadoNome: {
-    color: "#B8860B",
+    color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -1106,31 +1129,29 @@ const styles = StyleSheet.create({
   ouLinha: {
     flex: 1,
     height: 1,
-    backgroundColor: "#333",
+    backgroundColor: "#444",
   },
   ouTexto: {
     color: "#666",
     fontSize: 12,
-    fontWeight: "600",
     marginHorizontal: 12,
   },
   modalAlunosContainer: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#1A1A1A",
   },
   modalAlunosHeader: {
+    backgroundColor: "#B8860B",
+    padding: 20,
+    paddingTop: Platform.OS === "ios" ? 60 : 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#1a1a1a",
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   modalAlunosTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#B8860B",
+    color: "#FFF",
   },
   modalAlunosCloseButton: {
     padding: 4,
@@ -1138,107 +1159,146 @@ const styles = StyleSheet.create({
   buscaAlunoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    margin: 16,
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#333",
-    gap: 12,
+    padding: 12,
+    margin: 16,
+    gap: 8,
   },
   buscaAlunoInput: {
     flex: 1,
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 14,
   },
   modalAlunosLista: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   alunoItem: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#1a1a1a",
+    alignItems: "center",
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#333",
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
   },
   alunoItemInfo: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
     flex: 1,
   },
   alunoItemTextContainer: {
-    marginLeft: 12,
     flex: 1,
   },
   alunoItemNome: {
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   alunoItemInfoExtra: {
-    color: "#888",
+    color: "#999",
     fontSize: 12,
   },
   nenhumAlunoContainer: {
     alignItems: "center",
-    padding: 40,
+    padding: 48,
   },
   nenhumAlunoTexto: {
     color: "#666",
-    marginTop: 12,
     fontSize: 14,
+    marginTop: 12,
     textAlign: "center",
   },
   limparBuscaButton: {
     marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: "#333",
+    padding: 12,
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
   },
   limparBuscaTexto: {
     color: "#B8860B",
     fontSize: 14,
-    fontWeight: "600",
-  },
-  statusContainer: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-    marginBottom: 16,
   },
 
-  statusOption: {
+  modalTamanhoOverlay: {
     flex: 1,
-    paddingVertical: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-end",
+  },
+  modalTamanhoContainer: {
+    backgroundColor: "#1A1A1A",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+  },
+  modalTamanhoHeader: {
+    backgroundColor: "#B8860B",
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  modalTamanhoTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    flex: 1,
+  },
+  modalTamanhoCloseButton: {
+    padding: 4,
+  },
+  modalTamanhoSubtitle: {
+    fontSize: 14,
+    color: "#999",
+    padding: 16,
+    paddingBottom: 8,
+  },
+  modalTamanhoPreco: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#B8860B",
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  modalTamanhosLista: {
+    maxHeight: 400,
+  },
+  modalTamanhoItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: "#2A2A2A",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ccc",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
+    borderColor: "#444",
   },
-
-  statusOptionActive: {
-    backgroundColor: "#1e40af",
-    borderColor: "#1e40af",
+  modalTamanhoItemDisabled: {
+    opacity: 0.5,
+    backgroundColor: "#1F1F1F",
   },
-
-  statusOptionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#555",
+  modalTamanhoItemInfo: {
+    flex: 1,
   },
-
-  statusOptionTextActive: {
-    color: "#fff",
+  modalTamanhoItemTamanho: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 4,
+  },
+  modalTamanhoItemTamanhoDisabled: {
+    color: "#666",
+  },
+  modalTamanhoItemEstoque: {
+    fontSize: 14,
+    color: "#999",
+  },
+  modalTamanhoItemEstoqueDisabled: {
+    color: "#666",
   },
 });
