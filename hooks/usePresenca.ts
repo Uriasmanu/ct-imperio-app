@@ -2,12 +2,12 @@ import { db } from "@/config/firebaseConfig";
 import { PresencaParaConfirmar, PresencaStats } from "@/types/admin";
 import { CalendarDay, Filho, PresencaRecord } from "@/types/usuarios";
 import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    onSnapshot,
-    updateDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
@@ -76,85 +76,6 @@ export const usePresenca = (userId?: string) => {
       return doc(db, "usuarios", currentUserId);
     }
     return null;
-  };
-
-  const removeOldPresencasFromFirebase = async (
-    userData: any,
-    userDocRef: any,
-  ): Promise<boolean> => {
-    try {
-      let presencaArray: string[] = [];
-
-      if (isChild) {
-        const filhos = userData.filhos || [];
-        const filho = filhos.find((f: any) => f.id === userId);
-        presencaArray = filho?.Presenca || [];
-      } else {
-        presencaArray = userData.Presenca || [];
-      }
-
-      const validPresencas = filterValidPresencas(presencaArray);
-
-      if (validPresencas.length !== presencaArray.length) {
-        if (isChild) {
-          const filhos = userData.filhos || [];
-          const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-
-          if (filhoIndex !== -1) {
-            const novosFilhos = [...filhos];
-            novosFilhos[filhoIndex] = {
-              ...filhos[filhoIndex],
-              Presenca: validPresencas,
-            };
-
-            await updateDoc(userDocRef, {
-              filhos: novosFilhos,
-            });
-          }
-        } else {
-          await updateDoc(userDocRef, {
-            Presenca: validPresencas,
-          });
-        }
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("❌ Erro ao remover presenças antigas do Firebase:", error);
-      return false;
-    }
-  };
-
-  const clearAllPresencasOnNewYear = async (
-    userData: any,
-    userDocRef: any,
-  ): Promise<boolean> => {
-    try {
-      if (isChild) {
-        const filhos = userData.filhos || [];
-        const filhoIndex = filhos.findIndex((f: any) => f.id === userId);
-
-        if (filhoIndex !== -1) {
-          const novosFilhos = [...filhos];
-          novosFilhos[filhoIndex] = {
-            ...filhos[filhoIndex],
-            Presenca: [],
-          };
-
-          await updateDoc(userDocRef, {
-            filhos: novosFilhos,
-          });
-        }
-      } else {
-        await updateDoc(userDocRef, {
-          Presenca: [],
-        });
-      }
-      return true;
-    } catch (error) {
-      console.error("❌ Erro ao limpar histórico no dia 1º de janeiro:", error);
-      return false;
-    }
   };
 
   useEffect(() => {
