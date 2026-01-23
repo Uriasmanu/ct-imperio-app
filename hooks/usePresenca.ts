@@ -727,7 +727,11 @@ export const usePresenca = (userId?: string) => {
           const confirmada = presenca.confirmada || false;
           const recusada = presenca.recusada || false;
 
-          if (!confirmada || presenca.date === todayString) {
+          if (
+            (!confirmada && !recusada) ||
+            presenca.date === todayString
+          ) {
+
             todasPresencas.push({
               id: `usuario-${doc.id}-${presenca.date}`,
               usuarioId: doc.id,
@@ -749,7 +753,11 @@ export const usePresenca = (userId?: string) => {
             const confirmada = presenca.confirmada || false;
             const recusada = presenca.recusada || false;
 
-            if (!confirmada || presenca.date === todayString) {
+            if (
+              (!confirmada && !recusada) ||
+              presenca.date === todayString
+            ) {
+
               todasPresencas.push({
                 id: `filho-${doc.id}-${filho.id}-${presenca.date}`,
                 usuarioId: doc.id,
@@ -781,15 +789,15 @@ export const usePresenca = (userId?: string) => {
     buscarPresencasDoDia();
   }, [todayString]);
 
-const stats: PresencaStats = {
-  totalParaConfirmar: presencasParaConfirmar.length,
-  confirmadasHoje: presencasParaConfirmar.filter(
-    (p) => p.confirmada
-  ).length,
-  pendentesHoje: presencasParaConfirmar.filter(
-    (p) => !p.confirmada && !p.recusada
-  ).length,
-};
+  const stats: PresencaStats = {
+    totalParaConfirmar: presencasParaConfirmar.length,
+    confirmadasHoje: presencasParaConfirmar.filter(
+      (p) => p.confirmada
+    ).length,
+    pendentesHoje: presencasParaConfirmar.filter(
+      (p) => !p.confirmada && !p.recusada
+    ).length,
+  };
 
 
   const recarregarPresencas = () => {
