@@ -54,21 +54,6 @@ export const usePresenca = (userId?: string) => {
     return today.getMonth() === 0 && today.getDate() === 1;
   };
 
-  const isValidDate = (dateString: string): boolean => {
-    const date = new Date(dateString + "T00:00:00");
-    const year = date.getFullYear();
-
-    if (year !== currentYear) return false;
-
-    if (date.getMonth() === 0 && date.getDate() === 1) return false;
-
-    return true;
-  };
-
-  const filterValidPresencas = (presencaArray: string[]): string[] => {
-    return presencaArray.filter((dateString) => isValidDate(dateString));
-  };
-
   const getUserDocRef = () => {
     if (isChild && usuario?.id) {
       return doc(db, "usuarios", usuario.id);
