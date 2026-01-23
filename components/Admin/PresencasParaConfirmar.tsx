@@ -38,7 +38,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   };
 
   const presencasHoje = presencas.filter((presenca) => isHoje(presenca.data));
-  const presencasPendentesHoje = presencasHoje.filter((p) => !p.confirmada);
+  const presencasPendentesHoje = presencasHoje.filter((p) => !p.confirmada && !p.recusada);
 
   const temPresencasPendentesHoje = presencasPendentesHoje.length > 0;
 
@@ -67,7 +67,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                 Alert.alert("Sucesso", `${result.confirmed} presenças confirmadas.`);
               }
             } catch (error) {
-              Alert.alert("Erro", "Falha ao processar confirmação em massa.");
+              Alert.alert("Erro", "Falha ao processar confirmação.");
             } finally {
               setConfirmandoTodas(false);
             }
@@ -100,22 +100,23 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
     );
   };
 
-    const handleRecusar = async (presenca: PresencaParaConfirmar) => {
+  const handleRecusar = async (presenca: PresencaParaConfirmar) => {
     Alert.alert(
       "Recusar Presença",
-      `Recusar ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
+      `Deseja recusar a presença de ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Recusar",
+          style: "destructive",
           onPress: async () => {
-            setConfirmando(presenca.id);
+            setRecusando(presenca.id);
             try {
               await onRecusarPresenca(presenca.id);
             } catch (error) {
               Alert.alert("Erro", "Não foi possível recusar.");
             } finally {
-              setConfirmando(null);
+              setRecusando(null);
             }
           },
         },
@@ -193,7 +194,14 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
           </View>
         ) : (
           presencas.map((presenca) => (
-            <View key={presenca.id} style={styles.card}>
+            <View 
+              key={presenca.id} 
+              style={[
+                styles.card, 
+                presenca.confirmada && styles.cardConfirmado,
+                presenca.recusada && styles.cardRecusado
+              ]}
+            >
               <View style={styles.cardTop}>
                 <View style={styles.avatar}>
                   <Ionicons name="person" size={20} color="#B8860B" />
@@ -224,9 +232,14 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
               <View style={styles.cardActions}>
                 {presenca.confirmada ? (
-                  <View style={styles.confirmedBadge}>
+                  <View style={styles.statusBadge}>
                     <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
                     <Text style={styles.confirmedBadgeText}>Confirmado</Text>
+                  </View>
+                ) : presenca.recusada ? (
+                  <View style={styles.statusBadge}>
+                    <Ionicons name="close-circle" size={16} color="#ef4444" />
+                    <Text style={styles.refusedBadgeText}>Recusado</Text>
                   </View>
                 ) : (
                   <>
@@ -235,7 +248,11 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                       onPress={() => handleRecusar(presenca)}
                       disabled={recusando === presenca.id}
                     >
-                      <Text style={styles.btnSecondaryText}>Recusar</Text>
+                      {recusando === presenca.id ? (
+                        <ActivityIndicator size="small" color="#ef4444" />
+                      ) : (
+                        <Text style={styles.btnSecondaryText}>Recusar</Text>
+                      )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -263,7 +280,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F0F0F", 
+    backgroundColor: "#0F0F0F",
     paddingHorizontal: 20,
   },
   centerContent: {
@@ -285,6 +302,20 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#666",
     fontSize: 14,
+  },
+  btnBulk: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#B8860B",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 6,
+  },
+  btnBulkText: {
+    color: "#000",
+    fontSize: 12,
+    fontWeight: "800",
   },
   statsCard: {
     flexDirection: "row",
@@ -322,6 +353,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#222",
+  },
+  cardConfirmado: {
+    borderColor: "#14532d",
+    backgroundColor: "#0d1a10",
+  },
+  cardRecusado: {
+    borderColor: "#450a0a",
+    backgroundColor: "#1a0d0d",
+    opacity: 0.8,
   },
   cardTop: {
     flexDirection: "row",
@@ -419,15 +459,22 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
-  confirmedBadge: {
+  statusBadge: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
     gap: 6,
+    paddingVertical: 4,
   },
   confirmedBadgeText: {
     color: "#22c55e",
+    fontWeight: "700",
+    fontSize: 13,
+    textTransform: "uppercase",
+  },
+  refusedBadgeText: {
+    color: "#ef4444",
     fontWeight: "700",
     fontSize: 13,
     textTransform: "uppercase",
@@ -460,24 +507,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 10,
     fontWeight: "500",
-  },
-  btnBulk: {
-    flexDirection: "row", 
-    alignItems: "center",
-    backgroundColor: "#B8860B",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 6, 
-    shadowColor: "#B8860B",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  btnBulkText: {
-    color: "#000",
-    fontSize: 12,
-    fontWeight: "800",
   },
   btnDisabled: {
     opacity: 0.5,

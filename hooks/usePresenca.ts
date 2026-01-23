@@ -781,11 +781,16 @@ export const usePresenca = (userId?: string) => {
     buscarPresencasDoDia();
   }, [todayString]);
 
-  const stats: PresencaStats = {
-    totalParaConfirmar: presencasParaConfirmar.length,
-    confirmadasHoje: presencasParaConfirmar.filter((p) => p.confirmada).length,
-    pendentesHoje: presencasParaConfirmar.filter((p) => !p.confirmada).length,
-  };
+const stats: PresencaStats = {
+  totalParaConfirmar: presencasParaConfirmar.length,
+  confirmadasHoje: presencasParaConfirmar.filter(
+    (p) => p.confirmada
+  ).length,
+  pendentesHoje: presencasParaConfirmar.filter(
+    (p) => !p.confirmada && !p.recusada
+  ).length,
+};
+
 
   const recarregarPresencas = () => {
     buscarPresencasDoDia();
