@@ -40,7 +40,6 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   const presencasHoje = presencas.filter((presenca) => isHoje(presenca.data));
   const presencasPendentesHoje = presencasHoje.filter((p) => !p.confirmada);
 
-  const temPresencasHoje = presencasHoje.length > 0;
   const temPresencasPendentesHoje = presencasPendentesHoje.length > 0;
 
   const handleConfirmarTodas = async () => {
