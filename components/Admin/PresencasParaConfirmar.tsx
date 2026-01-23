@@ -27,10 +27,11 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   loading = false,
 }) => {
   const [confirmando, setConfirmando] = useState<string | null>(null);
+  const [recusando, setRecusando] = useState<string | null>(null);
   const [confirmandoTodas, setConfirmandoTodas] = useState(false);
 
   const isHoje = (dataString: string) => {
-    const hoje = new Date().toISOString().split("T")[0]; 
+    const hoje = new Date().toISOString().split("T")[0];
     return dataString === hoje;
   };
 
@@ -51,73 +52,63 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
     }
 
     Alert.alert(
-      "Confirmar Todas as Presenças",
-      `Deseja confirmar todas as ${presencasPendentesHoje.length} presenças pendentes de hoje?`,
+      "Confirmar Todas",
+      `Deseja confirmar as ${presencasPendentesHoje.length} presenças de hoje?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar Todas",
-          style: "default",
           onPress: async () => {
             setConfirmandoTodas(true);
             try {
               const result = await onConfirmarTodas();
               if (result.success) {
-                Alert.alert(
-                  "Sucesso!",
-                  `${result.confirmed} presenças foram confirmadas com sucesso!`,
-                );
-              } else {
-                Alert.alert(
-                  "Erro",
-                  "Não foi possível confirmar todas as presenças",
-                );
+                Alert.alert("Sucesso", `${result.confirmed} presenças confirmadas.`);
               }
             } catch (error) {
-              Alert.alert("Erro", "Ocorreu um erro ao confirmar as presenças");
+              Alert.alert("Erro", "Falha ao processar confirmação em massa.");
             } finally {
               setConfirmandoTodas(false);
             }
           },
         },
-      ],
+      ]
     );
   };
 
   const handleConfirmar = async (presenca: PresencaParaConfirmar) => {
     Alert.alert(
       "Confirmar Presença",
-      `Deseja confirmar a presença de ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
+      `Confirmar ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Confirmar",
-          style: "default",
           onPress: async () => {
             setConfirmando(presenca.id);
             try {
               await onConfirmarPresenca(presenca.id);
-              
             } catch (error) {
-              Alert.alert("Erro", "Não foi possível confirmar a presença");
+              Alert.alert("Erro", "Não foi possível confirmar.");
             } finally {
               setConfirmando(null);
             }
           },
         },
-      ],
+      ]
     );
   };
 
   const formatarData = (dataString: string) => {
     const data = new Date(dataString + "T00:00:00");
-    return data.toLocaleDateString("pt-BR");
+    return data.toLocaleDateString("pt-BR", { day: '2-digit', month: 'short' });
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Carregando presenças...</Text>
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#B8860B" />
+        <Text style={styles.loadingText}>Buscando dados...</Text>
       </View>
     );
   }
@@ -125,14 +116,14 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Presenças para Confirmar</Text>
+        <View>
+          <Text style={styles.title}>Presenças</Text>
+          <Text style={styles.subtitle}>Gerenciamento diário</Text>
+        </View>
 
         {temPresencasPendentesHoje && onConfirmarTodas && (
           <TouchableOpacity
-            style={[
-              styles.confirmarTodasButton,
-              confirmandoTodas && styles.confirmarTodasButtonDisabled,
-            ]}
+            style={[styles.btnBulk, confirmandoTodas && styles.btnDisabled]}
             onPress={handleConfirmarTodas}
             disabled={confirmandoTodas}
           >
@@ -140,8 +131,8 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
               <ActivityIndicator size="small" color="#000" />
             ) : (
               <>
-                <Ionicons name="checkmark-done" size={18} color="#000" />
-                <Text style={styles.confirmarTodasText}>
+                <Ionicons name="checkmark-done-outline" size={18} color="#000" />
+                <Text style={styles.btnBulkText}>
                   Confirmar Todas ({presencasPendentesHoje.length})
                 </Text>
               </>
@@ -150,121 +141,91 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
         )}
       </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Ionicons name="time-outline" size={20} color="#eab308" />
-          <Text style={styles.statNumber}>{stats.pendentesHoje}</Text>
-          <Text style={styles.statLabel}>Pendentes</Text>
+      <View style={styles.statsCard}>
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { color: "#eab308" }]}>{stats.pendentesHoje}</Text>
+          <Text style={styles.statLab}>Pendentes</Text>
         </View>
-
-        <View style={styles.statItem}>
-          <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-          <Text style={styles.statNumber}>{stats.confirmadasHoje}</Text>
-          <Text style={styles.statLabel}>Confirmadas</Text>
+        <View style={styles.statDivider} />
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { color: "#22c55e" }]}>{stats.confirmadasHoje}</Text>
+          <Text style={styles.statLab}>Check-ins</Text>
         </View>
-
-        <View style={styles.statItem}>
-          <Ionicons name="list" size={20} color="#B8860B" />
-          <Text style={styles.statNumber}>{stats.totalParaConfirmar}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+        <View style={styles.statDivider} />
+        <View style={styles.statBox}>
+          <Text style={[styles.statNum, { color: "#B8860B" }]}>{stats.totalParaConfirmar}</Text>
+          <Text style={styles.statLab}>Total</Text>
         </View>
       </View>
 
-      <ScrollView style={styles.listaContainer}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
         {presencas.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="checkmark-done" size={48} color="#666" />
-            <Text style={styles.emptyStateText}>Nenhuma presença pendente</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Todas as presenças de hoje estão confirmadas
-            </Text>
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconCircle}>
+              <Ionicons name="shield-checkmark-sharp" size={32} color="#444" />
+            </View>
+            <Text style={styles.emptyStateText}>Tudo em dia!</Text>
+            <Text style={styles.emptyStateSubtext}>Nenhuma pendência encontrada.</Text>
           </View>
         ) : (
           presencas.map((presenca) => (
-            <View
-              key={presenca.id}
-              style={[
-                styles.presencaItem,
-                presenca.confirmada && styles.presencaConfirmada,
-              ]}
-            >
-              <View style={styles.presencaInfo}>
-                <View style={styles.presencaHeader}>
-                  <Text style={styles.usuarioNome}>
-                    {presenca.tipo === "filho"
-                      ? presenca.filhoNome
-                      : presenca.usuarioNome}
+            <View key={presenca.id} style={styles.card}>
+              <View style={styles.cardTop}>
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={20} color="#B8860B" />
+                </View>
+
+                <View style={styles.mainInfo}>
+                  <Text style={styles.userName} numberOfLines={1}>
+                    {presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}
                   </Text>
                   {presenca.tipo === "filho" && (
-                    <Text style={styles.filhoLabel}>
-                      (Filho de {presenca.usuarioNome})
-                    </Text>
+                    <Text style={styles.parentName}>Resp: {presenca.usuarioNome}</Text>
                   )}
                 </View>
 
-                <Text style={styles.presencaData}>
-                  {formatarData(presenca.data)}
-                </Text>
-
-                <View style={styles.modalidadesContainer}>
-                  {presenca.modalidades.map((modalidade, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.modalidadeBadge,
-                        {
-                          backgroundColor:
-                            modalidade === "Muay Thai"
-                              ? "#dc2626"
-                              : modalidade === "Jiu-Jitsu"
-                                ? "#1e40af"
-                                : modalidade === "Boxe"
-                                  ? "#059669"
-                                  : "#7c3aed",
-                        },
-                      ]}
-                    >
-                      <Text style={styles.modalidadeBadgeText}>
-                        {modalidade}
-                      </Text>
-                    </View>
-                  ))}
+                <View style={styles.dateTag}>
+                  <Text style={styles.dateText}>{formatarData(presenca.data)}</Text>
                 </View>
               </View>
 
-              <View style={styles.actions}>
+              <View style={styles.tagsRow}>
+                {presenca.modalidades.map((m, i) => (
+                  <View key={i} style={styles.tag}>
+                    <View style={[styles.tagDot, { backgroundColor: m.includes('Muay') ? '#ef4444' : '#3b82f6' }]} />
+                    <Text style={styles.tagText}>{m}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.cardActions}>
                 {presenca.confirmada ? (
-                  <View style={styles.confirmadaBadge}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#22c55e"
-                    />
-                    <Text style={styles.confirmadaText}>Confirmada</Text>
+                  <View style={styles.confirmedBadge}>
+                    <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+                    <Text style={styles.confirmedBadgeText}>Confirmado</Text>
                   </View>
                 ) : (
-                  <TouchableOpacity
-                    style={[
-                      styles.confirmarButton,
-                      confirmando === presenca.id &&
-                        styles.confirmarButtonDisabled,
-                    ]}
-                    onPress={() => handleConfirmar(presenca)}
-                    disabled={
-                      confirmando === presenca.id || presenca.confirmada
-                    }
-                  >
-                    {confirmando === presenca.id ? (
-                      <ActivityIndicator size="small" color="#000" />
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark" size={18} color="#000" />
-                        <Text style={styles.confirmarButtonText}>
-                          {presenca.confirmada ? "Confirmada" : "Confirmar"}
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity
+                      style={styles.btnSecondary}
+                      onPress={() => handleConfirmar(presenca)}
+                      disabled={recusando === presenca.id}
+                    >
+                      <Text style={styles.btnSecondaryText}>Recusar</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.btnPrimary}
+                      onPress={() => handleConfirmar(presenca)}
+                      disabled={confirmando === presenca.id}
+                    >
+                      {confirmando === presenca.id ? (
+                        <ActivityIndicator size="small" color="#000" />
+                      ) : (
+                        <Text style={styles.btnPrimaryText}>Confirmar</Text>
+                      )}
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -277,177 +238,225 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statNumber: {
-    color: "#FFF",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginVertical: 4,
-  },
-  statLabel: {
-    color: "#AAA",
-    fontSize: 12,
-  },
-  listaContainer: {
-    flexGrow: 1,
-    marginBottom: 16,
-  },
-
-  presencaItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#2a2a2a",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#B8860B",
-  },
-  presencaConfirmada: {
-    borderLeftColor: "#22c55e",
-    opacity: 0.7,
-  },
-  presencaInfo: {
     flex: 1,
+    backgroundColor: "#0F0F0F", 
+    paddingHorizontal: 20,
   },
-  presencaHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  usuarioNome: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginRight: 8,
-  },
-  filhoLabel: {
-    color: "#AAA",
-    fontSize: 12,
-    fontStyle: "italic",
-  },
-  presencaData: {
-    color: "#B8860B",
-    fontSize: 12,
-    marginVertical: 4,
-  },
-  modalidadesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-    marginTop: 4,
-  },
-  modalidadeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  modalidadeBadgeText: {
-    color: "#FFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  actions: {
-    marginLeft: 12,
-  },
-  confirmadaBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  confirmadaText: {
-    color: "#22c55e",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  confirmarButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#B8860B",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  confirmarButtonText: {
-    color: "#000",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  emptyState: {
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyStateText: {
-    color: "#CCC",
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 12,
-    textAlign: "center",
-  },
-  emptyStateSubtext: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 4,
-  },
-  loadingText: {
-    color: "#B8860B",
-    textAlign: "center",
-    padding: 20,
-  },
-  confirmarButtonDisabled: {
-    opacity: 0.6,
-    backgroundColor: "#666",
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 25,
   },
-
   title: {
     color: "#FFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    flex: 1,
+    fontSize: 26,
+    fontWeight: "900",
   },
-
-  confirmarTodasButton: {
+  subtitle: {
+    color: "#666",
+    fontSize: 14,
+  },
+  statsCard: {
+    flexDirection: "row",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: "#262626",
+  },
+  statBox: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: "#262626",
+    marginVertical: 5,
+  },
+  statNum: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  statLab: {
+    color: "#555",
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginTop: 2,
+  },
+  card: {
+    backgroundColor: "#161616",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#222",
+  },
+  cardTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#22c55e",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#222",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  mainInfo: {
+    flex: 1,
+  },
+  userName: {
+    color: "#EEE",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  parentName: {
+    color: "#666",
+    fontSize: 12,
+  },
+  dateTag: {
+    backgroundColor: "#222",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
-
-  confirmarTodasButtonDisabled: {
-    opacity: 0.6,
-    backgroundColor: "#666",
+  dateText: {
+    color: "#B8860B",
+    fontSize: 11,
+    fontWeight: "700",
   },
-
-  confirmarTodasText: {
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 16,
+  },
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#222",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  tagDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  tagText: {
+    color: "#AAA",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  cardActions: {
+    flexDirection: "row",
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#222",
+    paddingTop: 12,
+  },
+  btnPrimary: {
+    flex: 2,
+    backgroundColor: "#B8860B",
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnPrimaryText: {
+    color: "#000",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  btnSecondary: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#333",
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  btnSecondaryText: {
+    color: "#999",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  confirmedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    gap: 6,
+  },
+  confirmedBadgeText: {
+    color: "#22c55e",
+    fontWeight: "700",
+    fontSize: 13,
+    textTransform: "uppercase",
+  },
+  emptyCard: {
+    alignItems: "center",
+    padding: 40,
+    marginTop: 20,
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#161616",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  emptyStateText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  emptyStateSubtext: {
+    color: "#555",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  loadingText: {
+    color: "#666",
+    marginTop: 10,
+    fontWeight: "500",
+  },
+  btnBulk: {
+    flexDirection: "row", 
+    alignItems: "center",
+    backgroundColor: "#B8860B",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 6, 
+    shadowColor: "#B8860B",
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  btnBulkText: {
     color: "#000",
     fontSize: 12,
-    fontWeight: "bold",
+    fontWeight: "800",
+  },
+  btnDisabled: {
+    opacity: 0.5,
+    backgroundColor: "#444",
   },
 });
