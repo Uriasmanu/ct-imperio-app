@@ -138,6 +138,17 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
     );
   }
 
+  const getPrioridadePresenca = (p: PresencaParaConfirmar) => {
+    if (!p.confirmada && !p.recusada) return 1; 
+    if (p.recusada) return 2;                   
+    if (p.confirmada) return 3;                 
+    return 99;
+  };
+
+  const presencasOrdenadas = [...presencas].sort(
+    (a, b) => getPrioridadePresenca(a) - getPrioridadePresenca(b)
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -193,11 +204,11 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
             <Text style={styles.emptyStateSubtext}>Nenhuma pendência encontrada.</Text>
           </View>
         ) : (
-          presencas.map((presenca) => (
-            <View 
-              key={presenca.id} 
+          presencasOrdenadas.map((presenca) => (
+            <View
+              key={presenca.id}
               style={[
-                styles.card, 
+                styles.card,
                 presenca.confirmada && styles.cardConfirmado,
                 presenca.recusada && styles.cardRecusado
               ]}
