@@ -56,6 +56,7 @@ export default function AdminScreen() {
     stats,
     loading: presencasLoading,
     confirmarPresenca,
+    recusarPresenca,
     buscarPresencasDoDia,
     confirmarTodasPresencasHoje,
   } = usePresenca();
@@ -154,6 +155,7 @@ export default function AdminScreen() {
                 presencas={presencasParaConfirmar}
                 stats={stats}
                 onConfirmarPresenca={confirmarPresenca}
+                onRecusarPresenca={recusarPresenca}
                 onConfirmarTodas={confirmarTodasPresencasHoje}
                 loading={loading}
               />

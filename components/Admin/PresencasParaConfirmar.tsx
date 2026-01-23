@@ -15,6 +15,7 @@ interface PresencasParaConfirmarProps {
   presencas: PresencaParaConfirmar[];
   stats: PresencaStats;
   onConfirmarPresenca: (presencaId: string) => void;
+  onRecusarPresenca: (presencaId: string) => void;
   onConfirmarTodas?: () => Promise<{ success: boolean; confirmed: number }>;
   loading?: boolean;
 }
@@ -23,6 +24,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
   presencas,
   stats,
   onConfirmarPresenca,
+  onRecusarPresenca,
   onConfirmarTodas,
   loading = false,
 }) => {
@@ -90,6 +92,29 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
               await onConfirmarPresenca(presenca.id);
             } catch (error) {
               Alert.alert("Erro", "Não foi possível confirmar.");
+            } finally {
+              setConfirmando(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+    const handleRecusar = async (presenca: PresencaParaConfirmar) => {
+    Alert.alert(
+      "Recusar Presença",
+      `Recusar ${presenca.tipo === "filho" ? presenca.filhoNome : presenca.usuarioNome}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Recusar",
+          onPress: async () => {
+            setConfirmando(presenca.id);
+            try {
+              await onRecusarPresenca(presenca.id);
+            } catch (error) {
+              Alert.alert("Erro", "Não foi possível recusar.");
             } finally {
               setConfirmando(null);
             }
@@ -208,7 +233,7 @@ export const PresencasParaConfirmar: React.FC<PresencasParaConfirmarProps> = ({
                   <>
                     <TouchableOpacity
                       style={styles.btnSecondary}
-                      onPress={() => handleConfirmar(presenca)}
+                      onPress={() => handleRecusar(presenca)}
                       disabled={recusando === presenca.id}
                     >
                       <Text style={styles.btnSecondaryText}>Recusar</Text>

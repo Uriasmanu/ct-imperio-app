@@ -9,6 +9,7 @@ export interface PresencaParaConfirmar {
   data: string;
   modalidades: string[];
   confirmada: boolean;
+  recusada: boolean;
   tipo: "usuario" | "filho";
 }
 

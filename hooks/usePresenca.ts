@@ -439,6 +439,7 @@ export const usePresenca = (userId?: string) => {
             return {
               date: data,
               confirmada: true,
+              recusada: false,
             };
           }
 
@@ -464,6 +465,121 @@ export const usePresenca = (userId?: string) => {
             return {
               date: data,
               confirmada: true,
+              recusada: false,
+            };
+          }
+
+          return presenca;
+        });
+
+        await updateDoc(userDocRef, { Presenca: novasPresencas });
+      }
+
+      if (!atualizou) {
+        console.error("❌ Presença não encontrada para confirmação");
+        return false;
+      }
+
+      setTimeout(() => {
+        buscarPresencasDoDia();
+      }, 1000);
+
+      return true;
+    } catch (error) {
+      console.error("❌ Erro ao confirmar presença:", error);
+      return false;
+    }
+  };
+
+  const recusarPresenca = async (presencaId: string): Promise<boolean> => {
+    try {
+      const partes = presencaId.split("-");
+
+      const tipo = partes[0];
+
+      let usuarioId: string;
+      let filhoId: string | null = null;
+      let data: string;
+
+      if (tipo === "filho") {
+        if (partes.length < 4) {
+          console.error("❌ ID de filho mal formatado:", presencaId);
+          return false;
+        }
+        usuarioId = partes[1];
+        filhoId = partes[2];
+        data = partes.slice(3).join("-");
+      } else if (tipo === "usuario") {
+        if (partes.length < 3) {
+          console.error("❌ ID de usuário mal formatado:", presencaId);
+          return false;
+        }
+        usuarioId = partes[1];
+        data = partes.slice(2).join("-");
+      } else {
+        console.error("❌ Tipo de presença desconhecido:", tipo);
+        return false;
+      }
+
+      const userDocRef = doc(db, "usuarios", usuarioId);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        console.error("❌ Documento do usuário não encontrado:", usuarioId);
+        return false;
+      }
+
+      const userData = userDoc.data();
+      let atualizou = false;
+
+      if (tipo === "filho" && filhoId) {
+        const filhos = userData.filhos || [];
+        const filhoIndex = filhos.findIndex((f: any) => f.id === filhoId);
+
+        if (filhoIndex === -1) {
+          console.error("❌ Filho não encontrado:", filhoId);
+          return false;
+        }
+
+        const filhoAtual = filhos[filhoIndex];
+        const presencasAtuais: any[] = filhoAtual.Presenca || [];
+
+        const novasPresencas = presencasAtuais.map((presenca: any) => {
+          const presencaDate =
+            typeof presenca === "string" ? presenca : presenca.date;
+          if (presencaDate === data) {
+            atualizou = true;
+
+            return {
+              date: data,
+              confirmada: false,
+              recusada: true,
+            };
+          }
+
+          return presenca;
+        });
+
+        const novosFilhos = [...filhos];
+        novosFilhos[filhoIndex] = {
+          ...filhoAtual,
+          Presenca: novasPresencas,
+        };
+
+        await updateDoc(userDocRef, { filhos: novosFilhos });
+      } else if (tipo === "usuario") {
+        const presencasAtuais: any[] = userData.Presenca || [];
+
+        const novasPresencas = presencasAtuais.map((presenca: any) => {
+          const presencaDate =
+            typeof presenca === "string" ? presenca : presenca.date;
+          if (presencaDate === data) {
+            atualizou = true;
+
+            return {
+              date: data,
+              confirmada: false,
+              recusada: true,
             };
           }
 
@@ -609,6 +725,7 @@ export const usePresenca = (userId?: string) => {
         const presencasUsuario = usuarioData.Presenca || [];
         presencasUsuario.forEach((presenca: any) => {
           const confirmada = presenca.confirmada || false;
+          const recusada = presenca.recusada || false;
 
           if (!confirmada || presenca.date === todayString) {
             todasPresencas.push({
@@ -619,6 +736,7 @@ export const usePresenca = (userId?: string) => {
               modalidades:
                 usuarioData.modalidades?.map((m: any) => m.modalidade) || [],
               confirmada,
+              recusada,
               tipo: "usuario",
             });
           }
@@ -629,6 +747,7 @@ export const usePresenca = (userId?: string) => {
           const presencasFilho = filho.Presenca || [];
           presencasFilho.forEach((presenca: any) => {
             const confirmada = presenca.confirmada || false;
+            const recusada = presenca.recusada || false;
 
             if (!confirmada || presenca.date === todayString) {
               todasPresencas.push({
@@ -641,6 +760,7 @@ export const usePresenca = (userId?: string) => {
                 modalidades:
                   filho.modalidades?.map((m: any) => m.modalidade) || [],
                 confirmada,
+                recusada,
                 tipo: "filho",
               });
             }
@@ -688,6 +808,7 @@ export const usePresenca = (userId?: string) => {
     calcularPorcentagemPresenca,
     getSemestreInfo,
     confirmarPresenca,
+    recusarPresenca,
     confirmarTodasPresencasHoje,
     buscarPresencasDoDia,
     recarregarPresencas,
