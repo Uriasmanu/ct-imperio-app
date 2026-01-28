@@ -80,7 +80,6 @@ export const MultiModalidadeSelector: React.FC<
         })}
       </View>
 
-      {/* Graduações para cada modalidade selecionada */}
       {modalidades.map((modalidadeAluno) => (
         <View key={modalidadeAluno.modalidade} style={styles.graduacaoSection}>
           <Text style={styles.graduacaoLabel}>
