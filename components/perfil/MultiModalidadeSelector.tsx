@@ -7,11 +7,21 @@ import { GraduacaoSelector } from "./GraduacaoSelector";
 interface MultiModalidadeSelectorProps {
   modalidades: ModalidadeAluno[];
   onModalidadesChange: (modalidades: ModalidadeAluno[]) => void;
+  caller?: string;
 }
 
 export const MultiModalidadeSelector: React.FC<
   MultiModalidadeSelectorProps
-> = ({ modalidades, onModalidadesChange }) => {
+> = ({ modalidades, onModalidadesChange, caller }) => {
+
+  const getTipoGraduacao = (modalidade: string) => {
+    if (modalidade === "Jiu-Jitsu" && caller === "ModalFilho") {
+      return "jiu-jitsu-infantil";
+    }
+
+    return "jiu-jitsu";
+  };
+  
   const todasModalidades: Array<
     "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA"
   > = ["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA", "No-Gi"];
@@ -87,6 +97,7 @@ export const MultiModalidadeSelector: React.FC<
           </Text>
           <GraduacaoSelector
             modalidade={modalidadeAluno.modalidade}
+            categoriaGraduacao={getTipoGraduacao(modalidadeAluno.modalidade)}
             graduacaoAtual={modalidadeAluno.graduacao}
             onSelect={(graduacao) =>
               atualizarGraduacao(modalidadeAluno.modalidade, graduacao)

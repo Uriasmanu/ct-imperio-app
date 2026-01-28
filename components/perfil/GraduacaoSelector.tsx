@@ -1,26 +1,37 @@
-import { GraduacaoJiuJitsu, GraduacaoMuayThai, graduaçõesJiuJitsu, graduaçõesMuayThai } from '@/types/graduacoes';
+import { GraduacaoJiuJitsu, GraduacaoMuayThai, graduaçõesJiuJitsu, graduaçõesJiuJitsuInfantil, graduaçõesMuayThai } from '@/types/graduacoes';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface GraduacaoSelectorProps {
     modalidade: string;
     graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
+    categoriaGraduacao: "jiu-jitsu" | "jiu-jitsu-infantil";
     onSelect: (grad: GraduacaoMuayThai | GraduacaoJiuJitsu) => void;
 }
 
 export const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
     modalidade,
     graduacaoAtual,
+    categoriaGraduacao,
     onSelect,
 }) => {
     if (modalidade === "Jiu-Jitsu") {
         const atual = graduacaoAtual as GraduacaoJiuJitsu;
-        const faixasUnicas = Array.from(new Set(graduaçõesJiuJitsu.map(g => g.cor))).map(cor =>
-            graduaçõesJiuJitsu.find(g => g.cor === cor)
+
+        const graduacoesFonte =
+            categoriaGraduacao === "jiu-jitsu-infantil"
+                ? graduaçõesJiuJitsuInfantil
+                : graduaçõesJiuJitsu;
+
+        const faixasUnicas = Array.from(
+            new Set(graduacoesFonte.map(g => g.cor))
+        ).map(cor =>
+            graduacoesFonte.find(g => g.cor === cor)
         ).filter((g): g is GraduacaoJiuJitsu => !!g);
 
         const faixaSelecionada = atual?.cor || faixasUnicas[0]?.cor;
-        const grausDaFaixa = graduaçõesJiuJitsu
+
+        const grausDaFaixa = graduacoesFonte
             .filter(g => g.cor === faixaSelecionada)
             .sort((a, b) => (a.grau ?? 0) - (b.grau ?? 0));
 

@@ -152,6 +152,7 @@ export const ModalFilho: React.FC<ModalFilhoProps> = ({
               <MultiModalidadeSelector
                 modalidades={modalidades}
                 onModalidadesChange={setModalidades}
+                caller="ModalFilho"
               />
             </View>
 
