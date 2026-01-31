@@ -20,12 +20,21 @@ export const graduaçõesMuayThai: GraduacaoMuayThai[] = [
 
 export const graduaçõesMuayThaiInfantil: GraduacaoMuayThai[] = [
   { cor: "Branco" },
+  { cor: "Branco e cinza" },
+  { cor: "Branco e preto" },
+  { cor: "Branco e laranja" },
+  { cor: "Laranja" },
+  { cor: "Laranja e cinza" },
+  { cor: "Laranja e preto" },
+  { cor: "Laranja e amarelo" },
   { cor: "Amarelo" },
-  { cor: "Amarelo", pontaBranca: true },
+  { cor: "Amarelo e cinza" },
+  { cor: "Amarelo e preto" },
+  { cor: "Amarelo e verde" },
   { cor: "Verde" },
-  { cor: "Verde", pontaBranca: true },
+  { cor: "Verde e branco"},
   { cor: "Azul" },
-  { cor: "Azul", pontaBranca: true },
+  { cor: "Azul ebranco"},
 ];
 
 export interface GraduacaoJiuJitsu {
@@ -69,63 +78,63 @@ export const graduaçõesJiuJitsuInfantil: GraduacaoJiuJitsu[] = [
   { cor: "Branca", grau: 2 },
   { cor: "Branca", grau: 3 },
   { cor: "Branca", grau: 4 },
-  
+
 
   { cor: "Cinza e branca", grau: 0 },
   { cor: "Cinza e branca", grau: 1 },
   { cor: "Cinza e branca", grau: 2 },
   { cor: "Cinza e branca", grau: 3 },
   { cor: "Cinza e branca", grau: 4 },
-  
+
 
   { cor: "Cinza", grau: 0 },
   { cor: "Cinza", grau: 1 },
   { cor: "Cinza", grau: 2 },
   { cor: "Cinza", grau: 3 },
   { cor: "Cinza", grau: 4 },
-  
+
 
   { cor: "Cinza e preta", grau: 0 },
   { cor: "Cinza e preta", grau: 1 },
   { cor: "Cinza e preta", grau: 2 },
   { cor: "Cinza e preta", grau: 3 },
   { cor: "Cinza e preta", grau: 4 },
-  
+
 
   { cor: "Amarela e branca", grau: 0 },
   { cor: "Amarela e branca", grau: 1 },
   { cor: "Amarela e branca", grau: 2 },
   { cor: "Amarela e branca", grau: 3 },
   { cor: "Amarela e branca", grau: 4 },
-  
+
 
   { cor: "Amarela", grau: 0 },
   { cor: "Amarela", grau: 1 },
   { cor: "Amarela", grau: 2 },
   { cor: "Amarela", grau: 3 },
   { cor: "Amarela", grau: 4 },
-  
+
 
   { cor: "Amarela e preta", grau: 0 },
   { cor: "Amarela e preta", grau: 1 },
   { cor: "Amarela e preta", grau: 2 },
   { cor: "Amarela e preta", grau: 3 },
   { cor: "Amarela e preta", grau: 4 },
-  
+
 
   { cor: "Laranja e branca", grau: 0 },
   { cor: "Laranja e branca", grau: 1 },
   { cor: "Laranja e branca", grau: 2 },
   { cor: "Laranja e branca", grau: 3 },
   { cor: "Laranja e branca", grau: 4 },
-  
+
 
   { cor: "Laranja", grau: 0 },
   { cor: "Laranja", grau: 1 },
   { cor: "Laranja", grau: 2 },
   { cor: "Laranja", grau: 3 },
   { cor: "Laranja", grau: 4 },
-  
+
 
   { cor: "Laranja e preta", grau: 0 },
   { cor: "Laranja e preta", grau: 1 },

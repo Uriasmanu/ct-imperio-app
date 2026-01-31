@@ -105,7 +105,7 @@ export const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
 
         return (
             <View style={styles.graduacaoContainer}>
-                <Text style={styles.modalLabel}>Praijed:</Text>
+                <Text style={styles.modalLabel}>Prajied:</Text>
                 <View style={styles.grauButtonsContainer}>
                     {graduacoesFonte.map((grad) => (
                         <TouchableOpacity
