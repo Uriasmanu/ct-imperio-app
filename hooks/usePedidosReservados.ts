@@ -1,22 +1,23 @@
 import { db } from "@/config/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function usePedidosReservados() {
   const [reservados, setReservados] = useState(0);
 
   useEffect(() => {
-    const carregar = async () => {
-      const snapshot = await getDocs(collection(db, "pedidos"));
+    const unsubscribe = onSnapshot(
+      collection(db, "pedidos"),
+      (snapshot) => {
+        const total = snapshot.docs.filter(
+          (doc) => doc.data().status === "reservado"
+        ).length;
 
-      const total = snapshot.docs.filter(
-        (doc) => doc.data().status === "reservado"
-      ).length;
+        setReservados(total);
+      }
+    );
 
-      setReservados(total);
-    };
-
-    carregar();
+    return () => unsubscribe();
   }, []);
 
   return reservados;
