@@ -1,5 +1,4 @@
-// components/CarrinhoModal.tsx
-import { auth } from '@/config/firebaseConfig'; // Adicione esta importação
+import { auth } from '@/config/firebaseConfig';
 import { pedidoService } from '@/services/PedidoService';
 import { ItemEstoque, Pedido } from '@/types/estoque';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +16,6 @@ import {
   View
 } from 'react-native';
 
-// TIPOS
 export interface Produto {
   id: string;
   nome: string;
@@ -44,14 +42,13 @@ export interface CarrinhoModalProps {
   onAumentarQuantidade: (index: number) => void;
   onDiminuirQuantidade: (index: number) => void;
   onRemoverItem: (index: number) => void;
-  onReservar?: () => void; // Agora opcional, pois vamos criar o pedido aqui
+  onReservar?: () => void; 
   observacoes?: string;
   onObservacoesChange?: (text: string) => void;
-  usuarioNome?: string; // Adicionado: nome do usuário logado
-  usuarioId?: string;   // Adicionado: ID do usuário logado
+  usuarioNome?: string; 
+  usuarioId?: string;   
 }
 
-// COMPONENTE DE ITEM DO CARRINHO
 interface ItemCarrinhoComponentProps {
   item: ItemCarrinho;
   onAumentarQuantidade: () => void;
@@ -127,7 +124,6 @@ function ItemCarrinhoComponent({
   );
 }
 
-// COMPONENTE PRINCIPAL DO MODAL
 export function CarrinhoModal({
   visible,
   itens,
@@ -139,21 +135,19 @@ export function CarrinhoModal({
   onReservar,
   observacoes = '',
   onObservacoesChange,
-  usuarioNome = 'Cliente', // Valor padrão
-  usuarioId = ''           // Valor padrão
+  usuarioNome = 'Cliente', 
+  usuarioId = ''           
 }: CarrinhoModalProps) {
   const [loading, setLoading] = useState(false);
   const [pedidoCriado, setPedidoCriado] = useState(false);
   const [pedidoId, setPedidoId] = useState('');
 
-  // Função para criar o pedido
   const criarPedido = async () => {
     if (itens.length === 0) {
       Alert.alert('Carrinho vazio', 'Adicione itens ao carrinho antes de reservar.');
       return;
     }
 
-    // IMPORTANTE: Obter o usuário atual do Firebase Auth
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
@@ -167,7 +161,6 @@ export function CarrinhoModal({
     setLoading(true);
 
     try {
-      // Converter itens do carrinho para itens do pedido
       const itensPedido = itens.map(item => ({
         itemId: item.produto.id,
         nome: item.produto.nome,
@@ -177,10 +170,9 @@ export function CarrinhoModal({
         subtotal: item.subtotal
       }));
 
-      // Criar o objeto do pedido
       const pedido: Omit<Pedido, 'id'> = {
-        usuarioId: usuarioId, // Usando o ID do usuário autenticado
-        pessoa: usuarioNome,  // Usando o nome/email do usuário
+        usuarioId: usuarioId, 
+        pessoa: usuarioNome,  
         itens: itensPedido,
         data: new Date().toLocaleDateString('pt-BR'),
         dataTimestamp: Date.now(),
@@ -192,17 +184,13 @@ export function CarrinhoModal({
         updatedAt: new Date()
       };
 
-      // Criar o pedido no Firebase
       const idCriado = await pedidoService.criarPedido(pedido);
-
       setPedidoId(idCriado);
       setPedidoCriado(true);
 
-      // Chamar função onReservar se fornecida (para compatibilidade)
       if (onReservar) {
         onReservar();
       }
-
 
     } catch (error: any) {
       console.error('Erro ao criar pedido:', error);
@@ -215,7 +203,6 @@ export function CarrinhoModal({
     }
   };
 
-  // Função para visualizar o pedido criado
   const visualizarPedido = () => {
     Alert.alert(
       'Detalhes do Pedido',
@@ -229,7 +216,6 @@ export function CarrinhoModal({
     );
   };
 
-  // Limpar estado quando o modal for fechado
   const handleFechar = () => {
     setPedidoCriado(false);
     setPedidoId('');
@@ -245,7 +231,6 @@ export function CarrinhoModal({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* HEADER DO MODAL */}
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderTitleContainer}>
               <Ionicons name="cart" size={24} color="#FFF" />
@@ -258,9 +243,7 @@ export function CarrinhoModal({
             </TouchableOpacity>
           </View>
 
-          {/* CONTEÚDO DO CARRINHO */}
           {pedidoCriado ? (
-            // TELA DE CONFIRMAÇÃO DO PEDIDO
             <View style={styles.confirmacaoContainer}>
               <View style={styles.confirmacaoIconContainer}>
                 <Ionicons name="checkmark-circle" size={80} color="#22C55E" />
@@ -330,7 +313,6 @@ export function CarrinhoModal({
               </View>
             </View>
           ) : itens.length > 0 ? (
-            // TELA NORMAL DO CARRINHO
             <>
               <ScrollView style={styles.carrinhoLista}>
                 {itens.map((item, index) => (
@@ -342,9 +324,7 @@ export function CarrinhoModal({
                     onRemover={() => onRemoverItem(index)}
                   />
                 ))}
-              </ScrollView>
-
-              {/* RESUMO DO PEDIDO */}
+              </ScrollView> 
               <View style={styles.resumoContainer}>
                 <View style={styles.resumoItem}>
                   <Text style={styles.resumoLabel}>Total de Itens</Text>
@@ -356,9 +336,7 @@ export function CarrinhoModal({
                 <View style={styles.resumoItem}>
                   <Text style={styles.resumoLabel}>Valor Total</Text>
                   <Text style={styles.resumoValor}>R$ {total.toFixed(2)}</Text>
-                </View>
-
-                {/* OBSERVAÇÕES */}
+                </View>      
                 <View style={styles.observacoesContainer}>
                   <Text style={styles.observacoesLabel}>Observações (opcional)</Text>
                   <View style={styles.observacoesInputContainer}>
@@ -383,7 +361,6 @@ export function CarrinhoModal({
 
                 <View style={styles.resumoDivider} />
 
-                {/* STATUS DA RESERVA */}
                 <View style={styles.statusReservaContainer}>
                   <View style={styles.statusIconContainer}>
                     <Ionicons name="time-outline" size={20} color="#B8860B" />
@@ -395,8 +372,6 @@ export function CarrinhoModal({
                     </Text>
                   </View>
                 </View>
-
-                {/* BOTÕES DE AÇÃO */}
                 <View style={styles.botoesContainer}>
                   <TouchableOpacity
                     style={[styles.botaoReservar, loading && styles.botaoReservarDisabled]}
@@ -425,7 +400,6 @@ export function CarrinhoModal({
               </View>
             </>
           ) : (
-            // CARRINHO VAZIO
             <View style={styles.carrinhoVazio}>
               <Ionicons name="cart-outline" size={64} color="#666" />
               <Text style={styles.carrinhoVazioTitle}>Seu carrinho está vazio</Text>
@@ -721,7 +695,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Estilos para a tela de confirmação
+  
   confirmacaoContainer: {
     padding: 20,
     alignItems: 'center',
