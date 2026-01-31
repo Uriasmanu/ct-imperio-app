@@ -58,28 +58,23 @@ export default function aulasScreen() {
     const [startHours, startMinutes] = aula.startTime.split(':').map(Number);
     const [endHours, endMinutes] = aula.endTime.split(':').map(Number);
 
-    // Converte tudo para minutos totais para facilitar a comparação
     const currentTotalMinutes = currentHours * 60 + currentMinutes;
     const startTotalMinutes = startHours * 60 + startMinutes;
     const endTotalMinutes = endHours * 60 + endMinutes;
 
-    // Se a aula já terminou
     if (currentTotalMinutes > endTotalMinutes) {
       return 'finished';
     }
 
-    // Se a aula está acontecendo agora
     if (currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes) {
       return 'current';
     }
 
-    // Se a aula ainda vai acontecer
     return 'upcoming';
   };
 
   return (
     <View style={globalStyles.container}>
-      {/* Header FIXO no topo */}
       <View style={styles.header}>
         <Text style={styles.title}>Quadro de Aulas</Text>
         <Text style={styles.subtitle}>
@@ -87,7 +82,6 @@ export default function aulasScreen() {
         </Text>
       </View>
 
-      {/* Tabs FIXAS abaixo do header */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -122,7 +116,6 @@ export default function aulasScreen() {
         })}
       </ScrollView>
 
-      {/* CONTEÚDO PRINCIPAL com altura flexível */}
       <View style={styles.contentContainer}>
         <Animated.View
           style={{
