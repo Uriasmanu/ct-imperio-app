@@ -10,18 +10,32 @@ interface MultiModalidadeSelectorProps {
   caller?: string;
 }
 
+type CategoriaGraduacao =
+  | "jiu-jitsu"
+  | "jiu-jitsu-infantil"
+  | "muay-thai"
+  | "muay-thai-infantil";
+
+
 export const MultiModalidadeSelector: React.FC<
   MultiModalidadeSelectorProps
 > = ({ modalidades, onModalidadesChange, caller }) => {
 
-  const getTipoGraduacao = (modalidade: string) => {
-    if (modalidade === "Jiu-Jitsu" && caller === "ModalFilho") {
-      return "jiu-jitsu-infantil";
+  const getTipoGraduacao = (
+    modalidade: string,
+  ): "jiu-jitsu" | "jiu-jitsu-infantil" | "muay-thai" | "muay-thai-infantil" => {
+    const isInfantil = caller === "ModalFilho";
+
+    if (modalidade === "Jiu-Jitsu") {
+      return isInfantil ? "jiu-jitsu-infantil" : "jiu-jitsu";
+    }
+
+    if (modalidade === "Muay Thai") {
+      return isInfantil ? "muay-thai-infantil" : "muay-thai";
     }
 
     return "jiu-jitsu";
   };
-  
   const todasModalidades: Array<
     "Muay Thai" | "Jiu-Jitsu" | "No-Gi" | "Boxe" | "MMA"
   > = ["Jiu-Jitsu", "Muay Thai", "Boxe", "MMA", "No-Gi"];

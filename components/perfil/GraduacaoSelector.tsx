@@ -1,11 +1,16 @@
-import { GraduacaoJiuJitsu, GraduacaoMuayThai, graduaçõesJiuJitsu, graduaçõesJiuJitsuInfantil, graduaçõesMuayThai } from '@/types/graduacoes';
+import { GraduacaoJiuJitsu, GraduacaoMuayThai, graduaçõesJiuJitsu, graduaçõesJiuJitsuInfantil, graduaçõesMuayThai, graduaçõesMuayThaiInfantil } from '@/types/graduacoes';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface GraduacaoSelectorProps {
     modalidade: string;
     graduacaoAtual: GraduacaoMuayThai | GraduacaoJiuJitsu | undefined;
-    categoriaGraduacao: "jiu-jitsu" | "jiu-jitsu-infantil";
+    categoriaGraduacao:
+    | "jiu-jitsu"
+    | "jiu-jitsu-infantil"
+    | "muay-thai"
+    | "muay-thai-infantil";
+
     onSelect: (grad: GraduacaoMuayThai | GraduacaoJiuJitsu) => void;
 }
 
@@ -93,11 +98,16 @@ export const GraduacaoSelector: React.FC<GraduacaoSelectorProps> = ({
         );
     } else if (modalidade === "Muay Thai") {
         const atual = graduacaoAtual as GraduacaoMuayThai;
+        const graduacoesFonte =
+            categoriaGraduacao === "muay-thai-infantil"
+                ? graduaçõesMuayThaiInfantil
+                : graduaçõesMuayThai;
+
         return (
             <View style={styles.graduacaoContainer}>
                 <Text style={styles.modalLabel}>Praijed:</Text>
                 <View style={styles.grauButtonsContainer}>
-                    {graduaçõesMuayThai.map((grad) => (
+                    {graduacoesFonte.map((grad) => (
                         <TouchableOpacity
                             key={`${grad.cor}-${grad.pontaBranca ? "P" : "S"}`}
                             style={[

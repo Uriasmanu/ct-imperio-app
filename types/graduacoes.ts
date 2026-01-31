@@ -18,6 +18,16 @@ export const graduaçõesMuayThai: GraduacaoMuayThai[] = [
   { cor: "Preto" },
 ];
 
+export const graduaçõesMuayThaiInfantil: GraduacaoMuayThai[] = [
+  { cor: "Banco" },
+  { cor: "Amarelo" },
+  { cor: "Amarelo", pontaBranca: true },
+  { cor: "Verde" },
+  { cor: "Verde", pontaBranca: true },
+  { cor: "Azul" },
+  { cor: "Azul", pontaBranca: true },
+];
+
 export interface GraduacaoJiuJitsu {
   cor: string;
   faixa?: string;
