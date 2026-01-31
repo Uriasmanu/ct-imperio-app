@@ -1,4 +1,3 @@
-// services/PedidoService.ts
 import { db } from "@/config/firebaseConfig";
 import { Pedido } from "@/types/estoque";
 import {
@@ -15,7 +14,6 @@ import {
 import { estoqueService } from "./estoqueService";
 
 export const pedidoService = {
-  // Criar pedido
   async criarPedido(pedido: Omit<Pedido, "id">): Promise<string> {
     const docRef = await addDoc(collection(db, "pedidos"), {
       ...pedido,
@@ -29,7 +27,6 @@ export const pedidoService = {
     return docRef.id;
   },
 
-  // Buscar todos os pedidos
   async getPedidos(): Promise<Pedido[]> {
     try {
       const pedidosRef = collection(db, "pedidos");
@@ -63,7 +60,6 @@ export const pedidoService = {
     }
   },
 
-  // Buscar pedidos por status
   async getPedidosPorStatus(pago: boolean): Promise<Pedido[]> {
     try {
       const pedidosRef = collection(db, "pedidos");
@@ -96,7 +92,6 @@ export const pedidoService = {
     }
   },
 
-  // Atualizar pedido
   async atualizarPedido(id: string, pedido: Partial<Pedido>): Promise<void> {
     try {
       const pedidoRef = doc(db, "pedidos", id);
@@ -110,7 +105,6 @@ export const pedidoService = {
     }
   },
 
-  // Marcar como pago
   async marcarComoPago(id: string): Promise<void> {
     try {
       const pedido = await this.getPedidoById(id);
@@ -165,8 +159,6 @@ export const pedidoService = {
     }
   },
 
-
-  // Deletar pedido
   async deletarPedido(id: string): Promise<void> {
     try {
       const pedidoRef = doc(db, "pedidos", id);
@@ -218,8 +210,6 @@ export const pedidoService = {
       throw error;
     }
   },
-
-  // Buscar pedido por ID
   async getPedidoById(id: string): Promise<Pedido | null> {
     try {
       const { getDoc } = await import('firebase/firestore');
