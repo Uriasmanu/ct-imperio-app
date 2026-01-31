@@ -19,7 +19,7 @@ export const graduaçõesMuayThai: GraduacaoMuayThai[] = [
 ];
 
 export const graduaçõesMuayThaiInfantil: GraduacaoMuayThai[] = [
-  { cor: "Banco" },
+  { cor: "Branco" },
   { cor: "Amarelo" },
   { cor: "Amarelo", pontaBranca: true },
   { cor: "Verde" },
