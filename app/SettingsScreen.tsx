@@ -13,14 +13,31 @@ import AccountSection from "@/components/Settings/AccountSection";
 import LoginModal from "@/components/Settings/LoginModal";
 import { useUser } from "@/contexts/UserContext";
 import { useLogin } from "@/hooks/useLogin";
+import { useNotifications } from "@/hooks/useNotifications";
 import { globalStyles } from "@/styles/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { appConfig, gymData } from "./../utils/constants";
 
 const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const { usuario } = useUser();
+
+  const { notificationEnabled, notificationHour, notificationMinute, toggleNotification, changeTime } =
+    useNotifications();
+
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const handleTimeChange = (_: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      changeTime(selectedDate.getHours(), selectedDate.getMinutes());
+    }
+  };
+
+  const notificationTime = new Date();
+  notificationTime.setHours(notificationHour, notificationMinute, 0);
 
   const {
     showLoginModal,
@@ -136,6 +153,62 @@ const SettingsScreen = () => {
             </View>
           </View>
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="notifications" size={18} color="#B8860B" />
+          <Text style={styles.sectionTitle}>NOTIFICAÇÕES</Text>
+        </View>
+
+        <TouchableOpacity style={styles.menuItem} onPress={toggleNotification}>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons
+                name={notificationEnabled ? "notifications" : "notifications-off"}
+                size={18}
+                color="#B8860B"
+              />
+            </View>
+            <View>
+              <Text style={styles.menuText}>Lembrete Diário de Treino</Text>
+              <Text style={styles.menuSubtext}>
+                {notificationEnabled ? "Ativo" : "Desativado"}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name={notificationEnabled ? "toggle" : "toggle-outline"}
+            size={36}
+            color={notificationEnabled ? "#B8860B" : "#444"}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => setShowTimePicker(true)}>
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuItemIcon}>
+              <Ionicons name="time" size={18} color="#B8860B" />
+            </View>
+            <View>
+              <Text style={styles.menuText}>Horário do Lembrete</Text>
+              <Text style={styles.menuSubtext}>
+                {String(notificationHour).padStart(2, "0")}:
+                {String(notificationMinute).padStart(2, "0")}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#B8860B" />
+        </TouchableOpacity>
+
+        {showTimePicker && (
+          <DateTimePicker
+            value={notificationTime}
+            mode="time"
+            is24Hour={true}
+            display="default"
+            onChange={handleTimeChange}
+          />
+        )}
       </View>
 
       <View style={styles.section}>
