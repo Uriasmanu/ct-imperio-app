@@ -37,6 +37,15 @@ export const classSchedule: ClassSchedule[] = [
     current: true,
   },
   {
+    id: "18",
+    title: "Muay Thai - Turma Kids",
+    instructor: "Instrutor Rui",
+    startTime: "18:30",
+    endTime: "19:30",
+    days: ["Sexta"],
+    current: true,
+  },
+  {
     id: "4",
     title: "Muay Thai - Turma Mista (Noite)",
     instructor: "Mestre Will",
@@ -99,7 +108,7 @@ export const classSchedule: ClassSchedule[] = [
     days: ["Terça", "Quinta", "Sábado"],
     current: true,
   },
-    {
+  {
     id: "11",
     title: "Jiu-Jitsu - Turma Infanto 1 (6 anos acima)",
     instructor: "Mestre Will",
@@ -135,7 +144,7 @@ export const classSchedule: ClassSchedule[] = [
     days: ["Terça", "Quinta"],
     current: true,
   },
-    {
+  {
     id: "15",
     title: "Jiu-Jitsu - Turma Mista (Noite)",
     instructor: "Mestre Will",

@@ -50,7 +50,7 @@ export const usePresencaCalculo = ({
             // Primeiro semestre: 5 de janeiro a 30 de junho
             inicioSemestre = new Date(currentYear, 0, 5);
             fimSemestre = new Date(currentYear, 5, 30);
-            diasUteisTotalSemestre = 152; // FIXO para 2026
+            diasUteisTotalSemestre = 127; // FIXO para 2026
         } else {
             // Segundo semestre: 1 de julho a 31 de dezembro
             inicioSemestre = new Date(currentYear, 6, 1);
