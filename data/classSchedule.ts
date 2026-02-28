@@ -33,7 +33,7 @@ export const classSchedule: ClassSchedule[] = [
     instructor: "Instrutor Rui",
     startTime: "19:30",
     endTime: "20:30",
-    days: ["Segunda", "Quarta", "Sexta"],
+    days: ["Segunda", "Quarta"],
     current: true,
   },
   {
