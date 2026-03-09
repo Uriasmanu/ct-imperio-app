@@ -1,3 +1,4 @@
+import { Filho, Usuario } from "@/types/usuarios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { useEffect, useState } from "react";
@@ -123,4 +124,42 @@ export const useNotifications = () => {
         toggleNotification,
         changeTime,
     };
+};
+
+export const usePagamentoNotifications = () => {
+  const scheduleNotificacaoPagamento = async (item: Usuario | Filho, nome?: string) => {
+    if (!item.dataUltimoPagamento) return;
+
+    const dataVencimento = new Date(item.dataUltimoPagamento);
+    dataVencimento.setDate(dataVencimento.getDate() + 30);
+    dataVencimento.setHours(12, 0, 0, 0);
+
+    if (dataVencimento <= new Date()) return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Dia de pagar!",
+        body: `Sua mensalidade vence hoje. Regularize para continuar treinando!`,
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: dataVencimento,
+      },
+    });
+  };
+
+  const scheduleTodasNotificacoes = async (usuario: Usuario) => {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    await scheduleNotificacaoPagamento(usuario);
+
+    if (usuario.filhos && usuario.filhos.length > 0) {
+      for (const filho of usuario.filhos) {
+        await scheduleNotificacaoPagamento(filho);
+      }
+    }
+  };
+
+  return { scheduleTodasNotificacoes };
 };

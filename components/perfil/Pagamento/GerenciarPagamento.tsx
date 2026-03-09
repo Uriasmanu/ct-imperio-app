@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { db } from "@/config/firebaseConfig";
@@ -117,7 +117,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
   return (
     <>
       <View style={styles.container}>
-        {/* Status do Pagamento - Agora é apenas texto quando está pago */}
         {item.pagamento ? (
           <View style={[styles.statusContainer, styles.pagamentoPago]}>
             <Ionicons
@@ -150,7 +149,6 @@ export const GerenciarPagamento: React.FC<GerenciarPagamentoProps> = ({
               </Text>
             </TouchableOpacity>
 
-            {/* Botão Avisar que Pagou - aparece apenas quando está pendente */}
             {!item.avisoPagamento && (
               <TouchableOpacity
                 style={styles.avisarButton}
