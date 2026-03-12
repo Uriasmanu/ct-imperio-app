@@ -1,4 +1,3 @@
-import { Filho, Usuario } from "@/types/usuarios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { useEffect, useState } from "react";
@@ -151,150 +150,158 @@ export const useNotifications = () => {
     };
 };
 
+
+// useNotifications.ts - adicionar ao arquivo existente
+
+import { db } from "@/config/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+
+// --- Chaves de pagamento (já existem no seu arquivo) ---
+// STORAGE_KEY_PAG_ENABLED, STORAGE_KEY_PAG_HOUR, STORAGE_KEY_PAG_MINUTE já declarados
+
 // ─────────────────────────────────────────────
-// Hook: notificação de pagamento com horário configurável
+// Hook: notificação de pagamento pendente
 // ─────────────────────────────────────────────
-export const usePagamentoNotifications = () => {
-    const [pagamentoEnabled, setPagamentoEnabled] = useState(false);
-    const [pagamentoHour, setPagamentoHour] = useState(DEFAULT_PAG_HOUR);
-    const [pagamentoMinute, setPagamentoMinute] = useState(DEFAULT_PAG_MINUTE);
+export const usePagamentoNotifications = (usuarioId: string | null) => {
+  const [pagamentoNotifEnabled, setPagamentoNotifEnabled] = useState(false);
+  const [pagamentoHour, setPagamentoHour] = useState(DEFAULT_PAG_HOUR);
+  const [pagamentoMinute, setPagamentoMinute] = useState(DEFAULT_PAG_MINUTE);
 
-    useEffect(() => {
-        const loadSettings = async () => {
-            const [enabled, hour, minute] = await Promise.all([
-                AsyncStorage.getItem(STORAGE_KEY_PAG_ENABLED),
-                AsyncStorage.getItem(STORAGE_KEY_PAG_HOUR),
-                AsyncStorage.getItem(STORAGE_KEY_PAG_MINUTE),
-            ]);
+  // Carrega configurações salvas
+  useEffect(() => {
+    const loadSettings = async () => {
+      const [enabled, hour, minute] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY_PAG_ENABLED),
+        AsyncStorage.getItem(STORAGE_KEY_PAG_HOUR),
+        AsyncStorage.getItem(STORAGE_KEY_PAG_MINUTE),
+      ]);
 
-            setPagamentoEnabled(enabled === "true");
-            setPagamentoHour(hour !== null ? parseInt(hour) : DEFAULT_PAG_HOUR);
-            setPagamentoMinute(minute !== null ? parseInt(minute) : DEFAULT_PAG_MINUTE);
-        };
-
-        loadSettings();
-    }, []);
-
-    const requestPermissions = async (): Promise<boolean> => {
-        const { status: existing } = await Notifications.getPermissionsAsync();
-        if (existing === "granted") return true;
-
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== "granted") {
-            Alert.alert(
-                "Permissão necessária",
-                "Ative as notificações nas configurações do dispositivo para receber lembretes de pagamento."
-            );
-            return false;
-        }
-        return true;
+      setPagamentoNotifEnabled(enabled === "true");
+      setPagamentoHour(hour !== null ? parseInt(hour) : DEFAULT_PAG_HOUR);
+      setPagamentoMinute(minute !== null ? parseInt(minute) : DEFAULT_PAG_MINUTE);
     };
 
-    /**
-     * Agenda a notificação de vencimento para um usuário ou filho,
-     * usando o horário configurado pela usuária.
-     */
-    const scheduleNotificacaoPagamento = async (
-        item: Usuario | Filho,
-        hour: number,
-        minute: number
-    ) => {
-        if (!item.dataUltimoPagamento) return;
+    loadSettings();
+  }, []);
 
-        const dataVencimento = new Date(item.dataUltimoPagamento);
-        dataVencimento.setDate(dataVencimento.getDate() + 30);
-        dataVencimento.setHours(hour, minute, 0, 0);
+  // Sincroniza notificação com status do Firestore automaticamente
+  useEffect(() => {
+    if (!usuarioId) return;
 
-        if (dataVencimento <= new Date()) return;
+    const sincronizar = async () => {
+      try {
+        const userRef = doc(db, "usuarios", usuarioId);
+        const userSnap = await getDoc(userRef);
 
-        await Notifications.scheduleNotificationAsync({
-            identifier: NOTIF_IDENTIFIER_PAGAMENTO,
-            content: {
-                title: "Dia de pagar!",
-                body: "Sua mensalidade vence hoje. Regularize para continuar treinando!",
-                sound: true,
-            },
-            trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: dataVencimento,
-            },
-        });
-    };
+        if (!userSnap.exists()) return;
 
-    /**
-     * Ativa as notificações de pagamento e agenda para o usuário e filhos.
-     */
-    const enablePagamentoNotifications = async (
-        usuario: Usuario,
-        hour = pagamentoHour,
-        minute = pagamentoMinute
-    ) => {
-        const hasPermission = await requestPermissions();
-        if (!hasPermission) return;
+        const usuario = userSnap.data();
+        const isPago = usuario.pagamento === true;
 
-        // Cancela apenas a notificação de pagamento anterior
-        await Notifications.cancelScheduledNotificationAsync(NOTIF_IDENTIFIER_PAGAMENTO);
-
-        await scheduleNotificacaoPagamento(usuario, hour, minute);
-
-        if (usuario.filhos && usuario.filhos.length > 0) {
-            for (const filho of usuario.filhos) {
-                await scheduleNotificacaoPagamento(filho, hour, minute);
-            }
-        }
-
-        await AsyncStorage.multiSet([
-            [STORAGE_KEY_PAG_ENABLED, "true"],
-            [STORAGE_KEY_PAG_HOUR, String(hour)],
-            [STORAGE_KEY_PAG_MINUTE, String(minute)],
-        ]);
-
-        setPagamentoEnabled(true);
-        setPagamentoHour(hour);
-        setPagamentoMinute(minute);
-    };
-
-    /**
-     * Desativa as notificações de pagamento.
-     */
-    const disablePagamentoNotifications = async () => {
-        await Notifications.cancelScheduledNotificationAsync(NOTIF_IDENTIFIER_PAGAMENTO);
-        await AsyncStorage.setItem(STORAGE_KEY_PAG_ENABLED, "false");
-        setPagamentoEnabled(false);
-    };
-
-    const togglePagamentoNotification = async (usuario: Usuario) => {
-        if (pagamentoEnabled) {
-            await disablePagamentoNotifications();
+        if (isPago) {
+          await cancelarNotificacaoPagamento();
         } else {
-            await enablePagamentoNotifications(usuario);
+          // Só agenda se o usuário tiver habilitado a notificação
+          const enabled = await AsyncStorage.getItem(STORAGE_KEY_PAG_ENABLED);
+          if (enabled === "true") {
+            await agendarNotificacaoPagamento(pagamentoHour, pagamentoMinute);
+          }
         }
+      } catch (error) {
+        console.error("Erro ao sincronizar notificação de pagamento:", error);
+      }
     };
 
-    /**
-     * Chamado quando a usuária muda o horário da notificação de pagamento.
-     */
-    const changePagamentoTime = async (usuario: Usuario, hour: number, minute: number) => {
-        setPagamentoHour(hour);
-        setPagamentoMinute(minute);
+    sincronizar();
+  }, [usuarioId]);
 
-        if (pagamentoEnabled) {
-            await enablePagamentoNotifications(usuario, hour, minute);
-        } else {
-            await AsyncStorage.multiSet([
-                [STORAGE_KEY_PAG_HOUR, String(hour)],
-                [STORAGE_KEY_PAG_MINUTE, String(minute)],
-            ]);
-        }
-    };
+  const requestPermissions = async (): Promise<boolean> => {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === "granted") return true;
 
-    return {
-        pagamentoEnabled,
-        pagamentoHour,
-        pagamentoMinute,
-        togglePagamentoNotification,
-        changePagamentoTime,
-        enablePagamentoNotifications,
-        disablePagamentoNotifications,
-    };
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Ative as notificações nas configurações do dispositivo."
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const agendarNotificacaoPagamento = async (
+    hour = pagamentoHour,
+    minute = pagamentoMinute
+  ) => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    // Cancela versão anterior antes de reagendar
+    await Notifications.cancelScheduledNotificationAsync(
+      NOTIF_IDENTIFIER_PAGAMENTO
+    );
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: NOTIF_IDENTIFIER_PAGAMENTO,
+      content: {
+        title: "Pagamento pendente",
+        body: "Seu pagamento ainda está em aberto. Regularize para continuar treinando!",
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute,
+      },
+    });
+
+    await AsyncStorage.multiSet([
+      [STORAGE_KEY_PAG_ENABLED, "true"],
+      [STORAGE_KEY_PAG_HOUR, String(hour)],
+      [STORAGE_KEY_PAG_MINUTE, String(minute)],
+    ]);
+
+    setPagamentoNotifEnabled(true);
+    setPagamentoHour(hour);
+    setPagamentoMinute(minute);
+  };
+
+  const cancelarNotificacaoPagamento = async () => {
+    await Notifications.cancelScheduledNotificationAsync(
+      NOTIF_IDENTIFIER_PAGAMENTO
+    );
+    await AsyncStorage.setItem(STORAGE_KEY_PAG_ENABLED, "false");
+    setPagamentoNotifEnabled(false);
+  };
+
+  const toggleNotificacaoPagamento = async () => {
+    if (pagamentoNotifEnabled) {
+      await cancelarNotificacaoPagamento();
+    } else {
+      await agendarNotificacaoPagamento();
+    }
+  };
+
+  const changeTimePagamento = async (hour: number, minute: number) => {
+    setPagamentoHour(hour);
+    setPagamentoMinute(minute);
+
+    if (pagamentoNotifEnabled) {
+      await agendarNotificacaoPagamento(hour, minute);
+    } else {
+      await AsyncStorage.multiSet([
+        [STORAGE_KEY_PAG_HOUR, String(hour)],
+        [STORAGE_KEY_PAG_MINUTE, String(minute)],
+      ]);
+    }
+  };
+
+  return {
+    pagamentoNotifEnabled,
+    pagamentoHour,
+    pagamentoMinute,
+    toggleNotificacaoPagamento,
+    changeTimePagamento,
+  };
 };

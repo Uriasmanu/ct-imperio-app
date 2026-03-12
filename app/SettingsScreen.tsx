@@ -24,16 +24,21 @@ const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const { usuario } = useUser();
 
-  const { notificationEnabled, notificationHour, notificationMinute, toggleNotification, changeTime } =
-    useNotifications();
+  const {
+    notificationEnabled,
+    notificationHour,
+    notificationMinute,
+    toggleNotification,
+    changeTime,
+  } = useNotifications();
 
   const {
-    pagamentoEnabled,
+    pagamentoNotifEnabled: pagamentoEnabled,
     pagamentoHour,
     pagamentoMinute,
-    togglePagamentoNotification,
-    changePagamentoTime,
-  } = usePagamentoNotifications();
+    toggleNotificacaoPagamento: togglePagamentoNotification,
+    changeTimePagamento: changePagamentoTime,
+  } = usePagamentoNotifications(usuario?.id ?? null);
 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showPagamentoTimePicker, setShowPagamentoTimePicker] = useState(false);
@@ -47,8 +52,8 @@ const SettingsScreen = () => {
 
   const handlePagamentoTimeChange = (_: any, selectedDate?: Date) => {
     setShowPagamentoTimePicker(false);
-    if (selectedDate && usuario) {
-      changePagamentoTime(usuario, selectedDate.getHours(), selectedDate.getMinutes());
+    if (selectedDate) {
+      changePagamentoTime(selectedDate.getHours(), selectedDate.getMinutes());
     }
   };
 
@@ -83,10 +88,7 @@ const SettingsScreen = () => {
         Alert.alert("Erro", "Não foi possível abrir o link.");
       }
     } catch (error) {
-      Alert.alert(
-        "Erro",
-        "Ocorreu um problema ao abrir a política de privacidade.",
-      );
+      Alert.alert("Erro", "Ocorreu um problema ao abrir a política de privacidade.");
     }
   };
 
@@ -232,7 +234,7 @@ const SettingsScreen = () => {
         {/* --- Pagamento --- */}
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => usuario && togglePagamentoNotification(usuario)}
+          onPress={() => usuario && togglePagamentoNotification()}
         >
           <View style={styles.menuItemLeft}>
             <View style={styles.menuItemIcon}>
@@ -256,7 +258,10 @@ const SettingsScreen = () => {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem} onPress={() => setShowPagamentoTimePicker(true)}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => setShowPagamentoTimePicker(true)}
+        >
           <View style={styles.menuItemLeft}>
             <View style={styles.menuItemIcon}>
               <Ionicons name="time" size={18} color="#B8860B" />
@@ -324,10 +329,7 @@ const SettingsScreen = () => {
         </TouchableOpacity>
 
         <View>
-          <TouchableOpacity
-            style={styles.tutorialButton}
-            onPress={handleTutorial}
-          >
+          <TouchableOpacity style={styles.tutorialButton} onPress={handleTutorial}>
             <View style={styles.tutorialIconContainer}>
               <Ionicons name="play-circle" size={24} color="#B8860B" />
             </View>
@@ -365,9 +367,7 @@ const SettingsScreen = () => {
           <Ionicons name="fitness" size={24} color="#B8860B" />
           <Text style={styles.footerTitle}>CT Império</Text>
         </View>
-        <Text style={styles.footerText}>
-          © 2025 Todos os direitos reservados
-        </Text>
+        <Text style={styles.footerText}>© 2025 Todos os direitos reservados</Text>
       </View>
 
       <LoginModal

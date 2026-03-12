@@ -4,7 +4,7 @@ export interface GraduacaoMuayThai {
 }
 
 export const graduaçõesMuayThai: GraduacaoMuayThai[] = [
-  { cor: "Banco" },
+  { cor: "Branco" },
   { cor: "Amarelo" },
   { cor: "Amarelo", pontaBranca: true },
   { cor: "Verde" },
