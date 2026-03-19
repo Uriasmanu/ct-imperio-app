@@ -4,21 +4,19 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 
 Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
 });
 
-// --- Chaves de treino ---
 const STORAGE_KEY_ENABLED = "@notification_enabled";
 const STORAGE_KEY_HOUR = "@notification_hour";
 const STORAGE_KEY_MINUTE = "@notification_minute";
 
-// --- Chaves de pagamento ---
 const STORAGE_KEY_PAG_ENABLED = "@notification_pagamento_enabled";
 const STORAGE_KEY_PAG_HOUR = "@notification_pagamento_hour";
 const STORAGE_KEY_PAG_MINUTE = "@notification_pagamento_minute";
@@ -28,146 +26,141 @@ const DEFAULT_MINUTE = 0;
 const DEFAULT_PAG_HOUR = 9;
 const DEFAULT_PAG_MINUTE = 0;
 
-// Identificador único para não misturar notificações
 const NOTIF_IDENTIFIER_PAGAMENTO = "pagamento-vencimento";
 
-// ─────────────────────────────────────────────
-// Hook: notificação diária de treino
-// ─────────────────────────────────────────────
 export const useNotifications = () => {
-    const [notificationEnabled, setNotificationEnabled] = useState(false);
-    const [notificationHour, setNotificationHour] = useState(DEFAULT_HOUR);
-    const [notificationMinute, setNotificationMinute] = useState(DEFAULT_MINUTE);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [notificationHour, setNotificationHour] = useState(DEFAULT_HOUR);
+  const [notificationMinute, setNotificationMinute] = useState(DEFAULT_MINUTE);
 
-    useEffect(() => {
-        const loadSettings = async () => {
-            const [enabled, hour, minute] = await Promise.all([
-                AsyncStorage.getItem(STORAGE_KEY_ENABLED),
-                AsyncStorage.getItem(STORAGE_KEY_HOUR),
-                AsyncStorage.getItem(STORAGE_KEY_MINUTE),
-            ]);
+  useEffect(() => {
+    const loadSettings = async () => {
+      const [enabled, hour, minute] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY_ENABLED),
+        AsyncStorage.getItem(STORAGE_KEY_HOUR),
+        AsyncStorage.getItem(STORAGE_KEY_MINUTE),
+      ]);
 
-            setNotificationEnabled(enabled === "true");
-            setNotificationHour(hour !== null ? parseInt(hour) : DEFAULT_HOUR);
-            setNotificationMinute(minute !== null ? parseInt(minute) : DEFAULT_MINUTE);
-        };
-
-        loadSettings();
-    }, []);
-
-    const requestPermissions = async (): Promise<boolean> => {
-        const { status: existing } = await Notifications.getPermissionsAsync();
-        if (existing === "granted") return true;
-
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== "granted") {
-            Alert.alert(
-                "Permissão necessária",
-                "Ative as notificações nas configurações do dispositivo para receber lembretes diários."
-            );
-            return false;
-        }
-        return true;
+      setNotificationEnabled(enabled === "true");
+      setNotificationHour(hour !== null ? parseInt(hour) : DEFAULT_HOUR);
+      setNotificationMinute(minute !== null ? parseInt(minute) : DEFAULT_MINUTE);
     };
 
-    const enableNotification = async (hour = notificationHour, minute = notificationMinute) => {
-        const hasPermission = await requestPermissions();
-        if (!hasPermission) return;
+    loadSettings();
+  }, []);
 
-        // Cancela apenas a notificação de treino (pelo identificador)
-        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-        for (const notif of scheduled) {
-            if (notif.identifier !== NOTIF_IDENTIFIER_PAGAMENTO) {
-                await Notifications.cancelScheduledNotificationAsync(notif.identifier);
-            }
-        }
+  const requestPermissions = async (): Promise<boolean> => {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === "granted") return true;
 
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "CT Império",
-                body: "Já marcou presença hoje? Abra o app e registre seu treino!",
-                sound: true,
-            },
-            trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DAILY,
-                hour,
-                minute,
-            },
-        });
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Ative as notificações nas configurações do dispositivo para receber lembretes diários."
+      );
+      return false;
+    }
+    return true;
+  };
 
-        await AsyncStorage.multiSet([
-            [STORAGE_KEY_ENABLED, "true"],
-            [STORAGE_KEY_HOUR, String(hour)],
-            [STORAGE_KEY_MINUTE, String(minute)],
-        ]);
+  const enableNotification = async (hour = notificationHour, minute = notificationMinute) => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
 
-        setNotificationEnabled(true);
-        setNotificationHour(hour);
-        setNotificationMinute(minute);
-    };
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.identifier !== NOTIF_IDENTIFIER_PAGAMENTO) {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
 
-    const disableNotification = async () => {
-        // Cancela apenas as notificações de treino
-        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-        for (const notif of scheduled) {
-            if (notif.identifier !== NOTIF_IDENTIFIER_PAGAMENTO) {
-                await Notifications.cancelScheduledNotificationAsync(notif.identifier);
-            }
-        }
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "CT Império",
+        body: "Já marcou presença hoje? Abra o app e registre seu treino!",
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute,
+      },
+    });
 
-        await AsyncStorage.setItem(STORAGE_KEY_ENABLED, "false");
-        setNotificationEnabled(false);
-    };
+    await AsyncStorage.multiSet([
+      [STORAGE_KEY_ENABLED, "true"],
+      [STORAGE_KEY_HOUR, String(hour)],
+      [STORAGE_KEY_MINUTE, String(minute)],
+    ]);
 
-    const toggleNotification = async () => {
-        if (notificationEnabled) {
-            await disableNotification();
-        } else {
-            await enableNotification();
-        }
-    };
+    setNotificationEnabled(true);
+    setNotificationHour(hour);
+    setNotificationMinute(minute);
+  };
 
-    const changeTime = async (hour: number, minute: number) => {
-        setNotificationHour(hour);
-        setNotificationMinute(minute);
+  const disableNotification = async () => {
 
-        if (notificationEnabled) {
-            await enableNotification(hour, minute);
-        } else {
-            await AsyncStorage.multiSet([
-                [STORAGE_KEY_HOUR, String(hour)],
-                [STORAGE_KEY_MINUTE, String(minute)],
-            ]);
-        }
-    };
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.identifier !== NOTIF_IDENTIFIER_PAGAMENTO) {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
 
-    return {
-        notificationEnabled,
-        notificationHour,
-        notificationMinute,
-        toggleNotification,
-        changeTime,
-    };
+    await AsyncStorage.setItem(STORAGE_KEY_ENABLED, "false");
+    setNotificationEnabled(false);
+  };
+
+  const toggleNotification = async () => {
+    if (notificationEnabled) {
+      await disableNotification();
+    } else {
+      await enableNotification();
+    }
+  };
+
+  const changeTime = async (hour: number, minute: number) => {
+    setNotificationHour(hour);
+    setNotificationMinute(minute);
+
+    if (notificationEnabled) {
+      await enableNotification(hour, minute);
+    } else {
+      await AsyncStorage.multiSet([
+        [STORAGE_KEY_HOUR, String(hour)],
+        [STORAGE_KEY_MINUTE, String(minute)],
+      ]);
+    }
+  };
+
+  return {
+    notificationEnabled,
+    notificationHour,
+    notificationMinute,
+    toggleNotification,
+    changeTime,
+  };
 };
 
 
-// useNotifications.ts - adicionar ao arquivo existente
+
 
 import { db } from "@/config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 
-// --- Chaves de pagamento (já existem no seu arquivo) ---
-// STORAGE_KEY_PAG_ENABLED, STORAGE_KEY_PAG_HOUR, STORAGE_KEY_PAG_MINUTE já declarados
 
-// ─────────────────────────────────────────────
-// Hook: notificação de pagamento pendente
-// ─────────────────────────────────────────────
+
+
+
+
+
 export const usePagamentoNotifications = (usuarioId: string | null) => {
   const [pagamentoNotifEnabled, setPagamentoNotifEnabled] = useState(false);
   const [pagamentoHour, setPagamentoHour] = useState(DEFAULT_PAG_HOUR);
   const [pagamentoMinute, setPagamentoMinute] = useState(DEFAULT_PAG_MINUTE);
 
-  // Carrega configurações salvas
+
   useEffect(() => {
     const loadSettings = async () => {
       const [enabled, hour, minute] = await Promise.all([
@@ -184,7 +177,7 @@ export const usePagamentoNotifications = (usuarioId: string | null) => {
     loadSettings();
   }, []);
 
-  // Sincroniza notificação com status do Firestore automaticamente
+
   useEffect(() => {
     if (!usuarioId) return;
 
@@ -201,7 +194,7 @@ export const usePagamentoNotifications = (usuarioId: string | null) => {
         if (isPago) {
           await cancelarNotificacaoPagamento();
         } else {
-          // Só agenda se o usuário tiver habilitado a notificação
+
           const enabled = await AsyncStorage.getItem(STORAGE_KEY_PAG_ENABLED);
           if (enabled === "true") {
             await agendarNotificacaoPagamento(pagamentoHour, pagamentoMinute);
@@ -237,7 +230,7 @@ export const usePagamentoNotifications = (usuarioId: string | null) => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    // Cancela versão anterior antes de reagendar
+
     await Notifications.cancelScheduledNotificationAsync(
       NOTIF_IDENTIFIER_PAGAMENTO
     );
