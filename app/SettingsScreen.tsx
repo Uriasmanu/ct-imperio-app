@@ -13,7 +13,7 @@ import AccountSection from "@/components/Settings/AccountSection";
 import LoginModal from "@/components/Settings/LoginModal";
 import { useUser } from "@/contexts/UserContext";
 import { useLogin } from "@/hooks/useLogin";
-import { useNotifications, usePagamentoNotifications } from "@/hooks/useNotifications";
+import { useNotifications } from "@/hooks/useNotifications";
 import { globalStyles } from "@/styles/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -24,24 +24,10 @@ const SettingsScreen = () => {
   const [showVersionInfo, setShowVersionInfo] = useState(false);
   const { usuario } = useUser();
 
-  const {
-    notificationEnabled,
-    notificationHour,
-    notificationMinute,
-    toggleNotification,
-    changeTime,
-  } = useNotifications();
-
-  const {
-    pagamentoNotifEnabled: pagamentoEnabled,
-    pagamentoHour,
-    pagamentoMinute,
-    toggleNotificacaoPagamento: togglePagamentoNotification,
-    changeTimePagamento: changePagamentoTime,
-  } = usePagamentoNotifications(usuario?.id ?? null);
+  const { notificationEnabled, notificationHour, notificationMinute, toggleNotification, changeTime } =
+    useNotifications();
 
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showPagamentoTimePicker, setShowPagamentoTimePicker] = useState(false);
 
   const handleTimeChange = (_: any, selectedDate?: Date) => {
     setShowTimePicker(false);
@@ -50,18 +36,8 @@ const SettingsScreen = () => {
     }
   };
 
-  const handlePagamentoTimeChange = (_: any, selectedDate?: Date) => {
-    setShowPagamentoTimePicker(false);
-    if (selectedDate) {
-      changePagamentoTime(selectedDate.getHours(), selectedDate.getMinutes());
-    }
-  };
-
   const notificationTime = new Date();
   notificationTime.setHours(notificationHour, notificationMinute, 0);
-
-  const pagamentoTime = new Date();
-  pagamentoTime.setHours(pagamentoHour, pagamentoMinute, 0);
 
   const {
     showLoginModal,
@@ -88,7 +64,10 @@ const SettingsScreen = () => {
         Alert.alert("Erro", "Não foi possível abrir o link.");
       }
     } catch (error) {
-      Alert.alert("Erro", "Ocorreu um problema ao abrir a política de privacidade.");
+      Alert.alert(
+        "Erro",
+        "Ocorreu um problema ao abrir a política de privacidade.",
+      );
     }
   };
 
@@ -106,6 +85,7 @@ const SettingsScreen = () => {
   };
 
   const handleTutorial = () => {
+    // Função para navegar para o tutorial
     router.push("/onboardingScreen");
   };
 
@@ -181,7 +161,6 @@ const SettingsScreen = () => {
           <Text style={styles.sectionTitle}>NOTIFICAÇÕES</Text>
         </View>
 
-        {/* --- Treino --- */}
         <TouchableOpacity style={styles.menuItem} onPress={toggleNotification}>
           <View style={styles.menuItemLeft}>
             <View style={styles.menuItemIcon}>
@@ -211,7 +190,7 @@ const SettingsScreen = () => {
               <Ionicons name="time" size={18} color="#B8860B" />
             </View>
             <View>
-              <Text style={styles.menuText}>Horário do Lembrete de Treino</Text>
+              <Text style={styles.menuText}>Horário do Lembrete</Text>
               <Text style={styles.menuSubtext}>
                 {String(notificationHour).padStart(2, "0")}:
                 {String(notificationMinute).padStart(2, "0")}
@@ -228,62 +207,6 @@ const SettingsScreen = () => {
             is24Hour={true}
             display="default"
             onChange={handleTimeChange}
-          />
-        )}
-
-        {/* --- Pagamento --- */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => usuario && togglePagamentoNotification()}
-        >
-          <View style={styles.menuItemLeft}>
-            <View style={styles.menuItemIcon}>
-              <Ionicons
-                name={pagamentoEnabled ? "card" : "card-outline"}
-                size={18}
-                color="#B8860B"
-              />
-            </View>
-            <View>
-              <Text style={styles.menuText}>Lembrete de Pagamento</Text>
-              <Text style={styles.menuSubtext}>
-                {pagamentoEnabled ? "Ativo" : "Desativado"}
-              </Text>
-            </View>
-          </View>
-          <Ionicons
-            name={pagamentoEnabled ? "toggle" : "toggle-outline"}
-            size={36}
-            color={pagamentoEnabled ? "#B8860B" : "#444"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setShowPagamentoTimePicker(true)}
-        >
-          <View style={styles.menuItemLeft}>
-            <View style={styles.menuItemIcon}>
-              <Ionicons name="time" size={18} color="#B8860B" />
-            </View>
-            <View>
-              <Text style={styles.menuText}>Horário do Lembrete de Pagamento</Text>
-              <Text style={styles.menuSubtext}>
-                {String(pagamentoHour).padStart(2, "0")}:
-                {String(pagamentoMinute).padStart(2, "0")}
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#B8860B" />
-        </TouchableOpacity>
-
-        {showPagamentoTimePicker && (
-          <DateTimePicker
-            value={pagamentoTime}
-            mode="time"
-            is24Hour={true}
-            display="default"
-            onChange={handlePagamentoTimeChange}
           />
         )}
       </View>
@@ -329,7 +252,10 @@ const SettingsScreen = () => {
         </TouchableOpacity>
 
         <View>
-          <TouchableOpacity style={styles.tutorialButton} onPress={handleTutorial}>
+          <TouchableOpacity
+            style={styles.tutorialButton}
+            onPress={handleTutorial}
+          >
             <View style={styles.tutorialIconContainer}>
               <Ionicons name="play-circle" size={24} color="#B8860B" />
             </View>
@@ -367,7 +293,9 @@ const SettingsScreen = () => {
           <Ionicons name="fitness" size={24} color="#B8860B" />
           <Text style={styles.footerTitle}>CT Império</Text>
         </View>
-        <Text style={styles.footerText}>© 2025 Todos os direitos reservados</Text>
+        <Text style={styles.footerText}>
+          © 2025 Todos os direitos reservados
+        </Text>
       </View>
 
       <LoginModal
@@ -421,7 +349,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#B8860B",
     shadowColor: "#B8860B",
-    shadowOffset: { width: 0, height: 0 },
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
